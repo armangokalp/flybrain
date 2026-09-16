@@ -21,16 +21,16 @@ Her faz, bitiş kriterleri sağlanmadan kapanmaz. Gerçek Instagram hesabına il
 
 **Bitiş:** `load_connectome()` birkaç saniyede matrisi yüklüyor; aday nöron listesi doğrulanmış. ✅ (2026-09-16: önbellek 3 sn'de üretiliyor, 9 motor + 8 duyu havuzunun hepsi dolu, 7 test geçiyor)
 
-## Faz 2 — Simülasyon çekirdeği
+## Faz 2 — Simülasyon çekirdeği ✅
 
 - [x] LIF motoru (olay güdümlü, seyrek); isteğe bağlı sinaptik depresyon ve adaptasyon
 - [x] Performans ölçümü: simülasyonun 1 saniyesi yaklaşık 1,2 saniye
 - [x] **Doğrulama:** şeker tat nöronlarının (LB3b/c) uyarılması MN9'u ateşliyor mu, acı nöronlarının (LB1a–d) uyarılması ateşletmiyor mu? Orijinal ağırlıklarla evet (166 / 14 Hz), fakat beyin kilitleniyor (Z-06)
 - [x] Ağırlık ölçeği ve mekanizma taraması (35 ayar), koku ayırt edilebilirliği ölçütü ([06-simulasyon.md](06-simulasyon.md))
 - [x] Kararlılık testleri: kalıcı çekici bulundu ve kararlı ayarlar belirlendi
-- [ ] Çalışma ayarının seçimi (K-011, kullanıcı kararı)
+- [x] Çalışma ayarının seçimi: B (K-011), `BRAIN_PARAMS`
 
-**Bitiş:** Doğrulama deneyi yayınlanmış sonuçla nitel olarak uyuşuyor; 500 ms'lik bir karar penceresi makul sürede hesaplanıyor.
+**Bitiş:** Doğrulama deneyi yayınlanmış sonuçla nitel olarak uyuşuyor; 500 ms'lik bir karar penceresi makul sürede hesaplanıyor. ✅ (2026-09-16: seçilen ayarda şeker → MN9 3,7 Hz, acı → 0 Hz; kalıcı aktivite yok; 500 ms ≈ 0,6 sn)
 
 ## Faz 3 — Duyu kodlayıcıları
 

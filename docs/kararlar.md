@@ -73,7 +73,7 @@ Durumlar: **önerildi** · **kabul edildi** · **yerine geçti**
 
 ## K-011 · Beynin çalışma ayarı
 
-- **Durum:** önerildi (2026-09-16), kullanıcı kararı bekleniyor
+- **Durum:** kabul edildi (2026-09-16), **B seçildi**
 - **Bağlam:** Orijinal Shiu ağırlıklarıyla MaleCNS, girdiden bağımsız, kalıcı bir çekiciye kilitleniyor (Z-06). Ağırlık ölçeği ve iki biyolojik mekanizma (sinaptik depresyon ve ateşleme hızı adaptasyonu) 35 ayarda tarandı. Ayrıntılar: [06-simulasyon.md](06-simulasyon.md).
 - **Ölçütler:**
   1. **Kararlılık:** uyarım sonrası kalıcı aktivite yok.
@@ -92,4 +92,6 @@ Durumlar: **önerildi** · **kabul edildi** · **yerine geçti**
   - Ayırt edilebilirlik daha düşük olsa da şans düzeyinin yaklaşık 10 katı. Instagram kararları 16'lı ince bir sınıflandırma değil, kaba farklar gerektiriyor.
   - Görme sinyali çok katmanlı bir yoldan geçecek (Z-02). Daha güçlü ağırlıklar sinyalin sönmeden merkezi beyne ulaşma şansını artırıyor.
   - "Beğen = hortum" eşlemesi (Z-04) ancak bu adayda çalışabilir.
+- **Karar:** B. Kodda `flybrain.sim.BRAIN_PARAMS` (ağırlık 0,275 × 0,70 mV; STD U = 0,2, τ = 800 ms; duyu nöronları muaf). `LIFParams()` varsayılanları Shiu ayarı olarak korunuyor.
+- **Güvence:** [`tests/test_brain_params.py`](../tests/test_brain_params.py) bu ayarda şekerin MN9'u ateşlettiğini, acının ateşletmediğini ve beynin sönüp dinlenime döndüğünü her test çalıştırmasında doğruluyor.
 - **Yeniden değerlendirme:** Faz 3'te görme sinyali ölçüldüğünde bu karar tekrar gözden geçirilecek.

@@ -44,11 +44,14 @@ Temel olarak Shiu ve ark. (2024, *Nature*) çalışmasındaki tüm beyin LIF mod
 | Sinaptik zaman sabiti | 5 ms |
 | Refrakter süre | 2,2 ms |
 | Sinaptik gecikme | 1,8 ms |
-| Sinaps başına ağırlık | 0,275 mV × sinaps sayısı |
+| Sinaps başına ağırlık | Shiu: 0,275 mV × sinaps sayısı. **Proje ayarı (K-011): 0,275 × 0,70 = 0,1925 mV** |
 | İşaret | Nörotransmitter tahmininden: ACh → uyarıcı; GABA ve glutamat → ketleyici |
 | Zaman adımı | 0,1 ms |
 | Duyusal uyarım | Poisson; varsayılan 150 Hz, olay başına membran potansiyeline doğrudan +68,75 mV (0,275 × 250) |
 | Bağlantı eşiği | En az 5 sinaps (K-009) |
+| Kısa süreli sinaptik depresyon | **Proje ayarı (K-011):** U = 0,2, τ = 800 ms; duyu nöronları muaf. Shiu modelinde yok. |
+
+Orijinal Shiu ayarıyla MaleCNS kalıcı bir çekiciye kilitlendiği için (Z-06) proje, kararlılık taramasıyla seçilen `BRAIN_PARAMS` ayarını kullanıyor. Ayrıntı: [06-simulasyon.md](06-simulasyon.md).
 
 **Temel varsayım:** Konnektom sinaps *sayısını* verir, sinaps *gücünü* vermez. Bu yüzden her sinaps eşit ağırlıkta kabul edilir. Bu varsayımın zayıf yönleri için [03-zorluklar.md](03-zorluklar.md) belgesine bakın.
 

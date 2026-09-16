@@ -13,7 +13,8 @@ Kararları insan, dil modeli ya da eğitilmiş bir yorumlayıcı ağ vermez. Sin
 
 - ✅ **Faz 0:** araştırma ve mimari
 - ✅ **Faz 1:** konnektom veri hattı (165.122 nöron, 6,2 milyon bağlantı)
-- 🟡 **Faz 2:** simülasyon çekirdeği (motor hazır; beynin çalışma ayarı, K-011, karar bekliyor)
+- ✅ **Faz 2:** simülasyon çekirdeği (neredeyse gerçek zamanlı, kararlı beyin ayarı)
+- ⏭️ **Faz 3:** duyu kodlayıcıları
 
 İlerleme için [yol haritası](docs/04-yol-haritasi.md), günlük kayıtlar için [docs/gunluk](docs/gunluk/) klasörüne bakın.
 

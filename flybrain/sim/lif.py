@@ -55,6 +55,16 @@ class LIFParams:
     adapt_tau_ms: float = 200.0 # adaptasyon: a'nın sönme zaman sabiti
 
 
+# Projenin beyin ayarı (K-011): kararlı, koku ayırt edici ve şeker→MN9 doğrulamasını
+# koruyan tek aday. LIFParams() ise Shiu ve ark.'ın orijinal ayarı olarak kalır.
+BRAIN_PARAMS = LIFParams(
+    w_syn_mv=0.275 * 0.70,
+    std_u=0.2,
+    std_tau_ms=800.0,
+    std_skip_sensory=True,
+)
+
+
 @dataclass
 class RunResult:
     counts: np.ndarray        # nöron başına spike sayısı

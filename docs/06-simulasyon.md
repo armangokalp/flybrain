@@ -165,6 +165,6 @@ Muafiyet 0,45–0,55 aralığında şeker yanıtını geri getirmedi; yorulma ar
 - Kalıcılık olmadığı için beyin durumu postlar arasında sıfırlanmadan taşınabilir. Sinaptik kaynaklar (τ = 800 ms) yakın geçmişin kısa süreli bir izini doğal olarak tutuyor.
 - 200 ms'lik pencere, 500 ms kadar bilgi taşıyor. Karar penceresi kısaltılırsa sinek daha hızlı karar verebilir.
 
-## Açık karar: K-011, beynin çalışma ayarı
+## Karar: K-011, beynin çalışma ayarı
 
-Karar kullanıcıyla birlikte verilecek. Karşılaştırma ve öneri için [kararlar.md](kararlar.md#k-011--beynin-çalışma-ayarı) dosyasına bakın.
+**B seçildi:** ağırlık ölçeği 0,70, sinaptik depresyon U = 0,2, τ = 800 ms, duyu nöronları muaf. Kodda `flybrain.sim.BRAIN_PARAMS` olarak tanımlı. Gerekçe için [kararlar.md](kararlar.md#k-011--beynin-çalışma-ayarı) dosyasına bakın.
