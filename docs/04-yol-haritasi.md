@@ -43,14 +43,15 @@ Her faz, bitiş kriterleri sağlanmadan kapanmaz. Gerçek Instagram hesabına il
 
 **Bitiş:** Farklı görseller inen nöronlarda ayırt edilebilir aktivite desenleri üretiyor. ✅ (2026-09-16: 16 doğal istatistikli görsel %95–100, 16 post %85; gri ekranda sessiz, post sonrası dinlenime dönüyor)
 
-## Faz 4 — Motor kod çözücü
+## Faz 4 — Motor kod çözücü ✅
 
-- [ ] Motor havuzlarının tanımı (doğrulanmış nöron listeleriyle)
-- [ ] Kalibrasyon protokolü (nötr uyaran → eşikler)
-- [ ] Eylem seçimi ve "bakmaya devam" mantığı
-- [ ] "Beğen" eşlemesinin kararlaştırılması (Z-04)
+- [x] Motor okuma: komut nöronları ölçüldü; kas grubu kanallarına geçildi (K-015)
+- [x] Kalibrasyon: 480 içerikten bağımsız referans post, birikimli kanıt, sayma gürültüsü tabanı, bütçeye gerçekleşen oranla uyum (K-016)
+- [x] Eylem seçimi, "bakmaya devam" ve ilgi kaybı; eşik homeostazı
+- [x] "Beğen" ve "kaydet" (iki şiddet, K-018), "takip et" (karın kasları, K-017)
+- [x] `Fly` sınıfı: bir posta bakma döngüsü
 
-**Bitiş:** Gri ekranda hiçbir eylem tetiklenmiyor; gerçek görsellerde eylem dağılımı dejenere değil (tek bir eylem baskın değil).
+**Bitiş:** Gri ekranda hiçbir eylem tetiklenmiyor; gerçek görsellerde eylem dağılımı dejenere değil (tek bir eylem baskın değil). ✅ (2026-09-16: gri ekran → ilgi kaybı; homeostazlı oturumlarda eylemler bütçeye yakın dağılıyor, beğeni son blokta %14)
 
 ## Faz 5 — Yerel kum havuzu (sahte feed)
 

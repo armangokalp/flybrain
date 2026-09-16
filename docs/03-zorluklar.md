@@ -42,11 +42,13 @@ LIF modelinde bağlantılar sabit. Sinek beğeni alsa bile bundan bir şey öğr
 
 **Çözüm yolu (Faz 8):** Mantar gövdesinde (mushroom body) dopaminle kapılanan bir öğrenme kuralı eklemek. Sinekteki öğrenmenin gerçek mekanizması bu: Kenyon hücresi → MBON sinapsları, dopamin sinyali geldiğinde zayıflar. Ödül (beğeni, takipçi) PAM nöronlarını uyarır; böylece sinek neyin ödül getirdiğini öğrenebilir.
 
-### Z-04 · Sinek resim yemez: "beğen" hiç tetiklenmeyebilir 🔴
+### Z-04 · Sinek resim yemez: "beğen" hiç tetiklenmeyebilir 🟢
 
 MN9 (hortum uzatma) gerçek sinekte asıl olarak **tat** ile tetiklenir, görüntüyle değil. Biyolojik olarak doğru bir model gördüğü görsele hortum uzatmayabilir.
 
 **Çözüm yolları:** (a) Bunu kabul etmek: sinek nadiren beğenir ve bu durum da bir sonuçtur. (b) Kokunun (caption) beslenme devrelerini etkilemesine izin vermek. (c) "Beğen" eylemini bir yaklaşma davranışına bağlamak (hedefe dönme + ileri yürüme). Karar Faz 4'te, gerçek aktivite verisine bakılarak verilecek.
+
+**Faz 4:** Beklenen olmadı; hortum motor nöronları görsel + caption postlarında düşük hızda ama tutarlı biçimde ateşliyor (67 hortum MN'si, tutarlılık r = 0,93). Beğen ve kaydet bu kanaldan, iki şiddet eşiğiyle okunuyor (K-018).
 
 ### Z-05 · Sinek okuyamaz 🟢
 
@@ -130,13 +132,37 @@ Dopamin, serotonin ve oktopamin reseptöre göre uyarıcı da olabilir ketleyici
 
 **Geçici çözüm:** Hepsi uyarıcı kabul edildi (K-008). Bu nöronlar toplamın %0,3'ü. Faz 8'de dopamin, öğrenme kuralındaki rolüyle (işaret yerine plastisite sinyali olarak) ayrıca modellenecek.
 
-### Z-18 · Sabit görseller dönme davranışını tetiklemiyor 🔴
+### Z-18 · Sabit görseller dönme davranışını tetiklemiyor 🟡
 
 Solda ya da sağda duran koyu bir daire, dönme komut nöronlarında (DNa02) belirgin bir sol-sağ farkı yaratmadı (en fazla 1 Hz). Gerçek sinekte de dönme büyük ölçüde hareketle tetikleniyor.
 
 **Anlamı:** "Sekme değiştir = dönme" eşlemesi sabit görsellerle nadiren tetiklenebilir.
 
 **Çözüm yolları (Faz 4):** (a) Bunu kabul etmek. (b) Görseli küçük göz hareketleri (sakkadlar) ya da feed kaydırma hareketiyle sunmak; bu, T4/T5 hareket devrelerini de devreye sokar. (c) Reels videolarının kendi hareketinden yararlanmak.
+
+**Faz 4:** Dönme artık DNa02 yerine boyun motor nöronlarının sol−sağ farkından okunuyor. Bu fark her postta var ama tekrarlar arasında tutarlılığı düşük (r ≈ 0,2–0,3). "Sekme değiştir" eyleminin yönü bu yüzden büyük ölçüde gürültüye dayanıyor. Hareket girdisi (b, c) Faz 5–6'da ele alınacak.
+
+### Z-19 · Komut nöronları sessiz 🟢
+
+Literatürde davranış başlatan tekil komut nöronları (ileri yürüme için DNp09/oDN1, kur yapma için P1, yutma için MN11/12, tımar için aDN) gerçekçi postlarda hiç ateşlemedi.
+
+**Çözüm (K-015):** Okuma, vücut bölgesine göre gruplanmış kas kanallarından yapılıyor. Takip et (K-017) ve kaydet (K-018) bu kanallara taşındı.
+
+### Z-20 · Motor yanıtı başlangıçta toplanıyor, sonrası seyrek 🟢
+
+Kas aktivitesinin neredeyse tamamı postun ilk 500 ms'inde. Sonraki pencerelerde kaçış kanalı dışında kanallar neredeyse sessiz; bu, sinaptik yorulmanın beklenen sonucu. Sessiz pencerelerde standart sapma çok küçük olduğu için tek bir spike z ≈ 30 üretip, örneğin "kaydet" kararını tetikleyebiliyordu.
+
+**Çözüm:** Standart sapmaya sayma gürültüsü tabanı uygulanıyor. Tek bir spike en fazla yaklaşık 1 standart sapmalık kanıt sayılıyor.
+
+### Z-21 · Simülasyon hızı: görsel girdi pahalı 🔴
+
+Görsel girdide yaklaşık 7.400 nöron her 0,1 ms'de rastgele sayı çekiyor. Buna 165 bin nöronluk durum güncellemesi de eklenince bir postun 1,8 saniyelik simülasyonu tek çekirdekte birkaç saniye sürüyor.
+
+**Çözüm yolları:**
+- Poisson olaylarını olay zamanlamasıyla üretmek (rastgele sayı sayısı yaklaşık 40 kat azalır, ama rastgele sayı akışı değişir ve önceki deney sonuçları birebir tekrarlanamaz).
+- Durum güncellemesini Numba ile paralelleştirmek.
+
+Faz 5–6'da gerçek zamanlı kullanım için ele alınacak.
 
 ---
 

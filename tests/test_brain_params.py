@@ -66,3 +66,13 @@ def test_post_reaches_descending_neurons_and_brain_settles(setup):
     dn = conn.select(superclass="descending_neuron")
     assert (r.counts[dn] > 0).sum() > 5
     assert after.counts.sum() == 0
+
+
+def test_gray_screen_triggers_no_action(setup):
+    from flybrain.fly import Fly, Post
+    from flybrain.motor.selector import Calibration
+
+    conn, _, _ = setup
+    fly = Fly(conn, seed=2, calibration=Calibration.load(), homeostasis=False)
+    d = fly.look(Post(image=np.full((60, 120, 3), 0.5), caption=""))
+    assert d.action == "ilgi_kaybi", d

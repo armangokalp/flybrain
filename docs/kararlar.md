@@ -129,3 +129,67 @@ Durumlar: **önerildi** · **kabul edildi** · **yerine geçti**
 - **Kural:** Post görseli sineğin tüm görme alanına yayılır. Görselin sol yarısı sol göze, sağ yarısı sağ göze düşer; orta çizgi tam önü, kenarlar en arka kolonları, üst kenar sırt yönünü gösterir.
 - **Alternatif:** Görseli yalnızca ön görme alanındaki küçük bir pencereye, gerçek bir ekran gibi yerleştirmek. Bu durumda çok az kolon uyarılırdı.
 - **Gerekçe:** Postu sineğin gözünün tamamıyla "görmesi" en zengin girdiyi sağlıyor. Görme yönleri lamina geometrisinden çıkarıldı ([07-duyular.md](07-duyular.md#göz-geometrisi)).
+
+## K-015 · Motor okuma: kas grupları
+
+- **Durum:** kabul edildi (2026-09-16)
+- **Bağlam:** Literatürdeki komut nöronları (DNp09/oDN1, MN11/12, P1, aDN) gerçekçi postlarda hiç ateşlemedi. Bu haliyle sinek feed'i hiç kaydıramazdı ([08-motor.md](08-motor.md)).
+- **Karar:** Okuma, motor nöronların ve inen nöronların hedeflediği vücut bölgesine (MaleCNS `subclass`) göre gruplanmış kas kanallarından yapılır:
+
+  | Kanal | Eylem | Nöronlar |
+  |---|---|---|
+  | ileri | sonraki post | bacak MN'leri |
+  | geri | önceki post | MDN |
+  | hortum | beğen / kaydet | hortum MN'leri |
+  | yorum | yorum yap | kanat yönlendirme MN'leri |
+  | takip | takip et | karın MN'leri |
+  | cikis | takipten çık / oturumu bitir | alt tectulum inen nöronları |
+  | sekme | sekme değiştir | boyun MN'lerinde sol − sağ farkı |
+  | timar | boşta bekle | ön bacak − diğer bacaklar |
+
+- **Gerekçe:** Bu gruplar her postta aktif, tutarlı ve içeriğe duyarlı. Eşleme sabit ve anatomik; eğitilmiş bir yorumlayıcı yok (K-003 korunuyor).
+- **Kod:** `flybrain/motor/readout.py`
+
+## K-016 · Eylem bütçesi
+
+- **Durum:** kabul edildi (2026-09-16), kullanıcı kararı
+- **Seçenekler:**
+  - **ham:** hep yorum ya da çıkış
+  - **nötr z-skor:** tüm eylemler eşit sıklıkta
+  - **eylem bütçesi**
+- **Karar:** Eylem bütçesi. Genel sıklıkları insan belirler; hangi postta hangi eylemin yapılacağını sinek seçer. Bütçe:
+
+  | Kanal | ileri | geri | hortum (beğen + kaydet) | yorum | takip | çıkış | sekme | tımar |
+  |---|---|---|---|---|---|---|---|---|
+  | Bütçe | %35 | %3 | %15 | %2 | %2 | %2 | %5 | %5 |
+
+  Hiçbir kanal eşiğini aşmazsa sinek 1,5 saniye sonra "ilgisini kaybeder" ve kaydırır.
+- **Kalibrasyon:** Eşikler, içerikten bağımsız 480 referans posttan çıkarılır. Her kanalın z-skoru, pencere sırasına göre ayrı ortalama ve standart sapmayla hesaplanır. Standart sapmaya, tek bir spike'ın yarattığı hız kadar bir taban uygulanır (sayma gürültüsü).
+- **İlke notu:** [01-vizyon-ve-ilkeler.md](01-vizyon-ve-ilkeler.md) kalibrasyonu yalnızca nötr uyaranla (gri ekran) sınırlamıştı. Gri ekranda bütün kanallar tam olarak sıfır olduğu için ölçek oradan çıkarılamıyor. Bunun yerine içerikten bağımsız referans postlar (rastgele doku + rastgele kelimeler) kullanılıyor. İlke değişikliği vizyon belgesine işlendi.
+- **Kod:** `flybrain/motor/selector.py`, `flybrain/motor/calibration.json`, `flybrain/experiments/calibrate.py`
+
+## K-017 · Takip et = karın kasları
+
+- **Durum:** kabul edildi (2026-09-16), kullanıcı kararı
+- **Bağlam:** P1 nöronları hiçbir postta ateşlemedi.
+- **Karar:** Takip et, karın motor nöronlarına bağlanır. Erkek sineğin kur yapmasının son aşaması karın bükmedir (çiftleşme girişimi).
+
+## K-018 · Beğen ve kaydet: aynı kanal, iki şiddet
+
+- **Durum:** kabul edildi (2026-09-16), kullanıcı kararı. Kullanıcı özellikle istedi: "çoğu hortum tepkisi kaydetmeye gitmesin; orta ve yüksek şiddet eşikleri bilinçli belirlensin."
+- **Bağlam:** Yutma nöronları (MN11/12) hiç ateşlemedi.
+- **Karar:**
+  - **Beğeni:** hortum kanalı, referans postların üst %15'inde aşılan eşiği geçerse.
+  - **Kaydetme:** hortum kanalı, üst %2'de aşılan eşiği geçerse. Bu eşik ayrıca beğeni eşiğinin en az 1 standart sapma üstünde olmak zorunda.
+  - **Hedef:** hortum eylemlerinin yaklaşık %13'ü kaydetme olmalı.
+  - Gerçekleşen oran ayrı test postlarında ölçülüp raporlanır ([08-motor.md](08-motor.md)).
+
+### K-016 eki: kalibrasyon yöntemi ve eşik homeostazı (2026-09-16)
+
+- **Kalibrasyon yöntemi:**
+  - Birikimli kanıt ve sayma gürültüsü tabanı.
+  - Eşikler, karar kuralı referans postlarda bütünüyle uygulanarak gerçekleşen oranlara göre belirleniyor.
+- **Eşik homeostazı:** Sabit eşiklerle ayrı postlarda gerçekleşen oranlar bütçenin altında kaldı (beğeni + kaydet %7,8'e karşı %15). Bu yüzden kullanımda eşikler her karardan sonra 0,05 z adımla bütçeye doğru kaydırılıyor.
+- **Kaydetme denetleyicisi:** Yalnızca hortum kararlarında çalışıyor, bu kararlar içindeki kaydetme payını ~%13'e çekiyor (adım 0,15 z) ve beğeni eşiğinin en az 1 standart sapma üstünde kalıyor. İlk sürüm (tüm postlarda, bütçe %2) çok yavaş kaldı ve 720 bakışta hiç kaydetme üretmedi.
+- **Sınır:** Homeostaz yalnızca genel sıklığı etkiliyor; postlar arasındaki tercih sıralaması sinekte kalıyor.
+- **Ayrıntılar ve ölçümler:** [08-motor.md](08-motor.md#6-kalibrasyon-ve-doğrulama).

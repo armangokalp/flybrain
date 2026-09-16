@@ -73,6 +73,21 @@ def natural_images(n: int = 16, seed: int = 3) -> dict[str, np.ndarray]:
     return out
 
 
+def natural_image(k: int, seed: int) -> np.ndarray:
+    """Tek bir doğal istatistikli görsel; (seed, k) ikilisiyle bağımsız üretilir."""
+    rng = np.random.default_rng([seed, k])
+    fy = np.fft.fftfreq(H)[:, None]
+    fx = np.fft.fftfreq(W)[None, :]
+    amp = 1.0 / np.maximum(np.hypot(fx, fy), 1.0 / max(H, W))
+    base = np.real(np.fft.ifft2(amp * np.exp(2j * np.pi * rng.random((H, W)))))
+    chans = []
+    for _ in range(3):
+        tint = np.real(np.fft.ifft2(amp * np.exp(2j * np.pi * rng.random((H, W)))))
+        ch = 0.8 * base / base.std() + 0.2 * tint / tint.std()
+        chans.append(np.clip(0.5 + 0.18 * ch, 0.0, 1.0))
+    return np.dstack(chans)
+
+
 IMAGE_SETS = {"sentetik": test_images, "dogal": natural_images}
 
 

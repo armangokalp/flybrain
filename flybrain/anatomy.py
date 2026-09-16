@@ -33,6 +33,7 @@ MOTOR = {
     "ileri_yuru": {"type": ["DNp09", "DNg97"]},  # DNg97 = oDN1 (Sapkal 2024)
     "geri_yuru": {"type": "MDN"},  # moonwalker, DNp50
     "hortum": {"type": "MN9"},
+    "yutma": {"type": ["MN11D", "MN11V", "MN12D"]},  # yutma pompası (Manzo ve ark. 2012)
     "sarki": {"type": ["pIP10", "vPR6"]},
     "kur": {"type": re.compile(r"^pC1_"), "fruDsx": "coexpress_high"},  # P1 soyu (pMP4)
     "kacis": {"type": "DNp01"},  # Giant Fiber

@@ -38,7 +38,8 @@ Bu proje o yola girmiyor. Aşağıdaki ilkeler bunu garanti etmek için var.
 |---|---|---|
 | Hesabı açmak, ilk birkaç hesabı takip etmek | Sineğe başlangıç feed'i vermek | Başlangıç koşulunu belirliyor, kararları değil |
 | Duyu kodlayıcıları ve motor eşleme tablosunu tasarlamak | Sineğin dünyayla bağlantısını kurmak | Evet; bu yüzden tablo sabit, anatomik ve belgeli |
-| Kalibrasyon (eşikler) | Sinek boş ekrana bakarken hiçbir eylem tetiklenmemeli | Yalnızca **nötr uyaran** (gri ekran) ile yapılır, istenen davranışa göre asla ayarlanmaz |
+| Kalibrasyon (eşikler) | Kas kanallarının tipik yanıt düzeyini ölçmek | Gri ekran ve **içerikten bağımsız referans postlar** (rastgele doku + rastgele kelimeler) ile yapılır; belirli içeriğe karşı istenen davranışa göre asla ayarlanmaz (K-016) |
+| Eylem bütçesi (genel sıklıklar: ör. beğeni %15, yorum %2) | Hesabın doğal ve güvenli davranması | Genel sıklığı belirler; **hangi postta** ne yapılacağını sinek seçer (K-016) |
 | Güvenlik valisi (hız sınırları, içerik vetosu) | Hesabın banlanmasını ve uygunsuz içeriği önlemek | Yalnızca **veto eder**, kendi başına hiçbir eylem seçmez |
 | Instagram güvenlik doğrulamasını (challenge/CAPTCHA) çözmek | Otomasyon bunu yapamaz ve yapmamalı | Hayır; sistem bekler, insan çözer |
 

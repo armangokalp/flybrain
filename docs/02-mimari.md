@@ -71,27 +71,31 @@ Fotoreseptörler ketleyici olduğu için görme girişi doğrudan ON/OFF yolunun
 
 ## Motor kod çözme (sinek → Instagram)
 
-| Instagram eylemi | Sinek davranışı | Nöron havuzu (MaleCNS tip adı) | Gerekçe |
-|---|---|---|---|
-| Sonraki posta geç | İleri yürüme | `ileri_yuru`: DNp09, DNg97 (= oDN1) | İleri yürümeyi başlatan inen nöronlar (Bidaye ve ark. 2020) |
-| Önceki posta dön | Geri yürüme | `geri_yuru`: MDN (= DNp50) | Geri yürüme komut nöronu (Bidaye ve ark. 2014) |
-| Postta kalmaya devam et | Durma | Havuzların hiçbiri eşiği aşmıyor | Sinek karar verene kadar bakmayı sürdürür, yani bakma süresini de sinek belirler |
-| Beğen | Hortum uzatma (beslenme) | `hortum`: MN9 | Shiu ve ark. modelinin doğrulanmış çıktısı |
-| Kaydet | Beslenmeyi sürdürme (yutma) | Faringeal motor nöronlar (açık soru) | Faz 4'te kararlaştırılacak |
-| Yorum yap | Kur şarkısı (kanat titreşimi) | `sarki`: pIP10, vPR6 | Erkeğe özgü "seslenme" davranışı |
-| Takip et | Kur başlatma | `kur`: pC1_* (fru+dsx yüksek; P1 soyu) | Erkek sinek kur yaparken dişiyi gerçekten *takip eder* |
-| Takipten çık / oturumu bitir | Kaçış (sıçrayıp uçma) | `kacis`: DNp01 (Giant Fiber) | Ani kaçış refleksi |
-| Sekme değiştir (akış / keşfet / reels) | Sola/sağa dönme | `don_sol` / `don_sag`: DNa02 L / R | Dönme komut nöronu (Rayshubskiy ve ark. 2020) |
-| Boşta bekle | Tımar (temizlenme) | `timar`: DNg62 (= aDN1), DNge078 (= aDN2) | Anten temizleme devresi (Hampel ve ark. 2015) |
+İlk tasarım literatürdeki komut nöronlarına dayanıyordu. Faz 4'te bunların çoğu gerçekçi postlarda sessiz kaldı (Z-19). Okuma artık **kas gruplarından** yapılıyor (K-015); ayrıntılar: [08-motor.md](08-motor.md).
+
+| Instagram eylemi | Sinek davranışı | Kanal ve nöronlar |
+|---|---|---|
+| Sonraki posta geç | Yürüme | `ileri`: bacak motor nöronları (ön, orta, arka; 381) |
+| Önceki posta dön | Geri yürüme | `geri`: MDN (4) |
+| Beğen | Hortum hareketi, orta şiddet | `hortum`: beyin hortum motor nöronları (67) |
+| Kaydet | Hortum hareketi, yüksek şiddet | `hortum`, ikinci ve daha yüksek eşik (K-018) |
+| Yorum yap | Kanat titreşimi (kur şarkısı) | `yorum`: kanat yönlendirme motor nöronları (43) |
+| Takip et | Karın bükme (kur yapmanın son aşaması) | `takip`: karın motor nöronları (214) (K-017) |
+| Takipten çık / oturumu bitir | Kaçış, havalanma | `cikis`: alt tectulum'a inen nöronlar (31, Giant Fiber dahil) |
+| Sekme değiştir (sol / sağ) | Baş çevirme | `sekme`: boyun motor nöronlarında sol − sağ farkı (44) |
+| Boşta bekle | Ön bacakla temizlenme | `timar`: ön bacak hızı − diğer bacakların hızı |
+| Bakmaya devam | — | Hiçbir kanal eşiğini aşmıyor |
+| İlgisini kaybedip kaydır | — | 1,5 saniye içinde karar çıkmadı |
 
 ### Karar döngüsü (her post için)
 
-1. Post ekrana gelir, ekran görüntüsü alınır, caption okunur.
-2. Görsel görme kodlayıcısına, caption koku kodlayıcısına verilir.
-3. Beyin bir **karar penceresi** boyunca simüle edilir (başlangıç değeri: 500 ms simülasyon zamanı).
-4. Her motor havuzunun ateşleme hızı, kalibrasyonla belirlenen eşiğiyle karşılaştırılır.
-5. Eşiği en büyük oranla aşan havuzun eylemi seçilir. Hiçbir havuz eşiği aşmazsa bir pencere daha simüle edilir (sinek bakmaya devam eder).
-6. Seçilen eylem güvenlik valisinden geçer ve uygulanır. Beyin durumu **sıfırlanmaz**; bir önceki postun izi sonraki kararı etkiler.
+1. **Kaydırma:** 300 ms gri ekran; önceki postun izi söner. Beyin durumu **sıfırlanmaz**.
+2. **Uyarım:** görsel görme kodlayıcısına, caption koku kodlayıcısına, bildirimler ödül kodlayıcısına verilir.
+3. **Bakış:** beyin 500 ms'lik pencerelerle, en fazla 3 pencere çalışır.
+4. **Okuma:** her pencerede kanal hızları, referans postlara göre z-skora çevrilir.
+5. **Seçim:** eşiğini (eylem bütçesinden gelir, K-016) en büyük farkla aşan kanalın eylemi seçilir. Hiçbiri aşmazsa bir pencere daha izlenir.
+6. **İlgi kaybı:** 3 pencere sonunda karar yoksa sinek kaydırır.
+7. **Uygulama:** seçilen eylem güvenlik valisinden geçer ve uygulanır. Her kararın z-skorları ve gerekçesi kaydedilir.
 
 ## İçerik üretimi
 
