@@ -260,3 +260,20 @@ Durumlar: **önerildi** · **kabul edildi** · **yerine geçti**
   - **Ağırlık:** Ölçülen 1:1 iletimi sağlayacak şekilde nöron modelinin denkleminden hesaplanıyor: tek olayın tepe gerilimi, eşik farkının 2 katı (462 sinaps eşdeğeri).
   - **Depresyon:** Presinaptik nöronlar muaf, çünkü elektriksel sinaps vezikül tüketmez.
 - **Kapsam:** Şimdilik yalnızca gövdeli sinekte (`EmbodiedFly`) kullanılıyor. Instagram'a karar veren `Fly` sınıfına gövdeyle birlikte geçecek; bu geçiş yeniden kalibrasyon gerektiriyor.
+
+## K-024 · Propriyoseptörlerin kimliği bağlantı imzasından, kodlaması ölçülmüş işlevden
+
+- **Durum:** kabul edildi (2026-09-17)
+- **Bağlam:**
+  - MaleCNS, bacak propriyoseptörlerini pençe/kanca/topuz ve kıl plakası olarak etiketliyor. Ama pençe ve kancanın bükülmeye mi açılmaya mı, kıl plakalarının hangi eklemin hangi sınırına duyarlı olduğunu vermiyor.
+  - Bu bilgi olmadan eklem durumu doğru nöronlara iletilemez. Yön ters olursa refleks, olumsuz geri bildirim yerine olumlu geri bildirime döner.
+- **Karar:**
+  - **FeCO:** Bükülme/açılma ataması, Lee ve ark. (2025) FANC'ta bildirdiği bağlantı imzasıyla yapılır. Bükülme algılayıcıları tibia açıcı motor nöronlarını doğrudan uyarır ve bükücüleri dolaylı ketler; açılma algılayıcıları tersini yapar. İmza MaleCNS'te her tip için ölçülür ve testle korunur. SNpp50 bükülme pençesi, SNpp51 açılma pençesi, SNpp41 bükülme kancası, SNpp39 açılma kancası.
+  - **Kıl plakaları:** Pratt ve ark. (2026) CxHP8'de ölçülen düzen genellenir (VARSAYIM): plaka, doğrudan uyardığı kasların hareketinin tersindeki eklem sınırında ateşler.
+  - **Kodlama:** Pençe ve plaka tonik pozisyon, kanca yönlü hız, topuz iki yönlü hız kodlar (Mamiya ve ark. 2018). Eşikler grup içinde aralığa yayılır.
+  - **Kaynaksız sayılar:** En yüksek hız ve hız eşikleri gibi değerler [09-govde.md](09-govde.md#75-varsayımlar) içinde listelenir; davranışa bakılarak ayarlanmaz.
+- **Dışarıda kalanlar:**
+  - Yük algılayıcıları ve tarsal temas: etiket eksik.
+  - Yönü belirsiz kordotonal tipler.
+  - Boyun kıl plakaları: bağlantıları çelişkili.
+- **Sonuç:** Refleks yönü doğrulandı. Refleks genliği zayıf (Z-31); ön bacaklarda veri eksik (Z-32).

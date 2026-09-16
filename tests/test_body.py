@@ -59,13 +59,17 @@ def test_electrical_weight_gives_one_to_one_transmission():
     assert peak >= 2 * (p.v_thresh_mv - p.v_rest_mv)
 
 
-def test_quiet_brain_keeps_body_still(fly):
-    fly.reset()
-    before = fly.body.dof_angles().copy()
-    trace = fly.run(300)
+def test_quiet_brain_keeps_body_still(conn):
+    from flybrain.body.embodied import EmbodiedFly
+
+    f = EmbodiedFly(conn, seed=0, proprioception=False)
+    f.reset()
+    before = f.body.dof_angles().copy()
+    trace = f.run(300)
     a = trace.arrays()
     assert a["mn_spikes"].sum() == 0
-    assert np.abs(fly.body.dof_angles() - before).max() < 0.05
+    assert np.abs(f.body.dof_angles() - before).max() < 0.05
+    f.body.close()
 
 
 def test_mn9_extends_proboscis(fly):
@@ -86,3 +90,73 @@ def test_giant_fiber_triggers_jump(fly):
     ttm = np.isin(fly.muscles.mn, np.flatnonzero(fly.conn.neurons["type"].fillna("").astype(str) == "TTMn"))
     assert a["mn_spikes"][:, ttm].sum() >= 2
     assert a["thorax"][:, 2].max() - z0 > 1.0
+
+
+@pytest.fixture(scope="module")
+def proprio(fly):
+    return fly.proprio
+
+
+def _group(proprio, name):
+    g = next(g for g in proprio.groups if g.name == name)
+    return g, np.isin(proprio.idx, g.neurons)
+
+
+def test_proprio_assignments_match_published_signature():
+    from flybrain.experiments.proprio import signature
+
+    assert all(r["imzaya_uyuyor"] for r in signature())
+
+
+def test_claw_rates_follow_tibia_angle(fly, proprio):
+    j = fly.body.dofs.index("lm_trochanterfemur-lm_tibia-pitch")
+    angles = fly.body.dof_angles().copy()
+    still = np.zeros(len(fly.body.dofs))
+    _, flex = _group(proprio, "lm:pence_bukulme:SNpp50")
+    _, ext = _group(proprio, "lm:pence_acilma:SNpp51")
+    angles[j] = 2.6  # iç açı ~31°: bükülmüş
+    bent = proprio.rates(angles, still)
+    angles[j] = 1.0  # iç açı ~123°: açılmış
+    straight = proprio.rates(angles, still)
+    assert bent[flex].sum() > 3 * straight[flex].sum()
+    assert straight[ext].sum() > 3 * bent[ext].sum()
+
+
+def test_hook_is_directional_and_club_is_not(fly, proprio):
+    j = fly.body.dofs.index("lm_trochanterfemur-lm_tibia-pitch")
+    angles = fly.body.dof_angles().copy()
+    v = np.zeros(len(fly.body.dofs))
+    _, hook_flex = _group(proprio, "lm:kanca_bukulme:SNpp41")
+    _, club = _group(proprio, "lm:topuz:SNpp47")
+    v[j] = 5.0
+    flexing = proprio.rates(angles, v)
+    v[j] = -5.0
+    extending = proprio.rates(angles, v)
+    assert flexing[hook_flex].sum() > 0 and extending[hook_flex].sum() == 0
+    assert flexing[club].sum() == pytest.approx(extending[club].sum())
+    assert proprio.rates(angles, np.zeros_like(v))[club].sum() == 0
+
+
+def test_hair_plate_fires_near_its_limit(fly, proprio):
+    g, sel = _group(proprio, "lm:kil_plakasi:SNpp45")
+    k = fly.body.dofs.index(g.dof)
+    lo, hi, _ = fly.body.dof_ranges()
+    limit, other = (hi[k], lo[k]) if g.sign > 0 else (lo[k], hi[k])
+    angles = fly.body.dof_angles().copy()
+    still = np.zeros(len(angles))
+    angles[k] = limit
+    at_limit = proprio.rates(angles, still)[sel].sum()
+    angles[k] = other
+    far = proprio.rates(angles, still)[sel].sum()
+    assert at_limit > 0.5 * 100.0 * len(g.neurons) and far < 1.0
+
+
+def test_quiet_brain_with_proprioception_stays_calm(fly):
+    fly.reset()
+    z0 = fly.body.state().thorax_pos[2]
+    trace = fly.run(500)
+    a = trace.arrays()
+    assert a["proprio_spikes"].sum() > 0
+    # Az sayıda refleks spike'ı olabilir, ama beyin kaçak aktiviteye girmez ve sinek çökmez.
+    assert a["mn_spikes"].sum() < 100
+    assert a["thorax"][:, 2].min() > z0 - 0.15

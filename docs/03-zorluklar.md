@@ -188,6 +188,10 @@ Pugliese ve ark. (2025), konnektomun tek bir bacakta ritim ürettiğini, ama bac
 - Pugliese ve ark.'nın kullandığı nöron boyutuna göre uyarılabilirlik ölçeklemesini değerlendirmek.
 - **Yapılmayacak:** Hazır ritim üreteci eklemek (K-019).
 
+**Durum (2026-09-17):**
+- **Propriyosepsiyon eklendi (K-024):** Uyluk kordotonal organı ve kıl plakaları, 389 nöron.
+- **Sonuç:** DNg100 altında bacak motor nöronu spike'ları biraz arttı (1.112 → 1.578), ama koordinasyon çıkmadı. Önündeki engel sinir kordonunun kazancı (Z-31).
+
 ### Z-24 · Kas–eklem eşlemesi ve kuvvet ölçeği 🟡
 
 Motor nöronlar kas adıyla etiketli, ama NeuroMechFly'ın eklem serbestlik derecelerine hangi kasın hangi yönde tork uyguladığı bir tablo olarak hazır değil. FlyGym'deki kas modeli yalnızca sol ön bacakta var ve deneysel.
@@ -227,6 +231,10 @@ Instagram eylemleri nöral okumadan seçiliyor, gövde aynı nöronlarla hareket
 
 **Çözüm yolu:** Her kararda ilgili gövde bölgesinin hareketini ölçüp raporlamak. Örtüşmeyen durumlar veriye bakılarak kullanıcıyla birlikte çözülecek.
 
+- **Propriyosepsiyonla yeni bir gözlem (2026-09-17):** Bir DNg100 koşusunda TTMn 3 kez ateşledi ve sinek yürüme komutu altında sıçramaya benzer bir hareket yaptı.
+  - **Yol:** Propriyoseptörler, uyarıcı ara nöronlar (IN20A.22A001, GFC2) üzerinden TTMn'ye ulaşıyor.
+  - **Tekrarlanma:** Aynı koşulun başka koşularında görülmedi.
+
 ### Z-28 · Görselleştirme verisinin boyutu ve canlı izleme 🔴
 
 - **Veri hacmi:** 165 bin nöronun spike'ları, 126 eklemin açıları ve ekran kareleri, saniyede yüzbinlerce olay demek.
@@ -245,6 +253,10 @@ Gerçek sinekte yavaş motor nöronlar dururken de tonik ateşleyerek duruşu ko
 - Gövdeden gelen his: yük ve eklem açısı refleksleri tonik aktivite üretebilir.
 - Sinir sistemindeki kendiliğinden aktivite: biyolojik gürültü (ilke 4). Kanıta dayanıyorsa eklenebilir.
 
+**Durum (2026-09-17):**
+- **Tonik girdi var:** Propriyosepsiyonla nötr pozda 31 propriyoseptör tonik ateşliyor.
+- **Tonus çıkmıyor:** Motor nöronlara ulaşan saniyede 18 spike, bir tonus oluşturmuyor. Göğüs 0,64 mm'de kalıyor (Z-31).
+
 ### Z-30 · Şeker tadı tam hortum uzatma üretmiyor 🟡
 
 Uçtan uca testte şeker tadı hortum nöronlarına ulaşıyor. Ama en çok çalışanlar arasında hortumu geri çeken MN2Da da var. Haustellum açılıyor (0,32 rad), rostrum ileri gitmiyor.
@@ -252,6 +264,30 @@ Uçtan uca testte şeker tadı hortum nöronlarına ulaşıyor. Ama en çok çal
 - **Karşılaştırma:** Shiu ve ark. modelinde şeker → MN9 güçlüydü.
 - **Olası neden:** K-011 ayarında (düşük ağırlık, depresyon) MN9 yanıtı zaten zayıf (3,7 Hz).
 - **Bağlam:** Gerçek sinekte hortum uzatma, açlık durumuna da bağlıdır; bu durum modellenmiyor.
+
+### Z-31 · Sinir kordonunun kazancı: bacak motor nöronları yavaş 🔴
+
+- **Ölçüm:** DNg100 uyarımı altında bacak motor nöronlarının ortalama hızı 1,6–7,8 Hz; bacak başına etkin motor nöron sayısı az. Yürümede bu nöronların onlarca Hz'e çıkması beklenir.
+- **Denenenler ([09-govde.md](09-govde.md#74-yürüme-neden-çıkmıyor-sinir-kordonunun-kazancı)):**
+  - Depresyonu tüm sinir kordonunda kaldırmak: 3,5 Hz.
+  - Shiu ve ark.'nın orijinal sinaps ağırlığına dönmek: 7,8 Hz. Ama sıçrama kası tekrar tekrar ateşliyor, koordinasyon gelmiyor.
+- **Propriyosepsiyon:** Direnç refleksi doğru yönde ama çoğu bacakta eşiğin altında kalıyor.
+- **Neden (olası):** Shiu ve ark.'nın LIF modeli beyindeki duyu → karar yolları için doğrulanmıştı. Sinir kordonu için bir doğrulaması yok. Pugliese ve ark. (2025) sinir kordonunda ritmi, nöron boyutuna göre ölçeklenmiş kazanç ve eşik kullanan, 200 Hz'de doyan hız tabanlı bir modelle elde etti.
+
+**Çözüm yolları (kullanıcıya soruldu):**
+- Sinir kordonunu Pugliese ve ark.'nın hız tabanlı modeliyle simüle etmek; beyin LIF olarak kalır, arayüz inen ve çıkan nöronlar.
+- Sinir kordonu için ayrı bir kazanç, literatürdeki sinir kordonu ölçümlerine (motor nöron hızları, ritim frekansı, direnç refleksi) göre kalibre edilir (K-011'in yöntemi).
+- Yürümeyi araştırma olarak paralel sürdürüp sonraki adımlara (görme, sahne, görselleştirme) geçmek.
+
+### Z-32 · Ön bacak propriyoseptörleri ve yük algısı verisi eksik 🟡
+
+- **Ön bacak:** MaleCNS'te ön bacakların uyluk kordotonal organı çok eksik (sol 1, sağ 0 bükülme pençesi; orta ve arka bacaklarda 12–18). ProLN'den giren 185 duyu nöronunun tipi ve modalitesi bilinmiyor.
+- **Yük:** Yük algılayıcısı (kampaniform sensil) etiketi taşıyan bacak nöronu yalnızca 13.
+- **Zemin teması:** Tarsal temas kıllarının hangileri olduğu etiketlerde yok.
+
+**Çözüm yolları:**
+- MaleCNS'in sonraki sürümlerini izlemek.
+- FANC/BANC eşleşmelerinden tip kimliği aktarmak (indirme gerektirir).
 
 ---
 

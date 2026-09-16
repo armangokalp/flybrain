@@ -55,13 +55,14 @@ Her faz, bitiş kriterleri sağlanmadan kapanmaz. Gerçek Instagram hesabına il
 
 ## Faz 5 — Gövde (bedenlenme)
 
-Ayrıntı: [09-govde.md](09-govde.md). Kararlar: K-019, K-020, K-021.
+Ayrıntı: [09-govde.md](09-govde.md). Kararlar: K-019–K-024.
 
 - [x] Gövde kütüphanesi (FlyGym 2.1, NeuroMechFly): 126 eklem serbestlik derecesi, fizik gerçek zamandan hızlı
 - [x] Yürüme ritmi yoklaması: DNg100 → ritim çekirdeği → bacak motor nöronları (Z-22)
 - [x] Ölçülmüş elektriksel sinapslar: dev lif → TTMn, PSI (K-023)
 - [x] Motor nöron → kas → eklem tablosu (bacaklar, baş, hortum, kanatlar, karın, sıçrama) ve kas modeli (Z-24, ilk sürüm)
-- [ ] Gövdeden beyne his: eklem açısı, yük, zemin teması, baş konumu (Z-23)
+- [x] Gövdeden beyne his, ilk sürüm: uyluk kordotonal organı ve kıl plakaları, 389 nöron (K-024). Yük, zemin teması, baş konumu eksik (Z-32)
+- [ ] Yürüme: sinir kordonunun kazancı ve dinamiği (Z-31) — yön kararı bekliyor
 - [ ] Sineğin gözleriyle görme: ommatidyumlar → konnektom göz kolonları
 - [ ] Sahne: serbest sinek ve onu izleyen Instagram ekranı (K-021)
 - [ ] Kapalı döngü (beyin + gövde + görme) ve hız iyileştirmesi (Z-21)

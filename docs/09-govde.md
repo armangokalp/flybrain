@@ -133,7 +133,7 @@ Instagram eylemleri Faz 4'teki kas grubu okumasıyla seçilmeye devam ediyor. G�
 - [ ] Şeker tadı → MN9 → hortum uzuyor (uçtan uca): kısmen, bkz. 6.4
 - [x] Dev lif (DNp01) uyarımı → TTMn → orta bacaklar açılıyor → sinek sıçrıyor
 - [ ] DNg100 uyarımı → bacaklarda ritmik hareket (ne kadar yürüdüğü ölçülüp raporlanır)
-- [ ] Bacak hareketi → propriyoseptif duyu nöronları ateşliyor
+- [x] Bacak hareketi → propriyoseptif duyu nöronları ateşliyor (bkz. 7)
 - [ ] Nöral kararlar ile gövde hareketinin örtüşmesi ölçülüyor
 - [ ] Kapalı döngü (beyin + gövde + görme) gerçek zamanın en fazla 3 katı yavaşlıkta
 
@@ -231,9 +231,7 @@ Bu değerler hareketin **biçimini ve genliğini** etkiler; **ne zaman** hareket
 
 ### 6.6 Sıradaki adımlar
 
-1. **Gövdeden beyne his (Z-23):**
-   - kordotonal organ, kampaniform sensiller, tarsal temas
-   - Hem yürüme koordinasyonu hem duruş tonusu için gerekli (Z-29).
+1. ~~**Gövdeden beyne his (Z-23)**~~: ilk sürüm tamamlandı, bkz. 7.
 2. **Sineğin gözleriyle görme:** Ommatidyumları konnektom göz kolonlarına bağlamak.
 3. **Sahne:** Sineği izleyen Instagram ekranı.
 4. **Kapalı döngü hızı:**
@@ -242,3 +240,129 @@ Bu değerler hareketin **biçimini ve genliğini** etkiler; **ne zaman** hareket
 5. **Nöral karar ile gövde tutarlılığı (Z-27):**
    - Faz 4 okumasında TTMn ve STTMm (sıçrama kasları) "yorum" kanalında sayılıyor; "çıkış" kanalına taşınmalı.
    - Bu değişiklik yeniden kalibrasyon gerektiriyor.
+
+## 7. Propriyosepsiyon (2026-09-17)
+
+Gövdenin eklem açıları ve açısal hızları her milisaniyede konnektomdaki bacak propriyoseptörlerinin Poisson hızlarına çevriliyor (`flybrain/body/proprio.py`). Beyin bu nöronları, dışarıdan verilen duyusal uyarımla birlikte alıyor. Karar: K-024.
+
+### 7.1 Hangi nöronlar, neyi algılıyor?
+
+- **Bacak ataması:** Duyu nöronlarının hücre gövdesi beyin dışında olduğundan bacak, sinir kordonuna girdiği sinirden (`entryNerve`) okunuyor:
+  - ön bacak: ProLN, ProAN, VProN, DProN
+  - orta bacak: MesoLN
+  - arka bacak: MetaLN
+  - Taraf kökten (`rootSide`) geliyor.
+- **Uyluk kordotonal organı (FeCO):** Femur–tibia eklemini izliyor. MaleCNS eşanlamlıları pençe (claw), kanca (hook) ve topuz (club) tiplerini veriyor, ama pençe ve kancanın bükülmeye mi açılmaya mı duyarlı olduğunu vermiyor.
+  - **Çözüm:** Lee ve ark. (2025) FANC konnektomunda bir bağlantı imzası bildiriyor. Bükülme algılayıcıları tibia açıcı motor nöronlarına doğrudan uyarıcı, bükücülere dolaylı ketleyici geri bildirim veriyor; açılma algılayıcıları tersini yapıyor. Bu imza MaleCNS'te her tip için ölçüldü (`python -m flybrain.experiments.proprio`, tüm bacakların toplamı, sinaps sayısı):
+
+| Tip | Doğrudan → açıcı | Doğrudan → bükücü | İki adım → açıcı | İki adım → bükücü | Atama |
+|---|---|---|---|---|---|
+| SNpp50 (pençe) | 408 | 49 | +74 | −374 | bükülme |
+| SNpp51 (pençe) | 0 | 329 | −149 | +137 | açılma |
+| SNpp41 (kanca) | 88 | 0 | +44 | −29 | bükülme |
+| SNpp39 (kanca) | 0 | 419 | −20 | +104 | açılma |
+
+  "İki adım": duyu nöronu → ara nöron → motor nöron etkisi. Ara nöronun girdisindeki payla ağırlıklandırıldı ve işaretli.
+
+  Dört tipin dördü de imzaya net biçimde uyuyor. Topuz tipleri (SNpp40, 47, 56, 57, 60) iki yönlü hareket algılayıcısı; yön ataması gerekmiyor.
+
+- **Kıl plakaları (SNpp45, SNpp52):** Eklem sınırı dedektörleri (Pratt ve ark. 2026). CxHP8 plakası bacağın öne hareketinin sınırında ateşliyor ve bacağı geri götüren kasları uyarıyor.
+  - **Genelleme (VARSAYIM):** Bu düzen tüm plakalara uygulandı. Her plaka grubu için doğrudan uyardığı kasların eklem torkları toplanıyor; en büyük payı alan eklem, plakanın izlediği eklem sayılıyor. Plaka, kasların hareket yönünün tersindeki sınırda ateşliyor.
+  - **Sonuç:**
+    - SNpp45 her bacakta koksa roll ekleminde.
+    - SNpp52 orta ve arka sol bacaklarda ve sağ arka bacakta trokanter pitch ekleminde, diğerlerinde koksa roll ekleminde. Bu tutarsızlık, tip içinde birden fazla plaka olabileceğini düşündürüyor.
+- **Dışarıda kalanlar:**
+  - **Yük algılayıcıları (kampaniform sensiller):** Bacaklarda yalnızca 13 nöron bu etiketi taşıyor (SNpp53); gerçek sinekte bacak başına onlarca var.
+  - **Tarsal temas:** Dokunma kıllarının bacağın neresinde olduğu etiketlerde yok.
+  - **Diğer tipler:** Yönü belirsiz kordotonal tipler (SNpp42–44, 46, 48, 49, 58, 59) ve adı olmayan bacak propriyoseptörleri (SNppxx, 78 nöron).
+  - **Boyun kıl plakaları (SNpp19):** Boyun motor nöronlarına doğrudan ve dolaylı etkileri zıt yönde; boyun kas modeli de zaten bir varsayım.
+
+| Grup | lf | lm | lh | rf | rm | rh | Toplam |
+|---|---|---|---|---|---|---|---|
+| Pençe, bükülme | 1 | 14 | 18 | 0 | 12 | 17 | 62 |
+| Pençe, açılma | 3 | 9 | 5 | 1 | 6 | 8 | 32 |
+| Kanca, bükülme | 1 | 3 | 3 | 2 | 8 | 5 | 22 |
+| Kanca, açılma | 3 | 8 | 7 | 5 | 9 | 7 | 39 |
+| Topuz | 9 | 31 | 32 | 4 | 31 | 31 | 138 |
+| Kıl plakası | 11 | 22 | 14 | 8 | 22 | 19 | 96 |
+
+Toplam 62 grup, 389 nöron.
+
+**Veri eksiği:** Ön bacakların FeCO'su MaleCNS'te çok eksik (sol ön bacakta 1, sağ ön bacakta 0 bükülme pençesi). FANC'ta tek bir ön bacakta 58 pençe ve kanca aksonu var. ProLN'den giren 185 duyu nöronu tipsiz ve modalitesi bilinmiyor.
+
+### 7.2 Kodlama
+
+| Kodlama | Kullanan | Hız |
+|---|---|---|
+| Pozisyon (tonik) | pençe, kıl plakası | R_max · σ((yön·açı − eşik) / genişlik) |
+| Hız (fazik, yönlü) | kanca | R_max · kırp((yön·ω − eşik) / 5 rad/s) |
+| Sürat (fazik, iki yönlü) | topuz | R_max · kırp((\|ω\| − eşik) / 5 rad/s) |
+
+- **Aralık bölüşümü:** Bir gruptaki nöronların eşikleri aralığa eşit yayılıyor. Böylece açı arttıkça daha çok nöron devreye giriyor (Mamiya ve ark. 2018/2023).
+  - **Pençe:** Bükülme pençeleri femur–tibia iç açısı 90°'nin altını, açılma pençeleri üstünü kodluyor (Agrawal ve ark. 2020). Eşikler 90°'den eklem sınırına kadar yayılıyor.
+  - **Kıl plakaları:** Aralığın son %30'unu kodluyor.
+- **Açı kuralı:** Modelde tibia açısı 0 iken bacak düz (iç açı 180°) olduğu doğrulandı. İç açı = 180° − bükülme.
+- **Oturma:** Propriyosepsiyon oturma sırasında kapalı. Model sineği havada nötr pozda başlatıyor ve bu yapay iniş beyne iletilmiyor.
+
+### 7.3 Deneyler
+
+**Sessiz beyin, propriyosepsiyon açık (1 sn):**
+- Nötr pozda 31 propriyoseptör ateşliyor (toplam ~1.200 Hz).
+- Bacak motor nöronlarında 18 spike var ve beyin kaçak aktiviteye girmiyor.
+- Göğüs 0,68 yerine 0,64 mm'de, en fazla 3,8° yalpalama.
+
+**Direnç refleksi:** Tibia, deneycinin probu gibi bir dış torkla 0,5 rad bükülüyor ya da açılıyor (400 ms). Prob, `Body.apply_external` ile yalnızca deneyde uygulanıyor.
+
+| Bacak | Bükme: açıcı MN (spike/s) | Açma: bükücü MN (spike/s) |
+|---|---|---|
+| lm | 3,3 → 10,0 | 3,3 → 0 (açıcı da 3,3 → 0) |
+| rh | 0 → 2,5 | 13,3 → 15,0 |
+| Diğer dört bacak | 0 → 0 | 0 → 0 |
+| Propriyosepsiyon kapalı (tüm bacaklar) | 0 → 0 | 0 → 0 |
+
+- **Yön doğru:** Görüldüğü her durumda bükme açıcıyı, açma bükücüyü çalıştırıyor. Ters yönde bir tepki hiç yok.
+- **Genlik zayıf:** Refleks çoğu bacakta eşiğin altında kalıyor (Z-31).
+
+**Önceki deneyler, propriyosepsiyon açık:**
+
+| Deney | Propriyosepsiyon kapalı | Açık |
+|---|---|---|
+| MN9 | hortum 0,69 rad | aynı |
+| Şeker | haustellum 0,32 rad | 0,12 rad |
+| Dev lif | TTMn 3 spike; 1,9 mm yükseklik; 51° | TTMn 12 spike (5'i uyarım bittikten sonra); 3,1 mm; 78° |
+| DNg100 | bacak 1.112 spike; yürüme yok | bacak 1.578 spike; **TTMn 3 spike → sıçramaya benzer hareket**; yürüme yok |
+
+- **Sıçramadan sonraki ek TTMn spike'ları:** Konnektomdaki bir yoldan geliyor. Propriyoseptörler, uyarıcı ara nöronlar (IN20A.22A001, GFC2, IN20A.22A003) üzerinden TTMn'ye ulaşıyor; ketleyici yollar da var (IN13A022, IN13A032).
+- **DNg100 sırasındaki TTMn ateşlemesi:** Aynı yoldan geliyor ve rastgele tohuma bağlı; aynı koşulun başka bir koşusunda görülmedi. Yürüme komutu altında sıçrama kası ateşlemesi Z-27 açısından izlenecek.
+
+### 7.4 Yürüme neden çıkmıyor? Sinir kordonunun kazancı
+
+DNg100 uyarımı (150 Hz, 1,5 sn) altında bacak motor nöronlarının ortalama hızı (310 bacak motor nöronu):
+
+| Sinaps ağırlığı | Depresyondan muaf | Propriyo | Ort. hız | Aktif MN | TTMn | Yol / net | En büyük eğim |
+|---|---|---|---|---|---|---|---|
+| ×0,70 (K-011) | inen | kapalı | 1,6 Hz | 60 | 0 | 0,43 / 0,11 mm | 6° |
+| ×0,70 | inen | açık | 2,1 Hz | 65 | 0 | 0,52 / 0,16 mm | 9° |
+| ×0,70 | inen + sinir kordonu | kapalı | 3,5 Hz | 61 | 0 | 0,67 / 0,13 mm | 7° |
+| ×0,70 | inen + sinir kordonu | açık | 3,4 Hz | 78 | 0 | 1,33 / 0,11 mm | 32° |
+| ×0,85 | inen | açık | 3,2 Hz | 84 | 1 | 0,95 / 0,22 mm | 12° |
+| ×0,85 | inen + sinir kordonu | açık | 4,3 Hz | 88 | 11 | 7,43 / 0,85 mm | 59° |
+| ×1,00 (Shiu) | inen | açık | 7,8 Hz | 116 | 36 | 2,33 / 0,49 mm | 16° |
+| ×1,00 | inen + sinir kordonu | açık | 4,9 Hz | 101 | 19 | 4,07 / 0,47 mm | 33° |
+
+- **Hızlar düşük:** Hiçbir ayarda bacak motor nöronları yürümede beklenen onlarca Hz'e çıkmıyor.
+- **Kazanç artınca:** Koordinasyon gelmiyor; sıçrama kası tekrar tekrar ateşliyor ve sinek savruluyor.
+- **Karşılaştırma:** Pugliese ve ark. (2025) ritmi LIF ile değil, nöron boyutuna göre ölçeklenmiş kazanç ve eşikli, 200 Hz'de doyan hız tabanlı bir modelle elde etti. O modelde de tek bacak içinde ritim çıktı, bacaklar arası koordinasyon çıkmadı.
+- **Sonuç:** Mevcut LIF ayarında yürüme için eksik olan yalnızca propriyosepsiyon değil. Sinir kordonunun dinamiği de (kazanç, doyum, nöron boyutu) modellenmeli. Yön kararı kullanıcıya soruldu.
+
+### 7.5 Varsayımlar
+
+| Parametre | Değer | Dayanak |
+|---|---|---|
+| En yüksek hız | 100 Hz | Ergin sinekte ölçüm yok; larva kordotonal nöronlarında 1,5–78 Hz (Warren ve Göpfert 2024) |
+| Pençe ayrımı | iç açı 90° | Agrawal ve ark. 2020 (bükülmüş 0–90°, açılmış 90–180°) |
+| Kanca eşikleri | 0,5–10 rad/s, genişlik 5 rad/s | Kaynak yok |
+| Topuz eşikleri | 0,2–10 rad/s, genişlik 5 rad/s | Kaynak yok; titreşim duyarlılığı modellenmiyor |
+| Kıl plakası bölgesi | aralığın son %30'u | Kaynak yok |
+| Kıl plakası yönü | uyardığı kasların tersindeki sınır | CxHP8'de ölçülen düzenin genellemesi |
+| Eşiklerin nöronlara dağılımı | bodyId sırasıyla | Hangi nöronun hangi açıya duyarlı olduğu bilinmiyor |

@@ -41,7 +41,7 @@ DEFAULT_SIGN = 1  # vericisi belirsiz nöronlar; kolinerjik çoğunluk varsayım
 KEEP_COLUMNS = [
     "bodyId", "type", "instance", "superclass", "class", "subclass",
     "somaSide", "rootSide", "fruDsx", "flywireType", "synonyms",
-    "assignedOlHex1", "assignedOlHex2", "somaLocation",
+    "assignedOlHex1", "assignedOlHex2", "somaLocation", "entryNerve",
 ]
 
 

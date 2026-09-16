@@ -120,6 +120,7 @@ class Body:
     def reset(self):
         self.sim.reset()
         self.sim.set_leg_adhesion_states(self.fly.name, np.ones(6))
+        self.sim.mj_data.qfrc_applied[:] = 0.0
         self._zero = np.zeros(len(self.dofs))
 
     @property
@@ -130,6 +131,18 @@ class Body:
         self.sim.set_actuator_inputs(self.fly.name, self._motor, torques)
         for _ in range(n_steps):
             self.sim.step()
+
+    def apply_external(self, torques: np.ndarray | None):
+        """Dış kuvvet (deneycinin probu gibi): eklem sırasıyla tork; None temizler.
+
+        Yalnızca deneylerde kullanılır; sineğin kendi hareketi kaslardan gelir.
+        """
+        if not hasattr(self, "_vadr"):
+            self.dof_velocities()
+        f = self.sim.mj_data.qfrc_applied
+        f[:] = 0.0
+        if torques is not None:
+            f[self._vadr] = torques
 
     def _dof_joint_ids(self) -> np.ndarray:
         m = self.sim.mj_model
@@ -146,6 +159,12 @@ class Body:
         if not hasattr(self, "_qadr"):
             self._qadr = self.sim.mj_model.jnt_qposadr[self._dof_joint_ids()]
         return self.sim.mj_data.qpos[self._qadr]
+
+    def dof_velocities(self) -> np.ndarray:
+        """Aktüatör sırasıyla eklem açısal hızları (rad/s)."""
+        if not hasattr(self, "_vadr"):
+            self._vadr = self.sim.mj_model.jnt_dofadr[self._dof_joint_ids()]
+        return self.sim.mj_data.qvel[self._vadr]
 
     def state(self) -> BodyState:
         pos = self.sim.get_body_positions(self.fly.name)[0].copy()

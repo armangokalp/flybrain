@@ -9,10 +9,11 @@ Yoklamalar (her biri: oturma, 300 ms sessiz başlangıç, uyarım, sessiz bitiş
   dev_lif_uzun : dev lif 150 ms boyunca (fizyolojik değil; iletimin eşiğini görmek için)
   dng100   : yürüme komut nöronu; inen nöronlar depresyondan muaf (Z-22) → bacaklar
 
-Her yoklama bir video (runs/body-<ad>.mp4) ve ölçüm tablosu üretir.
+Her yoklama bir video (runs/body-<ad>.mp4) ve ölçüm tablosu üretir. Propriyosepsiyon
+varsayılan olarak açıktır; --no-proprio ile kapatılır (çıktılar runs/body-<ad>-p0.*).
 
 Kullanım:
-    python -m flybrain.experiments.body [--probes mn9 dev_lif] [--workers 5] [--no-video]
+    python -m flybrain.experiments.body [--probes mn9 dev_lif] [--workers 5] [--no-video] [--no-proprio]
     python -m flybrain.experiments.body --montage   # üç deneyi yan yana, etiketli tek video
 """
 
@@ -53,7 +54,7 @@ def _up_vectors(quats: np.ndarray) -> np.ndarray:
     return np.stack([2 * (x * z + w * y), 2 * (y * z - w * x), 1 - 2 * (x * x + y * y)], axis=1)
 
 
-def run_probe(name: str, video: bool = True, seed: int = 0) -> dict:
+def run_probe(name: str, video: bool = True, seed: int = 0, proprio: bool = True) -> dict:
     from flybrain.body.embodied import EmbodiedFly
     from flybrain.connectome.connectome import load_connectome
     from flybrain.sim import Stimulus
@@ -64,7 +65,8 @@ def run_probe(name: str, video: bool = True, seed: int = 0) -> dict:
     exempt = None
     if p.get("exempt") == "descending":
         exempt = np.flatnonzero(conn.neurons.superclass.fillna("").astype(str).to_numpy(dtype=object) == "descending_neuron")
-    fly = EmbodiedFly(conn, seed=seed, std_exempt=exempt)
+    fly = EmbodiedFly(conn, seed=seed, std_exempt=exempt, proprioception=proprio)
+    tag = name if proprio else f"{name}-p0"
     stim_idx = np.flatnonzero(np.isin(t, p["types"]))
     stim = Stimulus.of(stim_idx, p["hz"]) if len(stim_idx) else None
     cams = ("yan", "izleme") if video else ()
@@ -83,7 +85,7 @@ def run_probe(name: str, video: bool = True, seed: int = 0) -> dict:
 
     ang = a["angles"]
     base = ang[n_pre - 1]
-    out = {"ad": name, "sure_ms": sim_ms, "duvar_sn": round(wall, 1), "uyarilan": int(len(stim_idx))}
+    out = {"ad": tag, "sure_ms": sim_ms, "duvar_sn": round(wall, 1), "uyarilan": int(len(stim_idx))}
     for label, joint in WATCH.items():
         j = fly.joint(joint)
         dev = ang[n_pre:, j] - base[j]
@@ -104,6 +106,9 @@ def run_probe(name: str, video: bool = True, seed: int = 0) -> dict:
         g = "bacak" if len(g) == 2 else g
         groups[g] = groups.get(g, 0) + int(spikes[[pos[int(i)] for i in m.mn]].sum())
     out["mn_spike"] = groups
+    out["mn_spike_sessiz_baslangic"] = int(a["mn_spikes"][:n_pre].sum())
+    if proprio:
+        out["propriyo_spike"] = int(a["proprio_spikes"][n_pre:].sum())
     act = a["activation"]
     top = np.argsort(-act.max(axis=0))[:5]
     out["en_cok_uyarilan_kaslar"] = {fly.table.muscles[k].name: round(float(act[:, k].max()), 3) for k in top if act[:, k].max() > 0}
@@ -112,10 +117,10 @@ def run_probe(name: str, video: bool = True, seed: int = 0) -> dict:
         import imageio.v2 as imageio
 
         for cam, frames in trace.frames.items():
-            path = RUNS / f"body-{name}-{cam}.mp4"
+            path = RUNS / f"body-{tag}-{cam}.mp4"
             imageio.mimwrite(path, frames, fps=30, macro_block_size=1)
-        out["video"] = [str(RUNS / f"body-{name}-{c}.mp4") for c in trace.frames]
-    np.savez_compressed(RUNS / f"body-{name}.npz", **a, n_pre=n_pre, n_stim=n_stim,
+        out["video"] = [str(RUNS / f"body-{tag}-{c}.mp4") for c in trace.frames]
+    np.savez_compressed(RUNS / f"body-{tag}.npz", **a, n_pre=n_pre, n_stim=n_stim,
                         joint_names=np.array(fly.body.joint_names), mn=fly.muscles.mn)
     fly.body.close()
     return out
@@ -165,13 +170,15 @@ def main():
     ap.add_argument("--workers", type=int, default=5)
     ap.add_argument("--no-video", action="store_true")
     ap.add_argument("--montage", action="store_true")
+    ap.add_argument("--no-proprio", action="store_true")
     args = ap.parse_args()
     if args.montage:
         print(montage())
         return
     RUNS.mkdir(exist_ok=True)
     with ProcessPoolExecutor(args.workers) as ex:
-        results = list(ex.map(run_probe, args.probes, [not args.no_video] * len(args.probes)))
+        n = len(args.probes)
+        results = list(ex.map(run_probe, args.probes, [not args.no_video] * n, [0] * n, [not args.no_proprio] * n))
     stamp = time.strftime("%Y%m%d-%H%M%S")
     path = RUNS / f"body-{stamp}.json"
     path.write_text(json.dumps(results, indent=1, ensure_ascii=False))

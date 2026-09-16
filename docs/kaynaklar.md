@@ -43,6 +43,13 @@ Taban adres: `https://storage.googleapis.com/flyem-male-cns/v1.0/connectome-data
 - O'Sullivan ve ark. 2018, *Curr Biol* — [kanat kaslarının şarkı ve uçuştaki çok işlevli kontrolü](https://www.cell.com/current-biology/fulltext/S0960-9822(18)30829-7)
 - Azevedo ve ark. 2024, *Nature* 631:360 — [dişi sinir kordonu konnektomu ve motor nöron–kas atlası](https://www.nature.com/articles/s41586-024-07389-x)
 - Cheong ve ark. 2024, *eLife* — [MANC'ta inen girdiden motor çıktıya devreler](https://elifesciences.org/articles/96084)
+- Lee ve ark. 2025, *Nature Communications* — [bacak propriyosepsiyonu ve dış algı için ayrışan devreler](https://www.nature.com/articles/s41467-025-59302-3) ([açık erişim](https://pmc.ncbi.nlm.nih.gov/articles/PMC12048489/)): FeCO bükülme/açılma algılayıcılarının motor nöronlara bağlantı imzası (K-024)
+- Pratt ve ark. 2026, *Nature Communications* — [propriyoseptif sınır dedektörleri](https://www.nature.com/articles/s41467-026-69333-z) ([açık erişim](https://pmc.ncbi.nlm.nih.gov/articles/PMC13009157/)): kıl plakaları, CxHP8
+- Mamiya, Gurung ve Tuthill 2018, *Neuron* 100:636 — [bacak propriyosepsiyonunun nöral kodlaması](https://www.cell.com/neuron/fulltext/S0896-6273(18)30782-7): pençe (pozisyon), kanca (yönlü hareket), topuz (titreşim)
+- Mamiya ve ark. 2023, *Neuron* — [propriyoseptör seçiciliğinin biyomekanik kökenleri](https://www.cell.com/neuron/fulltext/S0896-6273(23)00542-1)
+- Agrawal ve ark. 2020, *eLife* — [bacak propriyosepsiyonunun merkezi işlenmesi](https://elifesciences.org/articles/60299): bükülmüş (0–90°) ve açılmış (90–180°) açıları kodlayan pençe alt tipleri
+- Warren ve Göpfert 2024, *J Exp Biol* — [larva kordotonal organının (lch5) mekanik uyarıya spike yanıtları](https://pmc.ncbi.nlm.nih.gov/articles/PMC11418168/): tek nöron hızları 1,5–78 Hz
+- Marin ve ark. 2024, *eLife* — [MANC'ın sistematik adlandırması](https://elifesciences.org/reviewed-preprints/97766v1) (SNpp duyu nöronu tipleri)
 - Stowers ve ark. 2017, *Nature Methods* — [serbest hareket eden hayvanlar için sanal gerçeklik (FreemoVR)](https://www.nature.com/articles/nmeth.4399)
 
 ## Gövde modelleri
