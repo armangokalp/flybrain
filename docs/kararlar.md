@@ -239,3 +239,24 @@ Durumlar: **önerildi** · **kabul edildi** · **yerine geçti**
   - Faz 10: öğrenme ve uzun dönem çalışma
 - **Sonuç:** Instagram bağlantısı iki faz ertelendi.
 - **Kayıt ve oynatma:** Simülasyon gerçek zamandan yavaş olduğu için her oturum kaydedilir ve gerçek hızda oynatılabilir. Oynatma animasyon değildir: her spike ve her eklem açısı simülasyondan gelir ve olduğu gibi gösterilir. Canlı mod ise ağır çekimdir.
+
+### K-019 eki: kas modeli (2026-09-17)
+
+- **Bacak kas geometrisi:** FlyGym içindeki kas-iskelet modelinden (FlyMimic; sol ön bacak, 15 kas) moment kolları, kuvvetler, pasif özellikler ve açı aralıkları okunuyor. Kas adları konnektomdaki motor nöron tipleriyle aynı.
+- **Diğer bacaklar:** Aynı geometri, nötr açıya göre kaydırılmış aralıklarla uygulanıyor (bacakların yapısal benzerliği varsayımı).
+- **Hareket yönleri:** Elle yazılmıyor; NeuroMechFly'ın nötr pozunda geometriden çıkarılıyor (`flybrain/body/derive.py`).
+- **Fizyolojik sınırlar:** Boy–kuvvet sınırı (tamamen kısalmış kas kuvvet üretmez) ve sert eklem sınırları eklendi. Bunlar olmadan kas torkları eklemleri anatomik aralığın dışına taşıyordu.
+- **Kaynaksız parametreler:** Her biri [09-govde.md](09-govde.md#65-varsayımlar-kaynağı-olmayan-parametreler) içinde listeli. Hareketin biçimini ve genliğini etkiliyorlar, zamanlamasını değil.
+
+## K-023 · Ölçülmüş elektriksel sinapslar modele eklenir
+
+- **Durum:** kabul edildi (2026-09-17)
+- **Bağlam:**
+  - Konnektomda dev liften TTMn'ye kimyasal sinaps var (sağ 70, sol 20). Ama tek dev lif spike'ı TTMn'de yaklaşık 2 mV yaratıyor; eşik farkı 7 mV.
+  - Depresyon yüzünden 150 ms'lik sürekli uyarımda bile TTMn ateşlemedi, yani kaçış devresi çalışmıyordu.
+  - Gerçek sinekte bu bağlantı elektriksel sinapsla 1:1 çalışır (Tanouye ve Wyman 1980; Allen ve ark. 2006). Elektriksel sinapslar elektron mikroskobu konnektomunda görünmez.
+- **Karar:** Literatürde ölçülmüş ve davranış için kritik elektriksel sinapslar `flybrain/connectome/electrical.py` içindeki listeye eklenir. Şimdilik iki bağlantı var: dev lif → TTMn ve dev lif → PSI.
+  - **Eşleşme:** Kimyasal sinapslarla aynı tarafta.
+  - **Ağırlık:** Ölçülen 1:1 iletimi sağlayacak şekilde nöron modelinin denkleminden hesaplanıyor: tek olayın tepe gerilimi, eşik farkının 2 katı (462 sinaps eşdeğeri).
+  - **Depresyon:** Presinaptik nöronlar muaf, çünkü elektriksel sinaps vezikül tüketmez.
+- **Kapsam:** Şimdilik yalnızca gövdeli sinekte (`EmbodiedFly`) kullanılıyor. Instagram'a karar veren `Fly` sınıfına gövdeyle birlikte geçecek; bu geçiş yeniden kalibrasyon gerektiriyor.

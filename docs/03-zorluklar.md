@@ -172,6 +172,8 @@ Görsel girdide yaklaşık 7.400 nöron her 0,1 ms'de rastgele sayı çekiyor. B
 
 K-011'deki depresyon (U = 0,2, τ = 800 ms), ateşleme hızı ne kadar yüksek olursa olsun bir sinapsın iletimini saniyede en fazla 6,25 tam spike'a eşdeğer düzeyde tutuyor. Faz 2'de kalıcı çekiciyi önleyen bu mekanizma, yürüme komut nöronu DNg100 saniyede 180 kez ateşlediğinde bile ritim çekirdeğini tamamen sessiz bırakıyor. İnen nöronlar muaf tutulunca çekirdek ve 30–70 bacak motor nöronu ateşliyor ([09-govde.md](09-govde.md#3-yürüme-ritmi-yoklaması-dng100)).
 
+Aynı sorun kaçış devresinde de çıktı: dev lif 150 ms boyunca ateşlese bile TTMn'ye ulaşamadı. Orada asıl eksik elektriksel sinapstı (K-023).
+
 **Çözüm yolları:**
 - İnen nöronları (ya da sinir kordonunu) depresyondan muaf tutmak. Muafiyetin kalıcı çekiciyi yeniden getirip getirmediği kararlılık testleriyle ölçülmeli.
 - Depresyonu hücre tipine göre ayarlamak (ör. inen nöron sinapslarında daha kısa τ). Parametreler ancak literatürdeki ölçümlere dayanıyorsa kullanılabilir.
@@ -186,11 +188,16 @@ Pugliese ve ark. (2025), konnektomun tek bir bacakta ritim ürettiğini, ama bac
 - Pugliese ve ark.'nın kullandığı nöron boyutuna göre uyarılabilirlik ölçeklemesini değerlendirmek.
 - **Yapılmayacak:** Hazır ritim üreteci eklemek (K-019).
 
-### Z-24 · Kas–eklem eşlemesi ve kuvvet ölçeği 🔴
+### Z-24 · Kas–eklem eşlemesi ve kuvvet ölçeği 🟡
 
 Motor nöronlar kas adıyla etiketli, ama NeuroMechFly'ın eklem serbestlik derecelerine hangi kasın hangi yönde tork uyguladığı bir tablo olarak hazır değil. FlyGym'deki kas modeli yalnızca sol ön bacakta var ve deneysel.
 
 **Çözüm yolu:** Anatomi literatüründen (bacak kaslarının bağlanma noktaları ve işlevleri) bir tablo derlemek, kaynaklarını belgelemek. Kuvvet ölçeğini kas fizyolojisinden ve eklem sertliğinden türetmek. Davranışa bakıp ayarlama yapılmayacak.
+
+**Durum (2026-09-17):** 105 kas, 701 motor nöron eşlendi (K-019 eki).
+- **Bacaklar:** Moment kolları ve kuvvetler FlyGym'deki kas-iskelet modelinden geliyor. Orta ve arka bacaklar ön bacağın geometrisiyle, yapısal benzerlik varsayımıyla eşlendi.
+- **Diğer bölgeler:** Tork ölçeği varsayıma dayanıyor.
+- **Eşlenmeyen:** Femur döndürücü, halter, anten ve retina kasları.
 
 ### Z-25 · Korku tepkisi zamansal görme gerektiriyor 🔴
 
@@ -206,11 +213,17 @@ Uçabilen hazır gövde modelinin (flybody) uçuş kontrolcüsü eğitilmiş bir
 
 **İlk sürüm:** Kaçış sıçrama olarak görünür (TTMn → orta bacaklar), sinek uçmaz. Kur şarkısı için kanat titreşimi ayrıca modellenecek.
 
+**Gözlem (2026-09-17):**
+- **Sıçrama çalışıyor:** 1,2 mm yükselme, 3,3 mm sıçrama.
+- **Denge riski:** Sinek yere oturmamışken tetiklenirse havada takla atıp sırtüstü düşüyor. Gerçek sinek bu durumda kanatlarıyla toparlanır. Bizim sineğimiz toparlanamıyor, sırtüstü de doğrulamıyor (Z-29).
+
 ### Z-27 · Nöral karar ile görünen hareketin tutarlılığı 🔴
 
 Instagram eylemleri nöral okumadan seçiliyor, gövde aynı nöronlarla hareket ediyor (K-020). Yine de iki tutarsızlık olasılığı var:
 - **İlgi kaybı:** Hiçbir kanal eşiği aşmadığında feed kayıyor, ama gövdede buna karşılık gelen bir hareket yok.
 - **İleri kanalı:** Bacak motor nöronlarının toplamını okuyor. Sinek yürümeden (ör. yerinde kıpırdanarak) bu eşiği aşabilir.
+
+- **Faz 4 okumasında bir hata:** TTMn ve STTMm (sıçrama kasları), kanat alt sınıfında oldukları için "yorum" kanalında sayılıyor. Oysa gövdede sıçrama üretiyorlar; "çıkış" kanalına taşınmalılar (yeniden kalibrasyon gerekir).
 
 **Çözüm yolu:** Her kararda ilgili gövde bölgesinin hareketini ölçüp raporlamak. Örtüşmeyen durumlar veriye bakılarak kullanıcıyla birlikte çözülecek.
 
@@ -223,6 +236,22 @@ Instagram eylemleri nöral okumadan seçiliyor, gövde aynı nöronlarla hareket
 - Sıkıştırılmış oturum kaydı ve gerçek hızda oynatma.
 - Canlı modun ağır çekim olarak açıkça etiketlenmesi.
 - Beyin görünümünde spike'ların kısa zaman kutularında toplanması.
+
+### Z-29 · Duruş tonusu yok 🔴
+
+Gerçek sinekte yavaş motor nöronlar dururken de tonik ateşleyerek duruşu korur. Bizim modelde dinlenen beyin tamamen sessiz. Kas modelinin pasif sertliğiyle sinek çömeliyor (göğüs 0,68 mm); sıçramadan sonra sırtüstü kalırsa doğrulamıyor.
+
+**Çözüm yolları:**
+- Gövdeden gelen his: yük ve eklem açısı refleksleri tonik aktivite üretebilir.
+- Sinir sistemindeki kendiliğinden aktivite: biyolojik gürültü (ilke 4). Kanıta dayanıyorsa eklenebilir.
+
+### Z-30 · Şeker tadı tam hortum uzatma üretmiyor 🟡
+
+Uçtan uca testte şeker tadı hortum nöronlarına ulaşıyor. Ama en çok çalışanlar arasında hortumu geri çeken MN2Da da var. Haustellum açılıyor (0,32 rad), rostrum ileri gitmiyor.
+
+- **Karşılaştırma:** Shiu ve ark. modelinde şeker → MN9 güçlüydü.
+- **Olası neden:** K-011 ayarında (düşük ağırlık, depresyon) MN9 yanıtı zaten zayıf (3,7 Hz).
+- **Bağlam:** Gerçek sinekte hortum uzatma, açlık durumuna da bağlıdır; bu durum modellenmiyor.
 
 ---
 

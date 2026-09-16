@@ -1,6 +1,6 @@
 # 09 — Gövde (bedenlenme)
 
-> Durum: **Faz 5 başladı (2026-09-17).** Bu belge, sineğin 3D fizik gövdesini kendi motor nöronlarıyla hareket ettirme çalışmasını anlatır. Kararlar: K-019, K-020, K-021, K-022.
+> Durum: **Faz 5 sürüyor (2026-09-17).** Motor nöron → kas → eklem zinciri çalışıyor; hortum ve sıçrama nöronlardan üretiliyor, yürüme henüz koordine değil. Bu belge, sineğin 3D fizik gövdesini kendi motor nöronlarıyla hareket ettirme çalışmasını anlatır. Kararlar: K-019, K-020, K-021, K-022.
 
 ## 1. Neden gövde?
 
@@ -79,7 +79,7 @@ FlyGym 2.1.0 kuruldu (Apache-2.0; MuJoCo 3.9). Varsayılan sadeleştirilmiş 3D 
 **Ölçümler:**
 
 - **Hız:** Tüm eklemlere tork aktüatörü takılı ve zaman adımı 0,1 ms iken fizik, gerçek zamanın **1,3 katı hızında** çalışıyor. Bu ölçüme görme ve çizim dahil değil.
-- **Pasif duruş:** Motor girdisi sıfırken sinek eklem yaylarıyla ayakta duruyor.
+- **Pasif duruş:** FlyGym'in varsayılan eklem sertliğiyle (10) sinek motor girdisi olmadan dimdik duruyor (göğüs 0,73 mm). Kas modelinin sertliğiyle (0,4) çömeliyor ama yere yapışmıyor (0,46–0,68 mm). Gerçek sinekte duruşu yavaş motor nöronların tonik ateşlemesi sağlar; bizim modelde dinlenen beyin sessiz (Z-29).
 - **Görme:** Bileşik göz her göz için 721 ommatidyum veriyor. İlk çağrı 2,6 sn sürdü (hazırlık dahil); sonraki çağrıların maliyeti ayrıca ölçülecek.
 
 ## 5. Plan
@@ -128,10 +128,117 @@ Instagram eylemleri Faz 4'teki kas grubu okumasıyla seçilmeye devam ediyor. G�
 
 ### 5.6 Bitiş kriterleri (Faz 5)
 
-- [ ] Beyin sessizken gövde pasif duruşta kalıyor
-- [ ] MN9 uyarımı → hortum uzuyor; şeker tadı → MN9 → hortum uzuyor (uçtan uca)
-- [ ] Dev lif (DNp01) uyarımı → TTMn → orta bacaklar açılıyor → sinek sıçrıyor
+- [x] Beyin sessizken gövde pasif duruşta kalıyor
+- [x] MN9 uyarımı → hortum uzuyor
+- [ ] Şeker tadı → MN9 → hortum uzuyor (uçtan uca): kısmen, bkz. 6.4
+- [x] Dev lif (DNp01) uyarımı → TTMn → orta bacaklar açılıyor → sinek sıçrıyor
 - [ ] DNg100 uyarımı → bacaklarda ritmik hareket (ne kadar yürüdüğü ölçülüp raporlanır)
 - [ ] Bacak hareketi → propriyoseptif duyu nöronları ateşliyor
 - [ ] Nöral kararlar ile gövde hareketinin örtüşmesi ölçülüyor
 - [ ] Kapalı döngü (beyin + gövde + görme) gerçek zamanın en fazla 3 katı yavaşlıkta
+
+## 6. İlk uygulama (2026-09-17)
+
+Kod: `flybrain/body/` (`derive.py`, `muscles.py`, `body.py`, `embodied.py`), deneyler: `python -m flybrain.experiments.body`, testler: `tests/test_body.py`.
+
+### 6.1 Kas geometrisi nereden geliyor?
+
+FlyGym'in içinde, FlyMimic çalışmasının sol ön bacak kas-iskelet modeli var. Model X-ray tomografisinden 15 kas içeriyor ve **kas adları konnektomdaki motor nöron tipleriyle birebir aynı** (tergopleural promotor, sternal adductor, trokanter bükücü, tibia açıcı...). `derive.py` bu modelden şunları okuyup `muscle_geometry.json` dosyasına yazıyor:
+
+- **Moment kolları:** Her kasın her eklemdeki kolu (tendon uzunluğunun açıya göre türevi, nötr pozda). Tendonlar düz çizgi olduğu için 3D modellere gerek yok, ek indirme yapılmadı.
+- **Kuvvetler:** En büyük kuvvetler (F0), kas kesit alanından tahmin edilmiş. Birim µN.
+- **Pasif özellikler ve sınırlar:** Eklemlerin sertlik ve sönüm değerleri (0,4 µN·mm/rad ve 0,02) ve anatomik açı aralıkları.
+- **Karşıt kaslar kontrol edildi:** Her eklemde ters yönde çekiyorlar. Örneğin tibia bükücüsü açıyı artırıyor, açıcısı azaltıyor.
+
+Kas-iskelet modeli ile NeuroMechFly aynı eklem düzenini kullanıyor; eksenler ve nötr açılar örtüşüyor. Bu yüzden kollar eklem uzayında doğrudan aktarılıyor.
+
+Diğer yönler, NeuroMechFly'ın nötr pozunda küçük açı değişimlerinin gövde parçalarını nereye taşıdığına bakılarak **geometriden** belirleniyor:
+
+| Hareket | Eklem | Yöntem |
+|---|---|---|
+| Hortum ileri (rostrum) | `c_head-c_rostrum-pitch`, − yön | haustellum öne gidiyor |
+| Haustellum açılma | `c_rostrum-c_haustellum-pitch`, + yön | uç, tabandan uzaklaşıyor |
+| Baş sola dönme | `c_thorax-c_head-roll`, + yön | ekseni dikey olan serbestlik derecesi |
+| Kanat açma | `c_thorax-*_wing-roll`, − yön | kanat en çok yana gidiyor |
+| Karın aşağı bükme | 5 segmentte `pitch`, − yön | uç segment aşağı iniyor |
+| Tibia bükme | `*_tibia-pitch`, + yön (6 bacak) | tarsus femur tabanına yaklaşıyor |
+| Tarsus aşağı bükme | tibia ile aynı yön | eksenler paralel; nötr pozda tarsus neredeyse düz olduğu için mesafe ölçütü kullanılamıyor |
+
+**Sıçrama kası (TTM):** Zumstein ve ark. (2004) orta bacağın ucunda 101 µN tepe kuvvet ve 8,2 ms yükselme süresi ölçmüş. Bu kuvvet, orta bacağın 1,48 mm'lik kaldıraç koluyla 149 µN·mm torka çevriliyor.
+
+### 6.2 Kas tablosu
+
+- **Eşlenenler:** 105 kas, 701 motor nöron.
+  - bacak kasları (6 bacak)
+  - TTM
+  - hortum (McKellar ve ark. 2020)
+  - boyun
+  - kanat yönlendirme kasları
+  - karın
+- **Eşlenmeyenler (191 nöron):**
+
+| Grup | Neden |
+|---|---|
+| Uçuş güç kasları (DLMn, DVMn) | Uçuş modellenmiyor (Z-26) |
+| Femur döndürücü (Fe reductor, 20) | Kas-iskelet modelinde yok |
+| Labellum ve yutak kasları (MN5–8, MN10–13, CEM) | Gövde modelinde bu parçalar yok |
+| Halter, anten ve retina kasları | Henüz eşlenmedi |
+| Adsız tipler (MNml…, MNhl…, MNx…) | İşlevleri bilinmiyor |
+
+### 6.3 Kas modeli
+
+- **Seğirme:** Her motor nöron spike'ı nöronun seğirme durumunu Δ·(1−x) kadar artırır (Δ = 0,3; TTM tek seğirmeli kas olduğu için Δ = 1). Durum 40 ms'de söner.
+- **Kuvvet:** Kasın uyarılması, sürdüğü motor nöronların ortalamasıdır. Kuvvet bu uyarılmayı 8,2 ms gecikmeyle izler.
+- **Boy–kuvvet:** Bir kas tamamen kısaldığında kuvvet üretemez. Sınırlı eklemlerde, eklem kasın çektiği yöndeki sınıra yaklaştıkça (aralığın son %25'i) tork sıfıra iner. Bu olmadan, sıçramadan sonra havadaki orta bacaklar eklem sınırını aşıp 90 rad döndü.
+- **Eklem sınırları:** Tepki süresi 20 ms'den 0,5 ms'ye indirildi; varsayılan yumuşak sınır, kas torkları karşısında aşılıyordu.
+- **Oturma:** Gövde nötr pozdan pasif duruşuna 500 ms'de oturuyor. Her deney bu oturmadan sonra başlıyor.
+- **Beyin–gövde eşleşmesi:** Her 1 ms'de bir. Parçalamanın beyin simülasyonuna ek maliyeti yok (ölçüldü).
+
+### 6.4 Neden–sonuç deneyleri
+
+Her deney 500 ms oturma ve 300 ms sessiz başlangıçla başlıyor. Videolar `runs/body-*.mp4`; üç deneyin yan yana hali: `python -m flybrain.experiments.body --montage`.
+
+| Deney | Motor nöron spike'ı | Gövde |
+|---|---|---|
+| Sessiz beyin (1 sn) | 0 | Hiçbir eklem kıpırdamıyor, göğüs 0,68 mm yükseklikte duruyor ✅ |
+| MN9, 150 Hz, 600 ms | hortum 154 | Rostrum 0,69 rad ileri, haustellum 0,69 rad açılıyor ✅ |
+| Şeker tadı (LB3b/c), 800 ms | hortum 12, boyun 18, bacak 4 | Haustellum 0,32 rad açılıyor ama rostrum ileri gitmiyor. En çok çalışanlar: MN4b (haustellum açıcı), MN2Da (**geri çekici**), MN9. Tam hortum uzatma (PER) yok (Z-30) |
+| Dev lif, 300 Hz, 15 ms | TTMn 2 + 1 | Orta bacaklar 1,6 rad açılıyor. Göğüs 1,2 mm yükseliyor, sinek 3,3 mm öteye sıçrıyor, en fazla 51° yalpalıyor ✅ |
+| TTMn doğrudan | TTMn 2 | Aynı sıçrama (kas ve fizik kontrolü) ✅ |
+| DNg100, 150 Hz, 1,5 sn (inen nöronlar depresyondan muaf) | bacak 1.112, boyun 139, karın 65, kanat 25 | Bacaklar kıpırdıyor: 0,73 mm yol ama net 0,15 mm, en fazla 9° yalpalama. **Yürüme yok**, koordinasyon yok (Z-23) |
+
+**Dev lif için elektriksel sinaps (K-023):** Konnektomda dev liften TTMn'ye kimyasal sinaps var (sağ 70, sol 20). Ama tek bir dev lif spike'ının TTMn'de yarattığı tepe gerilim 2 mV civarında, eşik farkı ise 7 mV. Depresyon da sürekli ateşlemede iletimi boğuyor (150 ms'lik uyarımda bile TTMn hiç ateşlemedi). Gerçek sinekte bu bağlantı elektriksel sinapsla 1:1 çalışıyor ve elektriksel sinapslar elektron mikroskobu konnektomunda görünmüyor. Ölçülmüş bu bağlantı, 1:1 iletimi sağlayan ağırlıkla modele eklendi (`flybrain/connectome/electrical.py`). Bu eklemeden sonra 15 ms'lik darbe sıçramayı tetikliyor.
+
+**Önceki denemeden bir not:** Oturma adımı eklenmeden önce sıçrama, sinek henüz yere oturmamışken tetikleniyordu ve sinek havada takla atıp sırtüstü düşüyordu. Sırtüstü kalan sinek doğrulamıyor, çünkü motor nöronları sessiz (Z-26).
+
+### 6.5 Varsayımlar (kaynağı olmayan parametreler)
+
+| Parametre | Değer | Etkisi |
+|---|---|---|
+| Seğirme artışı Δ | 0,3 (TTM 1,0) | Hareketin şiddeti |
+| Gevşeme süresi | 40 ms | Hareketin süresi |
+| Yükselme süresi (TTM dışı kaslar) | 8,2 ms (TTM ölçümü) | Hareketin hızı |
+| Boy–kuvvet kenarı | aralığın %25'i | Sınıra yakın tork |
+| Orta ve arka bacaklar | Ön bacağın kas geometrisi ve aralıkları, nötr açıya göre kaydırılarak | Bacakların yapısal benzerliği varsayımı |
+| Tarsus aralığı ve kas torku | ±0,6 rad; sertlik × 0,5 rad | Tarsus hareketi |
+| Hortum, baş, kanat, karın torku | sertlik × açı (1,0 / 0,35 / 1,2 / segment başına 0,15 rad) | Bu bölgelerin hareket genliği |
+| Boyun | Her taraftaki boyun motor nöronları başı kendi tarafına çevirir | Baş dönme yönü |
+| Kanat | Üçüncü aksiller kaslar kanadı katlar, diğer yönlendirme kasları açar | Kanat açma |
+| Karın | Tüm karın motor nöronları aşağı büker; iki taraf arasındaki fark yana büker | Karın hareketi |
+| Kas içi paylaşım | Bir kası süren motor nöronlar eşit ağırlıkta | Boyut ilkesi (küçük nöron küçük kuvvet) yok sayılıyor |
+
+Bu değerler hareketin **biçimini ve genliğini** etkiler; **ne zaman** hareket edileceğini her zaman motor nöron spike'ları belirler.
+
+### 6.6 Sıradaki adımlar
+
+1. **Gövdeden beyne his (Z-23):**
+   - kordotonal organ, kampaniform sensiller, tarsal temas
+   - Hem yürüme koordinasyonu hem duruş tonusu için gerekli (Z-29).
+2. **Sineğin gözleriyle görme:** Ommatidyumları konnektom göz kolonlarına bağlamak.
+3. **Sahne:** Sineği izleyen Instagram ekranı.
+4. **Kapalı döngü hızı:**
+   - Sessiz beyinle 1 sn simülasyon: videosuz yaklaşık 3 sn, iki kameralı kayıtla 6 sn.
+   - Hedef: gerçek zamanın en fazla 3 katı.
+5. **Nöral karar ile gövde tutarlılığı (Z-27):**
+   - Faz 4 okumasında TTMn ve STTMm (sıçrama kasları) "yorum" kanalında sayılıyor; "çıkış" kanalına taşınmalı.
+   - Bu değişiklik yeniden kalibrasyon gerektiriyor.

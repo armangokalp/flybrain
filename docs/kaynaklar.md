@@ -37,11 +37,18 @@ Taban adres: `https://storage.googleapis.com/flyem-male-cns/v1.0/connectome-data
 - Rayshubskiy ve ark. 2020 — DNa02 ve dönme
 - Hampel ve ark. 2015, *eLife* — anten temizleme devresi
 - Pugliese ve ark. 2025, bioRxiv — [sinir kordonu konnektomu simülasyonlarıyla yürüme ritim devresi](https://pmc.ncbi.nlm.nih.gov/articles/PMC13142387/) (DNg100, E1/E2/I1 çekirdeği). Kod: <https://github.com/smpuglie/Pugliese_cpg_2025>
+- McKellar ve ark. 2020, *eLife* 9:e54978 — [hortumun tüm kaslarının motor nöronları](https://elifesciences.org/articles/54978): MN9 rostrum ileri + haustellum açma, MN4 haustellum açma, MN1/MN2 geri çekme, MN3 haustellum bükme
+- Zumstein ve ark. 2004, *J Exp Biol* 207:3515 — [sıçramada kuvvet üretimi](https://journals.biologists.com/jeb/article/207/20/3515/14914/Distance-and-force-production-during-jumping-in): TTM, orta bacak ucunda 101 µN, tepeye 8,2 ms
+- Tanouye ve Wyman 1980, *J Neurophysiol*; Allen ve ark. 2006, *Curr Opin Neurobiol* — dev lif sistemi, dev lif → TTMn ve PSI elektriksel sinapsları (K-023)
+- O'Sullivan ve ark. 2018, *Curr Biol* — [kanat kaslarının şarkı ve uçuştaki çok işlevli kontrolü](https://www.cell.com/current-biology/fulltext/S0960-9822(18)30829-7)
+- Azevedo ve ark. 2024, *Nature* 631:360 — [dişi sinir kordonu konnektomu ve motor nöron–kas atlası](https://www.nature.com/articles/s41586-024-07389-x)
+- Cheong ve ark. 2024, *eLife* — [MANC'ta inen girdiden motor çıktıya devreler](https://elifesciences.org/articles/96084)
 - Stowers ve ark. 2017, *Nature Methods* — [serbest hareket eden hayvanlar için sanal gerçeklik (FreemoVR)](https://www.nature.com/articles/nmeth.4399)
 
 ## Gövde modelleri
 
 - Wang-Chen ve ark. 2024, *Nature Methods* — [NeuroMechFly v2](https://www.nature.com/articles/s41592-024-02497-y). Kütüphane: [FlyGym](https://github.com/NeLy-EPFL/flygym) (Apache-2.0), belgeler: <https://neuromechfly.org/>
+- FlyMimic kas-iskelet modeli: [Drosophila bacak hareketinin kas-iskelet simülasyonu](https://arxiv.org/html/2509.06426) (arXiv 2509.06426). FlyGym 2.1 içinde `assets/model/musculoskeletal`; bacak kas geometrimizin kaynağı (K-019 eki)
 - Vaxenburg ve ark. 2025, *Nature* — [flybody: tüm gövde fizik simülasyonu](https://www.nature.com/articles/s41586-025-09029-4). Kod: <https://github.com/TuragaLab/flybody>. Uçuş kontrolcüsü eğitilmiş olduğu için kullanılmıyor (Z-26).
 
 ## Referans uygulamalar
