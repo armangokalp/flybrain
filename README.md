@@ -11,7 +11,24 @@ Kararları insan, dil modeli ya da eğitilmiş bir yorumlayıcı ağ vermez. Sin
 
 ## Durum
 
-**Faz 0: araştırma ve mimari.** İlerleme için [yol haritası](docs/04-yol-haritasi.md), günlük kayıtlar için [docs/gunluk](docs/gunluk/) klasörüne bakın.
+- ✅ **Faz 0:** araştırma ve mimari
+- ✅ **Faz 1:** konnektom veri hattı (165.122 nöron, 6,2 milyon bağlantı)
+- ⏭️ **Faz 2:** simülasyon çekirdeği
+
+İlerleme için [yol haritası](docs/04-yol-haritasi.md), günlük kayıtlar için [docs/gunluk](docs/gunluk/) klasörüne bakın.
+
+## Kurulum
+
+Python 3.12 veya 3.13 gerekir.
+
+```bash
+python3.13 -m venv .venv
+.venv/bin/pip install -e '.[dev]'
+.venv/bin/python -m flybrain.connectome.download   # yaklaşık 1,1 GB, data/raw/
+.venv/bin/python -m flybrain.connectome.build      # önbellek, data/cache/
+.venv/bin/python -m flybrain.anatomy               # nöron havuzlarını doğrular
+.venv/bin/python -m pytest
+```
 
 ## Belgeler
 
@@ -21,6 +38,7 @@ Kararları insan, dil modeli ya da eğitilmiş bir yorumlayıcı ağ vermez. Sin
 | [02 — Mimari](docs/02-mimari.md) | Sistem bileşenleri, duyu ve motor eşlemeleri |
 | [03 — Zorluklar](docs/03-zorluklar.md) | Karşılaşılan/beklenen sorunlar ve çözüm yolları |
 | [04 — Yol haritası](docs/04-yol-haritasi.md) | Fazlar ve her fazın bitiş kriterleri |
+| [05 — Veri keşfi](docs/05-veri-kesfi.md) | MaleCNS verisinin analizi, doğrulanan nöron havuzları |
 | [Kararlar](docs/kararlar.md) | Alınan tasarım kararlarının kaydı |
 | [Kaynaklar](docs/kaynaklar.md) | Veri setleri, makaleler, referans kodlar |
 | [Günlük](docs/gunluk/) | Oturum oturum süreç kaydı |

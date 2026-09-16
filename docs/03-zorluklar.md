@@ -14,11 +14,20 @@ Haritada hangi nöronun hangisine kaç sinapsla bağlandığı var. Sinapsın ne
 
 **Çözüm yolu:** Shiu ve ark. modelinin varsayımını kullanıyoruz: her sinaps eşit ağırlıkta, işaret ise nörotransmitter tahmininden geliyor. Bu model tat devrelerinde deneysel olarak doğrulandı. Aynı doğrulamayı MaleCNS üzerinde tekrarlayacağız (şeker nöronlarını uyar, MN9 ateşliyor mu bak). Tutmazsa global ağırlık ölçeğini ayarlayacağız. Bu ayar yalnızca "beyin canlı ama epileptik değil" koşulu için yapılacak.
 
-### Z-02 · Görme sinyali merkezi beyne ulaşabilecek mi? 🔴
+### Z-02 · Görme sinyali merkezi beyne ulaşabilecek mi? 🟡
 
 Fotoreseptörlerden inen nöronlara kadar birçok sinaptik katman var. Eşit ağırlık varsayımıyla sinyal bu katmanlarda sönebilir ya da kontrolden çıkabilir.
 
-**Çözüm yolu:** Faz 3'te katman katman aktivite ölçümü yapacağız (fotoreseptör → lamina/medulla → lobula → merkezi beyin → inen nöronlar). Sinyal sönüyorsa uyarım yoğunluğunu artırmak, patlıyorsa ketleyici ağırlıkları yeniden ölçeklemek iki seçenek. Her iki durumda da tek bir global parametre değişecek ve bu kayda geçecek.
+**Faz 1 bulgusu (2026-09-16):** Sorun beklenenden temel çıktı. Fotoreseptörler **histaminerjik**, yani ilk sinapsları ketleyici. Fotoreseptörlerden motor havuzlarına **hiç uyarıcı yol yok**. Shiu modelinde nöronlar uyarı yokken sessiz. Sessiz bir nöronu ketlemek hiçbir şey değiştirmediği için fotoreseptörleri doğrudan uyarmak **hiçbir aşağı akış aktivitesi üretmez**.
+
+Gerçek sinekte böyle olmuyor: lamina nöronları ışıkta sürekli aktif ve ışık değişimleri bu aktiviteyi aşağı ya da yukarı kaydırıyor. Sinek gözü aslında büyük ölçüde **kontrast** algılıyor. Aynı sorun sonraki katmanlarda da tekrar ediyor (L1 glutamaterjik, dolayısıyla modelde ketleyici).
+
+**Çözüm seçenekleri (Faz 3'te deneyle seçilecek):**
+- **(a) Tonik taban aktivite:** Görme sistemine sürekli bir arka plan uyarımı verilir, görsel bu tabanın etrafında dalgalanma yaratır. Biyolojiye en yakın seçenek bu, fakat yeni bir parametre ekliyor (taban hızı).
+- **(b) Kolon nöronlarından giriş:** İşaret dönüşümü elle uygulanır ve görsel, kolon koordinatı olan nöronlara (L2 uyarıcı; Mi1, Tm1...) verilir. Karanlık bölgeler L2'yi daha çok ateşler. Basit bir yöntem, ancak fotoreseptör katmanı atlanmış olur.
+- **(c) İkisinin birleşimi.**
+
+Her durumda kalibrasyon katman katman aktivite ölçümüyle yapılacak (fotoreseptör → lamina/medulla → lobula → merkezi beyin → inen nöronlar).
 
 ### Z-03 · Plastisite yok, dolayısıyla öğrenme de yok 🔴
 
@@ -59,17 +68,33 @@ Uyarı yokken model tamamen sessiz kalabilir. Çok uyarı verilirse de tüm beyi
 
 Faz 2'de ölçüm yapılacak.
 
-### Z-08 · Bellek ve disk 🔴
+### Z-08 · Bellek ve disk 🟢
 
-Makine: 16 GB RAM, yaklaşık 35 GB boş disk. Bağlantı tablosu 1,1 GB (sıkıştırılmış feather); bellekte bunun birkaç katına çıkabilir.
+Makine: 16 GB RAM, yaklaşık 35 GB boş disk. Bağlantı tablosu 1 GB (feather); bellekte 3,5 GB'a çıkıyor (152 milyon satır).
 
-**Çözüm yolu:** Yalnızca gereken dosyaları indirmek (anotasyonlar, nörotransmitterler ve bağlantı ağırlıkları, toplam yaklaşık 1,2 GB). 12,7 GB'lık sinaps noktaları dosyasını indirmemek. Tabloyu pyarrow ile filtreleyerek okumak ve sonucu seyrek matris olarak önbelleğe almak.
+**Çözüm:** Yalnızca gereken üç dosya indirildi (1,1 GB). 12,7 GB'lık sinaps noktaları dosyası indirilmedi. Tablo memory-map ile açılıp pyarrow ile süzülüyor. Önbellek üretimi 3 saniye sürüyor, bellek kullanımı en fazla 4,4 GB'a çıkıyor ve sonuç diskte 54 MB tutuyor.
 
-### Z-09 · Görsel → ommatidyum eşlemesi 🔴
+### Z-09 · Görsel → ommatidyum eşlemesi 🟡
 
-Bir görseli doğru fotoreseptöre vermek için her fotoreseptörün hangi göz kolonunda olduğunu bilmek gerekiyor. MaleCNS'de laminanın ve R1–R6 fotoreseptörlerinin ne kadar eksiksiz olduğu henüz bilinmiyor.
+Bir görseli doğru fotoreseptöre vermek için her fotoreseptörün hangi göz kolonunda olduğunu bilmek gerekiyor.
 
-**Çözüm yolu:** Faz 1'de anotasyon tablosunda kolon bilgisi aranacak. Kolon bilgisi yoksa nöronların konumlarından kolonlar çıkarılacak. R1–R6 eksikse, girdi doğrudan lamina monopolar hücrelerine (L1–L3) verilecek.
+**Faz 1 bulgusu:** Anotasyon tablosunda 15 kolon nöron tipi için kolon koordinatı (`hex1`, `hex2`) var; göz başına yaklaşık 890 kolon. **Fotoreseptörlerde bu bilgi yok.** Sol gözde R1–R6'nın yalnızca 501'i var (sağda 893); sol göz eksik.
+
+**Çözüm yolu:** Her fotoreseptörün kolonu, en çok sinaps yaptığı kolon nöronunun (R1–R6 için L1/L2/L3, R7/R8 için Mi1/Tm...) koordinatından çıkarılacak. Sol göz eksikliği görselin sol yarısını daha zayıf "görmek" anlamına geliyor. Bu biyolojik değil, veri kaynaklı bir asimetri; Faz 3'te telafi edilip edilmeyeceğine karar verilecek.
+
+### Z-16 · Ağ çok sıkı bağlı: özgüllük nereden gelecek? 🔴
+
+Her duyu, beynin yaklaşık %98'ine birkaç sinaptik adımda ulaşıyor. Şeker nöronları da, acı nöronları da, dopamin nöronları da her motor havuzuna 2–3 adımda erişebiliyor.
+
+**Anlamı:** Hangi davranışın ortaya çıkacağını topoloji değil, sinaps sayıları ve işaretler belirleyecek. Uyarım çok güçlü olursa her şey ateşler ve davranış ayırt edilemez hale gelir.
+
+**Çözüm yolu:** Faz 2'de uyarım yoğunluğuna karşı yanıt eğrileri çıkarılacak. Seçicilik ölçütü şöyle olacak: şeker MN9'u ateşletmeli, acı ateşletmemeli.
+
+### Z-17 · Modülatör nörotransmitterlerin işareti belirsiz 🟡
+
+Dopamin, serotonin ve oktopamin reseptöre göre uyarıcı da olabilir ketleyici de. Model tek bir işaret istiyor.
+
+**Geçici çözüm:** Hepsi uyarıcı kabul edildi (K-008). Bu nöronlar toplamın %0,3'ü. Faz 8'de dopamin, öğrenme kuralındaki rolüyle (işaret yerine plastisite sinyali olarak) ayrıca modellenecek.
 
 ---
 
@@ -91,11 +116,11 @@ Instagram şüphelendiğinde doğrulama ister.
 
 **Çözüm yolu:** Sistem bunu atlatmaya **çalışmaz**. Doğrulama algılandığında oturum durur ve kullanıcıya bildirim gider; kullanıcı doğrulamayı elle çözer, sonra sistem devam eder.
 
-### Z-12 · Resmi API feed'i okuyamıyor 🔴
+### Z-12 · Resmi API feed'i okuyamıyor 🟢
 
 Resmi Instagram API'si yalnızca kendi hesabının içeriğini yönetmeye izin veriyor.
 
-**Çözüm yolu:** Karar bekliyor (bkz. [mimari → Instagram bağlantısı](02-mimari.md#instagram-bağlantısı-seçenekler-karar-bekliyor)).
+**Çözüm:** Playwright ile tarayıcı otomasyonu seçildi (K-006).
 
 ---
 

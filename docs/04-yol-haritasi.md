@@ -2,37 +2,39 @@
 
 Her faz, bitiş kriterleri sağlanmadan kapanmaz. Gerçek Instagram hesabına ilk dokunuş **Faz 6**'da olacak; o zamana kadar her şey yerelde test edilir.
 
-## Faz 0 — Araştırma ve mimari 🟡
+## Faz 0 — Araştırma ve mimari ✅
 
 - [x] Veri setinin güncel durumunu araştırmak (MaleCNS v1.0, Eylül 2026)
 - [x] Referans simülasyon modellerini belirlemek (Shiu ve ark. LIF)
 - [x] Mimari taslağı, ilkeler ve zorluklar belgeleri
-- [ ] Açık tasarım kararlarının kullanıcıyla netleştirilmesi (bkz. [kararlar.md](kararlar.md))
+- [x] Açık tasarım kararlarının netleştirilmesi (K-004, K-005, K-006)
 
 **Bitiş:** Mimari onaylandı, veri indirme izni alındı.
 
-## Faz 1 — Konnektom veri hattı
+## Faz 1 — Konnektom veri hattı ✅
 
-- [ ] Python ortamı (`pyproject.toml`, sanal ortam)
-- [ ] İndirme betiği: anotasyonlar, nörotransmitterler, bağlantı ağırlıkları
-- [ ] Nöron filtresi (yalnızca izlenmiş/anotasyonlu gövdeler)
-- [ ] Seyrek ağırlık matrisi + işaretler → önbellek (`data/cache/`)
-- [ ] Veri keşif raporu: aday duyu ve motor nöronlarının tabloda gerçekten olup olmadığı ([02-mimari.md](02-mimari.md) tablolarının doğrulanması)
+- [x] Python ortamı (`pyproject.toml`, sanal ortam)
+- [x] İndirme betiği: anotasyonlar, nörotransmitterler, bağlantı ağırlıkları
+- [x] Nöron filtresi (yalnızca izlenmiş/anotasyonlu gövdeler)
+- [x] Seyrek ağırlık matrisi + işaretler → önbellek (`data/cache/`)
+- [x] Veri keşif raporu ve aday nöronların doğrulanması ([05-veri-kesfi.md](05-veri-kesfi.md))
 
-**Bitiş:** `load_connectome()` birkaç saniyede matrisi yüklüyor; aday nöron listesi doğrulanmış.
+**Bitiş:** `load_connectome()` birkaç saniyede matrisi yüklüyor; aday nöron listesi doğrulanmış. ✅ (2026-09-16: önbellek 3 sn'de üretiliyor, 9 motor + 8 duyu havuzunun hepsi dolu, 7 test geçiyor)
 
 ## Faz 2 — Simülasyon çekirdeği
 
 - [ ] LIF motoru (olay güdümlü, seyrek)
 - [ ] Performans ölçümü (simülasyon saniyesi başına duvar saati)
-- [ ] **Doğrulama:** şeker tat nöronlarının uyarılması MN9'u ateşliyor mu? (Shiu ve ark. sonucunun MaleCNS'de tekrarı)
+- [ ] **Doğrulama:** şeker tat nöronlarının (LB3b/c) uyarılması MN9'u ateşliyor mu, acı nöronlarının (LB1a–d) uyarılması ateşletmiyor mu? (Shiu ve ark. sonucunun MaleCNS'de tekrarı)
+- [ ] Uyarım yoğunluğuna karşı yanıt eğrileri (Z-16)
 - [ ] Taban aktivite ve kararlılık testleri (sessizlik / epilepsi)
 
 **Bitiş:** Doğrulama deneyi yayınlanmış sonuçla nitel olarak uyuşuyor; 500 ms'lik bir karar penceresi makul sürede hesaplanıyor.
 
 ## Faz 3 — Duyu kodlayıcıları
 
-- [ ] Görme: görsel → altıgen ommatidyum ızgarası → fotoreseptör ateşleme hızları
+- [ ] Görme: görsel → `hex1 × hex2` kolon ızgarası → giriş nöronları (fotoreseptörlerin ketleyici olması nedeniyle yöntem Z-02'ye göre seçilecek)
+- [ ] Fotoreseptör kolonlarının bağlantıdan çıkarılması (Z-09)
 - [ ] Katman katman sinyal yayılımı analizi (Z-02)
 - [ ] Koku: kelime → ORN kombinasyonu (sabit hash)
 - [ ] Ödül/ceza: bildirim → PAM/PPL1 uyarımı

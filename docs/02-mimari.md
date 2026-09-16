@@ -1,6 +1,6 @@
 # 02 — Mimari
 
-> Durum: **taslak (Faz 0)**. Nöron adları literatüre dayanan **adaylardır**. Faz 1'de MaleCNS anotasyon tablosuyla doğrulanacaklar.
+> Durum: **Faz 1 sonrası güncellendi.** Nöron havuzları MaleCNS anotasyon tablosunda doğrulandı (bkz. [05-veri-kesfi.md](05-veri-kesfi.md)); tek kaynak [`flybrain/anatomy.py`](../flybrain/anatomy.py). Havuzların *davranışsal* doğrulaması Faz 2 ve Faz 4'te yapılacak.
 
 ## Genel akış
 
@@ -47,6 +47,8 @@ Temel olarak Shiu ve ark. (2024, *Nature*) çalışmasındaki tüm beyin LIF mod
 | Sinaps başına ağırlık | 0,275 mV × sinaps sayısı |
 | İşaret | Nörotransmitter tahmininden: ACh → uyarıcı; GABA ve glutamat → ketleyici |
 | Zaman adımı | 0,1 ms |
+| Duyusal uyarım | Poisson; varsayılan 150 Hz, olay başına membran potansiyeline doğrudan +68,75 mV (0,275 × 250) |
+| Bağlantı eşiği | En az 5 sinaps (K-009) |
 
 **Temel varsayım:** Konnektom sinaps *sayısını* verir, sinaps *gücünü* vermez. Bu yüzden her sinaps eşit ağırlıkta kabul edilir. Bu varsayımın zayıf yönleri için [03-zorluklar.md](03-zorluklar.md) belgesine bakın.
 
@@ -56,9 +58,9 @@ Neden MaleCNS kullanıyoruz? FlyWire (2024) yalnızca beyni kapsıyordu. MaleCNS
 
 | Instagram girdisi | Sinek duyusu | Hedef nöronlar (aday) | Kodlama |
 |---|---|---|---|
-| Post görseli | Görme | Fotoreseptörler: R1–R6 (parlaklık/hareket), R7 (UV), R8 (mavi/yeşil) | Görsel, göz başına yaklaşık 750 ommatidyumluk altıgen ızgaraya indirgenir. Her ommatidyumun parlaklığı ve rengi, o kolondaki fotoreseptörlerin Poisson ateşleme hızını belirler. |
+| Post görseli | Görme | Fotoreseptörler: R1–R6 (parlaklık/hareket), R7 (UV), R8 (mavi/yeşil); kolon nöronları (L1–L5, Mi1...) | Görsel, veri setindeki `hex1 × hex2` kolon ızgarasına (göz başına yaklaşık 890 kolon) indirgenir. Fotoreseptörler ketleyici olduğundan giriş şekli Faz 3'te belirlenecek (bkz. Z-02). |
 | Video / Reels | Hareket | Aynı nöronlar, zamansal dizi halinde | Kareler sırayla verilir; T4/T5 hareket algılama devreleri bu diziye doğal olarak tepki verir |
-| Caption, hashtag | Koku | Koku alıcı nöronlar (ORN, yaklaşık 50 tür) | Her kelime sabit bir hash fonksiyonuyla birkaç ORN türünün kombinasyonuna eşlenir. Böylece aynı kelime hep aynı "kokuyu" verir ve sinek kelimelere karşı tutarlı tepkiler geliştirebilir. |
+| Caption, hashtag | Koku | Koku alıcı nöronlar (ORN, 53 glomerül tipi) | Her kelime sabit bir hash fonksiyonuyla birkaç ORN türünün kombinasyonuna eşlenir. Böylece aynı kelime hep aynı "kokuyu" verir ve sinek kelimelere karşı tutarlı tepkiler geliştirebilir. |
 | Kendi postuna gelen beğeni, yeni takipçi | Ödül | PAM dopamin nöronları | Bildirim sayısıyla orantılı uyarım |
 | Takipçi kaybı | Ceza | PPL1 dopamin nöronları | Kayıp sayısıyla orantılı uyarım |
 
@@ -66,18 +68,18 @@ Bir not: gerçek sinekte görme sinyali fotoreseptörlerden merkezi beyne ulaşa
 
 ## Motor kod çözme (sinek → Instagram)
 
-| Instagram eylemi | Sinek davranışı | Aday nöron havuzu | Gerekçe |
+| Instagram eylemi | Sinek davranışı | Nöron havuzu (MaleCNS tip adı) | Gerekçe |
 |---|---|---|---|
-| Sonraki posta geç | İleri yürüme | oDN1, DNp09 | İleri yürümeyi başlatan inen nöronlar (Bidaye ve ark. 2020) |
-| Önceki posta dön | Geri yürüme | MDN ("moonwalker") | Geri yürüme komut nöronu (Bidaye ve ark. 2014) |
+| Sonraki posta geç | İleri yürüme | `ileri_yuru`: DNp09, DNg97 (= oDN1) | İleri yürümeyi başlatan inen nöronlar (Bidaye ve ark. 2020) |
+| Önceki posta dön | Geri yürüme | `geri_yuru`: MDN (= DNp50) | Geri yürüme komut nöronu (Bidaye ve ark. 2014) |
 | Postta kalmaya devam et | Durma | Havuzların hiçbiri eşiği aşmıyor | Sinek karar verene kadar bakmayı sürdürür, yani bakma süresini de sinek belirler |
-| Beğen | Hortum uzatma (beslenme) | MN9 | Shiu ve ark. modelinin doğrulanmış çıktısı |
+| Beğen | Hortum uzatma (beslenme) | `hortum`: MN9 | Shiu ve ark. modelinin doğrulanmış çıktısı |
 | Kaydet | Beslenmeyi sürdürme (yutma) | Faringeal motor nöronlar (açık soru) | Faz 4'te kararlaştırılacak |
-| Yorum yap | Kur şarkısı (kanat titreşimi) | pIP10 → kanat motor nöronları | Erkeğe özgü "seslenme" davranışı |
-| Takip et | Kur başlatma | P1 nöronları | Erkek sinek kur yaparken dişiyi gerçekten *takip eder* |
-| Takipten çık / oturumu bitir | Kaçış (sıçrayıp uçma) | Dev Lif nöronu (Giant Fiber, DNp01) | Ani kaçış refleksi |
-| Sekme değiştir (akış / keşfet / reels) | Sola/sağa dönme | DNa02 (sol-sağ asimetrisi) | Dönme komut nöronu (Rayshubskiy ve ark. 2020) |
-| Boşta bekle | Tımar (temizlenme) | aDN, DNg12 | Anten temizleme devresi (Hampel ve ark. 2015) |
+| Yorum yap | Kur şarkısı (kanat titreşimi) | `sarki`: pIP10, vPR6 | Erkeğe özgü "seslenme" davranışı |
+| Takip et | Kur başlatma | `kur`: pC1_* (fru+dsx yüksek; P1 soyu) | Erkek sinek kur yaparken dişiyi gerçekten *takip eder* |
+| Takipten çık / oturumu bitir | Kaçış (sıçrayıp uçma) | `kacis`: DNp01 (Giant Fiber) | Ani kaçış refleksi |
+| Sekme değiştir (akış / keşfet / reels) | Sola/sağa dönme | `don_sol` / `don_sag`: DNa02 L / R | Dönme komut nöronu (Rayshubskiy ve ark. 2020) |
+| Boşta bekle | Tımar (temizlenme) | `timar`: DNg62 (= aDN1), DNge078 (= aDN2) | Anten temizleme devresi (Hampel ve ark. 2015) |
 
 ### Karar döngüsü (her post için)
 
@@ -88,7 +90,11 @@ Bir not: gerçek sinekte görme sinyali fotoreseptörlerden merkezi beyne ulaşa
 5. Eşiği en büyük oranla aşan havuzun eylemi seçilir. Hiçbir havuz eşiği aşmazsa bir pencere daha simüle edilir (sinek bakmaya devam eder).
 6. Seçilen eylem güvenlik valisinden geçer ve uygulanır. Beyin durumu **sıfırlanmaz**; bir önceki postun izi sonraki kararı etkiler.
 
-## İçerik üretimi (seçenekler, karar bekliyor)
+## İçerik üretimi
+
+**Karar (K-004, K-005):** Görsellerde A ve B seçenekleri birlikte kullanılacak; bir post için hangisinin kullanılacağına sinek karar verecek. Caption'lar koku-kelime seçimiyle (A) yazılacak.
+
+A/B seçimi için ilk öneri: post üretimi tetiklendiği anda motor aktivite baskınsa (sinek hareket halindeyse) yürüyüş resmi, merkezi beyin aktivitesi baskınsa (sinek "düşünüyorsa") nöral portre üretilir. Kesin kural Faz 7'de belirlenecek.
 
 ### Görsel
 
@@ -110,7 +116,9 @@ Bir not: gerçek sinekte görme sinyali fotoreseptörlerden merkezi beyne ulaşa
 
 P1 (kur uyarılması) aktivitesi oturum boyunca birikir. Belirli bir eşiği geçtiğinde sinek "bir şey söylemek ister" ve post üretimi başlar.
 
-## Instagram bağlantısı (seçenekler, karar bekliyor)
+## Instagram bağlantısı
+
+**Karar (K-006):** Playwright ile tarayıcı otomasyonu. Sinek, ekranda gördüğü görüntünün kendisini alır.
 
 | Yol | Feed okuma | Beğeni/takip/yorum | Paylaşım | Risk |
 |---|---|---|---|---|

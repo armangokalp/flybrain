@@ -1,0 +1,24 @@
+[project]
+name = "flybrain"
+version = "0.1.0"
+description = "Simüle edilmiş bir meyve sineği beyninin Instagram kullandığı deneysel sistem"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "numpy>=2.0",
+    "scipy>=1.13",
+    "pandas>=2.2",
+    "pyarrow>=16",
+    "numba>=0.61",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["flybrain*"]
