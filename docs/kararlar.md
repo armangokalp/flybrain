@@ -95,3 +95,37 @@ Durumlar: **önerildi** · **kabul edildi** · **yerine geçti**
 - **Karar:** B. Kodda `flybrain.sim.BRAIN_PARAMS` (ağırlık 0,275 × 0,70 mV; STD U = 0,2, τ = 800 ms; duyu nöronları muaf). `LIFParams()` varsayılanları Shiu ayarı olarak korunuyor.
 - **Güvence:** [`tests/test_brain_params.py`](../tests/test_brain_params.py) bu ayarda şekerin MN9'u ateşlettiğini, acının ateşletmediğini ve beynin sönüp dinlenime döndüğünü her test çalıştırmasında doğruluyor.
 - **Yeniden değerlendirme:** Faz 3'te görme sinyali ölçüldüğünde bu karar tekrar gözden geçirilecek.
+- **Ek (2026-09-16, Faz 3):** Kodlayıcının doğrudan sürdüğü giriş nöronları da (ör. görmede L2, L3, Mi1, Tm3) depresyondan muaf tutuluyor (`Simulator(std_exempt=...)`). Gerekçe duyu nöronlarıyla aynı: bu nöronların Poisson hızı zaten etkin girdiyi temsil ediyor. Muafiyet olmadan görme sinyali optik lobdan çıkamıyordu ([07-duyular.md](07-duyular.md)).
+
+## K-012 · Görme girişi: ON/OFF kontrast kodlaması, 250 Hz
+
+- **Durum:** kabul edildi (2026-09-16)
+- **Bağlam:** Fotoreseptörler ketleyici olduğu için sessiz modelde doğrudan uyarılmaları işe yaramıyor (Z-02).
+- **Seçenekler:**
+  - **off:** karanlık → L2, L3
+  - **onoff:** off + aydınlık → Mi1, Tm3
+  - **foto:** ışık → fotoreseptörler, ayrıca lamina ve ON nöronlarına tonik akım
+- **Sonuçlar:**
+  - Yalnızca **onoff** sinyali merkezi beyne ve inen nöronlara taşıyor.
+  - **foto**, gri ekranda bile yaklaşık 15 bin nöronu sürekli ateşletiyor ve sinyali merkeze ulaştıramıyor.
+  - onoff 250 Hz, 16 doğal istatistikli görseli %95–100 ayırt ediyor. Gri ekranda sessiz, görsel sonrası dinlenime dönüyor.
+- **Karar:** onoff, doymuş kontrastta 250 Hz. Kontrast `c = (I − Ī)/Ī`, 0,6'da doyuyor. Gri ekran sıfır uyarım demek.
+- **Bedel:** Fotoreseptör katmanı ve renk kanalları (R7/R8) kullanılmıyor; renk yalnızca parlaklık ağırlıklarıyla (R 0,05, G 0,55, B 0,40) etkiliyor. foto yöntemi kodda duruyor; ileride tonik aktiviteyle birlikte yeniden denenebilir.
+- **Kod:** `flybrain/senses/vision.py`; deney: `flybrain/experiments/vision.py`
+
+## K-013 · Kelime → koku eşlemesi
+
+- **Durum:** kabul edildi (2026-09-16)
+- **Kural:**
+  - Her kelime (ya da emoji) 53 glomerülden 3'üne eşlenir. Eşleme blake2b özetine dayanan sabit bir sıralamayla (rendezvous hashing) yapılır.
+  - Karışımda glomerül etkinliği, onu seçen kelime sayısıdır: `hız = 200 · a / (a + 1/3)` Hz. Tek kelime 150 Hz verir.
+  - En fazla 40 kelime kullanılır.
+- **Gerekçe:** Eşleme sabit ve anlamdan bağımsız; sinek anlamı değil kokuyu ayırt ediyor. Yoğunluk, Faz 2'de ayırt edilebilirliği ölçülen yapay kokularla aynı.
+- **Ölçüm:** Görselle birlikte verildiğinde 4 caption %52 doğrulukla ayırt ediliyor (şans %25).
+
+## K-014 · Panoramik gösterim
+
+- **Durum:** kabul edildi (2026-09-16)
+- **Kural:** Post görseli sineğin tüm görme alanına yayılır. Görselin sol yarısı sol göze, sağ yarısı sağ göze düşer; orta çizgi tam önü, kenarlar en arka kolonları, üst kenar sırt yönünü gösterir.
+- **Alternatif:** Görseli yalnızca ön görme alanındaki küçük bir pencereye, gerçek bir ekran gibi yerleştirmek. Bu durumda çok az kolon uyarılırdı.
+- **Gerekçe:** Postu sineğin gözünün tamamıyla "görmesi" en zengin girdiyi sağlıyor. Görme yönleri lamina geometrisinden çıkarıldı ([07-duyular.md](07-duyular.md#göz-geometrisi)).

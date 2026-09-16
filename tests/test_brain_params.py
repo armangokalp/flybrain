@@ -48,3 +48,21 @@ def test_silent_brain_stays_silent(setup):
     r = Simulator(conn, BRAIN_PARAMS).run(200)
     assert r.counts.sum() == 0
     assert np.isfinite(r.counts).all()
+
+
+def test_post_reaches_descending_neurons_and_brain_settles(setup):
+    from flybrain.experiments.post import VISION
+    from flybrain.experiments.vision import natural_images
+    from flybrain.senses.olfaction import OlfactoryEncoder
+    from flybrain.senses.vision import VisionEncoder
+
+    conn, _, _ = setup
+    vis = VisionEncoder(conn, VISION)
+    stim = vis.encode(natural_images(1, seed=11)["dogal_00"]) + OlfactoryEncoder(conn).encode("sabah kahvesi")
+    sim = Simulator(conn, BRAIN_PARAMS, seed=1, std_exempt=vis.input_neurons)
+    r = sim.run(500, stim)
+    sim.run(300)
+    after = sim.run(200)
+    dn = conn.select(superclass="descending_neuron")
+    assert (r.counts[dn] > 0).sum() > 5
+    assert after.counts.sum() == 0

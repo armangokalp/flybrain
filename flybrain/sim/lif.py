@@ -2,9 +2,10 @@
 
 Model Shiu ve ark. (2024) ile aynıdır:
 
-    dv/dt = (v_rest - v + g - a) / tau_m  (refrakter sürede donar)
+    dv/dt = (v_rest + b - v + g - a) / tau_m  (refrakter sürede donar)
     dg/dt = -g / tau_syn
     da/dt = -a / tau_adapt                (a = 0: Shiu modeli)
+    b: nöron başına sabit tonik akım (mV; varsayılan 0, Shiu modeli)
     v > v_th  ->  spike;  v = v_reset, g = 0, refrakter başlar
     spike     ->  gecikme sonrası  g[post] += W[post, pre] * w_syn
     Poisson   ->  v += poisson_kick
@@ -34,6 +35,7 @@ import numba as nb
 import numpy as np
 
 from flybrain.connectome.connectome import Connectome
+from flybrain.sim.stimulus import Stimulus
 
 
 @dataclass(frozen=True)
@@ -83,7 +85,7 @@ def _run(
     n_steps, t0, seed,
     v, g, ref, ring_idx, ring_fac, ring_n, scratch,
     x, t_last, std_u, std_k,
-    a, ea, ca, adapt,
+    a, ea, ca, adapt, bias,
     indptr, indices, wdata,
     stim_idx, stim_p, kick,
     em, es, cg, v_rest, v_reset, v_th, ref_steps,
@@ -105,7 +107,8 @@ def _run(
             if ref[i] > 0:
                 ref[i] -= 1
             else:
-                v[i] = v_rest + (v[i] - v_rest) * em + gi * cg - ai * ca
+                vinf = v_rest + bias[i]
+                v[i] = vinf + (v[i] - vinf) * em + gi * cg - ai * ca
             g[i] = gi * es
             a[i] = ai * ea
             if ref[i] == 0 and v[i] > v_th:
@@ -152,7 +155,18 @@ def _run(
 
 
 class Simulator:
-    def __init__(self, conn: Connectome, params: LIFParams = LIFParams(), seed: int = 0):
+    def __init__(
+        self,
+        conn: Connectome,
+        params: LIFParams = LIFParams(),
+        seed: int = 0,
+        bias_mv: np.ndarray | None = None,
+        std_exempt: np.ndarray | None = None,
+    ):
+        """bias_mv: nöron başına tonik akım (ör. ışıkta sürekli aktif görme nöronları).
+        std_exempt: depresyondan muaf ek nöronlar. Kodlayıcının doğrudan sürdüğü giriş
+        nöronları için kullanılır; onların Poisson hızı zaten etkin girdiyi temsil eder.
+        """
         self.conn = conn
         self.p = params
         self.n = conn.n
@@ -173,8 +187,14 @@ class Simulator:
         if params.std_skip_sensory:
             sensory = conn.neurons.superclass.fillna("").str.contains("sensory").to_numpy()
             self._std_u[sensory] = 0.0
+        if std_exempt is not None:
+            self._std_u[np.asarray(std_exempt, dtype=np.int64)] = 0.0
         self._depth = int(round(params.delay_ms / dt))
         self._kick = params.poisson_kick_mv
+
+        self.bias_mv = np.zeros(self.n) if bias_mv is None else np.asarray(bias_mv, dtype=np.float64)
+        if self.bias_mv.shape != (self.n,):
+            raise ValueError("bias_mv her nöron için bir değer içermeli")
 
         self._rng = np.random.default_rng(seed)
         self.reset()
@@ -200,19 +220,21 @@ class Simulator:
     def run(
         self,
         duration_ms: float,
-        stim_idx: np.ndarray | None = None,
+        stim_idx: np.ndarray | Stimulus | None = None,
         stim_hz: np.ndarray | float | None = None,
         record: np.ndarray | None = None,
         max_records: int = 1_000_000,
     ) -> RunResult:
         """Beyni `duration_ms` boyunca çalıştırır.
 
-        stim_idx: Poisson girdisi alan nöronların indeksleri.
-        stim_hz: her biri için hız (tek sayı ya da dizi).
+        stim_idx: Poisson girdisi alan nöronların indeksleri ya da bir Stimulus.
+        stim_hz: her biri için hız (tek sayı ya da dizi); Stimulus verilince kullanılmaz.
         record: spike zamanları kaydedilecek nöronların indeksleri.
         """
         n_steps = int(round(duration_ms / self.p.dt_ms))
-        if stim_idx is None:
+        if isinstance(stim_idx, Stimulus):
+            stim_idx, stim_hz = stim_idx.idx, stim_idx.hz
+        if stim_idx is None or len(stim_idx) == 0:
             stim_idx = np.zeros(0, dtype=np.int64)
             stim_p = np.zeros(0)
         else:
@@ -233,7 +255,7 @@ class Simulator:
             n_steps, self.step, seed,
             self.v, self.g, self.ref, self._ring_idx, self._ring_fac, self._ring_n, self._scratch,
             self.x, self._t_last, self._std_u, self.p.dt_ms / self.p.std_tau_ms,
-            self.a, self._ea, self._ca, self.p.adapt_mv,
+            self.a, self._ea, self._ca, self.p.adapt_mv, self.bias_mv,
             self._indptr, self._indices, self._wdata,
             stim_idx, stim_p, self._kick,
             self._em, self._es, self._cg,

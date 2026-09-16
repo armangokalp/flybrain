@@ -14,7 +14,8 @@ Kararları insan, dil modeli ya da eğitilmiş bir yorumlayıcı ağ vermez. Sin
 - ✅ **Faz 0:** araştırma ve mimari
 - ✅ **Faz 1:** konnektom veri hattı (165.122 nöron, 6,2 milyon bağlantı)
 - ✅ **Faz 2:** simülasyon çekirdeği (neredeyse gerçek zamanlı, kararlı beyin ayarı)
-- ⏭️ **Faz 3:** duyu kodlayıcıları
+- ✅ **Faz 3:** duyu kodlayıcıları (görsel → göz, caption → koku, bildirim → dopamin)
+- ⏭️ **Faz 4:** motor kod çözücü
 
 İlerleme için [yol haritası](docs/04-yol-haritasi.md), günlük kayıtlar için [docs/gunluk](docs/gunluk/) klasörüne bakın.
 
@@ -41,6 +42,7 @@ python3.13 -m venv .venv
 | [04 — Yol haritası](docs/04-yol-haritasi.md) | Fazlar ve her fazın bitiş kriterleri |
 | [05 — Veri keşfi](docs/05-veri-kesfi.md) | MaleCNS verisinin analizi, doğrulanan nöron havuzları |
 | [06 — Simülasyon](docs/06-simulasyon.md) | LIF motoru, kalıcı çekici bulgusu, ayar taramaları |
+| [07 — Duyular](docs/07-duyular.md) | Göz geometrisi, görme/koku/ödül kodlayıcıları ve deneyleri |
 | [Kararlar](docs/kararlar.md) | Alınan tasarım kararlarının kaydı |
 | [Kaynaklar](docs/kaynaklar.md) | Veri setleri, makaleler, referans kodlar |
 | [Günlük](docs/gunluk/) | Oturum oturum süreç kaydı |

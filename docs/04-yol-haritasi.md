@@ -32,15 +32,16 @@ Her faz, bitiş kriterleri sağlanmadan kapanmaz. Gerçek Instagram hesabına il
 
 **Bitiş:** Doğrulama deneyi yayınlanmış sonuçla nitel olarak uyuşuyor; 500 ms'lik bir karar penceresi makul sürede hesaplanıyor. ✅ (2026-09-16: seçilen ayarda şeker → MN9 3,7 Hz, acı → 0 Hz; kalıcı aktivite yok; 500 ms ≈ 0,6 sn)
 
-## Faz 3 — Duyu kodlayıcıları
+## Faz 3 — Duyu kodlayıcıları ✅
 
-- [ ] Görme: görsel → `hex1 × hex2` kolon ızgarası → giriş nöronları (fotoreseptörlerin ketleyici olması nedeniyle yöntem Z-02'ye göre seçilecek)
-- [ ] Fotoreseptör kolonlarının bağlantıdan çıkarılması (Z-09)
-- [ ] Katman katman sinyal yayılımı analizi (Z-02)
-- [ ] Koku: kelime → ORN kombinasyonu (sabit hash)
-- [ ] Ödül/ceza: bildirim → PAM/PPL1 uyarımı
+- [x] Görme: görsel → panoramik kolon eşlemesi → ON/OFF giriş nöronları, 250 Hz (K-012, K-014)
+- [x] Göz geometrisi ve koordinatsız nöronların kolonlarının bağlantıdan çıkarılması (Z-09)
+- [x] Katman katman sinyal yayılımı ve üç giriş yönteminin karşılaştırması (Z-02)
+- [x] Koku: kelime → 3 glomerül, doygun karışım (K-013)
+- [x] Ödül/ceza: bildirim → PAM/PPL1 uyarımı
+- [x] Birleşik test: görsel + caption (16 post, %85)
 
-**Bitiş:** Farklı görseller inen nöronlarda ayırt edilebilir aktivite desenleri üretiyor.
+**Bitiş:** Farklı görseller inen nöronlarda ayırt edilebilir aktivite desenleri üretiyor. ✅ (2026-09-16: 16 doğal istatistikli görsel %95–100, 16 post %85; gri ekranda sessiz, post sonrası dinlenime dönüyor)
 
 ## Faz 4 — Motor kod çözücü
 

@@ -1,6 +1,6 @@
 # 02 — Mimari
 
-> Durum: **Faz 2 sonrası güncellendi.** Beyin ayarı K-011 ile belirlendi. Nöron havuzları MaleCNS anotasyon tablosunda doğrulandı (bkz. [05-veri-kesfi.md](05-veri-kesfi.md)); tek kaynak [`flybrain/anatomy.py`](../flybrain/anatomy.py). Havuzların *davranışsal* doğrulaması Faz 2 ve Faz 4'te yapılacak.
+> Durum: **Faz 3 sonrası güncellendi.** Beyin ayarı K-011, duyu kodlaması K-012–K-014 ile belirlendi. Nöron havuzları MaleCNS anotasyon tablosunda doğrulandı (bkz. [05-veri-kesfi.md](05-veri-kesfi.md)); tek kaynak [`flybrain/anatomy.py`](../flybrain/anatomy.py). Havuzların *davranışsal* doğrulaması Faz 2 ve Faz 4'te yapılacak.
 
 ## Genel akış
 
@@ -61,13 +61,13 @@ Neden MaleCNS kullanıyoruz? FlyWire (2024) yalnızca beyni kapsıyordu. MaleCNS
 
 | Instagram girdisi | Sinek duyusu | Hedef nöronlar (aday) | Kodlama |
 |---|---|---|---|
-| Post görseli | Görme | Fotoreseptörler: R1–R6 (parlaklık/hareket), R7 (UV), R8 (mavi/yeşil); kolon nöronları (L1–L5, Mi1...) | Görsel, veri setindeki `hex1 × hex2` kolon ızgarasına (göz başına yaklaşık 890 kolon) indirgenir. Fotoreseptörler ketleyici olduğundan giriş şekli Faz 3'te belirlenecek (bkz. Z-02). |
+| Post görseli | Görme | ON/OFF yolunun ilk uyarıcı nöronları: L2, L3 (karanlık), Mi1, Tm3 (aydınlık) | Görsel panoramik olarak iki gözün kolonlarına yayılır (K-014). Her kolonun kontrastı `(I − Ī)/Ī`, 0,6'da doyar ve en fazla 250 Hz'e dönüşür (K-012). Gri ekran sıfır uyarım demektir. Ayrıntı: [07-duyular.md](07-duyular.md) |
 | Video / Reels | Hareket | Aynı nöronlar, zamansal dizi halinde | Kareler sırayla verilir; T4/T5 hareket algılama devreleri bu diziye doğal olarak tepki verir |
-| Caption, hashtag | Koku | Koku alıcı nöronlar (ORN, 53 glomerül tipi) | Her kelime sabit bir hash fonksiyonuyla birkaç ORN türünün kombinasyonuna eşlenir. Böylece aynı kelime hep aynı "kokuyu" verir ve sinek kelimelere karşı tutarlı tepkiler geliştirebilir. |
-| Kendi postuna gelen beğeni, yeni takipçi | Ödül | PAM dopamin nöronları | Bildirim sayısıyla orantılı uyarım |
-| Takipçi kaybı | Ceza | PPL1 dopamin nöronları | Kayıp sayısıyla orantılı uyarım |
+| Caption, hashtag, emoji | Koku | Koku alıcı nöronlar (ORN, 53 glomerül tipi) | Her kelime sabit bir özet fonksiyonuyla 3 glomerüle eşlenir; karışımda hız `200 · a/(a + 1/3)` Hz (K-013). Aynı kelime her zaman aynı "kokuyu" verir. |
+| Kendi postuna gelen beğeni, yeni takipçi | Ödül | PAM dopamin nöronları | `150 · n/(n + 5)` Hz |
+| Takipçi kaybı | Ceza | PPL1 dopamin nöronları | `150 · n/(n + 5)` Hz |
 
-Bir not: gerçek sinekte görme sinyali fotoreseptörlerden merkezi beyne ulaşana kadar birçok katmandan geçer. Sinyal bu katmanlarda sönebilir ya da kontrolden çıkıp patlayabilir. Faz 3'ün ana riski bu.
+Fotoreseptörler ketleyici olduğu için görme girişi doğrudan ON/OFF yolunun uyarıcı nöronlarına veriliyor. Kodlayıcının sürdüğü nöronlar sinaptik depresyondan muaf. Bu düzende 16 doğal istatistikli görsel %95–100, görsel + caption olarak 16 post %85 doğrulukla inen nöronlarda ayırt ediliyor ve beyin her posttan sonra dinlenime dönüyor ([07-duyular.md](07-duyular.md)).
 
 ## Motor kod çözme (sinek → Instagram)
 

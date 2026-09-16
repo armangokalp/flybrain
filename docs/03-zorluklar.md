@@ -14,7 +14,7 @@ Haritada hangi nöronun hangisine kaç sinapsla bağlandığı var. Sinapsın ne
 
 **Çözüm yolu:** Shiu ve ark. modelinin varsayımını kullanıyoruz: her sinaps eşit ağırlıkta, işaret ise nörotransmitter tahmininden geliyor. Bu model tat devrelerinde deneysel olarak doğrulandı. Aynı doğrulamayı MaleCNS üzerinde tekrarlayacağız (şeker nöronlarını uyar, MN9 ateşliyor mu bak). Tutmazsa global ağırlık ölçeğini ayarlayacağız. Bu ayar yalnızca "beyin canlı ama epileptik değil" koşulu için yapılacak.
 
-### Z-02 · Görme sinyali merkezi beyne ulaşabilecek mi? 🟡
+### Z-02 · Görme sinyali merkezi beyne ulaşabilecek mi? 🟢
 
 Fotoreseptörlerden inen nöronlara kadar birçok sinaptik katman var. Eşit ağırlık varsayımıyla sinyal bu katmanlarda sönebilir ya da kontrolden çıkabilir.
 
@@ -29,6 +29,13 @@ Gerçek sinekte böyle olmuyor: lamina nöronları ışıkta sürekli aktif ve �
 
 Her durumda kalibrasyon katman katman aktivite ölçümüyle yapılacak (fotoreseptör → lamina/medulla → lobula → merkezi beyin → inen nöronlar).
 
+**Faz 3 çözümü (K-012):** Üç yöntem denendi. Sonuçlar:
+- Tonik aktivite (a, "foto" yöntemi) başarısız: gri ekranda bile yaklaşık 15 bin nöronu sürekli ateşletiyor ve sinyali merkeze ulaştıramıyor.
+- Yalnızca OFF girişi (b'nin yarısı) optik lobda kalıyor.
+- **ON ve OFF birlikte** (karanlık → L2/L3, aydınlık → Mi1/Tm3, 250 Hz) sinyali görme projeksiyon nöronlarına, merkezi beyne, inen nöronlara ve motor nöronlara taşıyor. 16 doğal istatistikli görseli %95–100 ayırt ediyor.
+
+Bir koşul gerekti: kodlayıcının sürdüğü nöronların sinaptik depresyondan muaf tutulması. Ayrıntılar: [07-duyular.md](07-duyular.md).
+
 ### Z-03 · Plastisite yok, dolayısıyla öğrenme de yok 🔴
 
 LIF modelinde bağlantılar sabit. Sinek beğeni alsa bile bundan bir şey öğrenmez. Böyle kalırsa feed yalnızca Instagram'ın algoritması tarafından şekillenir.
@@ -41,11 +48,13 @@ MN9 (hortum uzatma) gerçek sinekte asıl olarak **tat** ile tetiklenir, görün
 
 **Çözüm yolları:** (a) Bunu kabul etmek: sinek nadiren beğenir ve bu durum da bir sonuçtur. (b) Kokunun (caption) beslenme devrelerini etkilemesine izin vermek. (c) "Beğen" eylemini bir yaklaşma davranışına bağlamak (hedefe dönme + ileri yürüme). Karar Faz 4'te, gerçek aktivite verisine bakılarak verilecek.
 
-### Z-05 · Sinek okuyamaz 🔴
+### Z-05 · Sinek okuyamaz 🟢
 
 Caption'lar metin; sineğin dil diye bir yetisi yok.
 
 **Çözüm yolu:** Kelimeleri kokuya çeviriyoruz (bkz. [mimari](02-mimari.md)). Bu eşleme keyfi fakat **sabit**. Sinek anlamı değil, kokuyu ayırt eder. Anlamlı bir metin beklemek gerçekçi değil; ortaya çıkacak şey sineğin "koku zevkini" yansıtan bir kelime dizisi.
+
+**Faz 3:** Kodlayıcı yazıldı (K-013). Görselle birlikte verildiğinde 4 farklı caption %52 doğrulukla ayırt ediliyor (şans %25). Görsel sinyali baskın, ama caption'ın etkisi ölçülebilir düzeyde.
 
 ### Z-06 · Sessiz veya epileptik beyin 🟢
 
@@ -82,7 +91,7 @@ Makine: 16 GB RAM, yaklaşık 35 GB boş disk. Bağlantı tablosu 1 GB (feather)
 
 **Çözüm:** Yalnızca gereken üç dosya indirildi (1,1 GB). 12,7 GB'lık sinaps noktaları dosyası indirilmedi. Tablo memory-map ile açılıp pyarrow ile süzülüyor. Önbellek üretimi 3 saniye sürüyor, bellek kullanımı en fazla 4,4 GB'a çıkıyor ve sonuç diskte 54 MB tutuyor.
 
-### Z-09 · Görsel → ommatidyum eşlemesi 🟡
+### Z-09 · Görsel → ommatidyum eşlemesi 🟢
 
 Bir görseli doğru fotoreseptöre vermek için her fotoreseptörün hangi göz kolonunda olduğunu bilmek gerekiyor.
 
@@ -100,6 +109,13 @@ Bir görseli doğru fotoreseptöre vermek için her fotoreseptörün hangi göz 
 
 Atanan her fotoreseptör, bağlandığı kolon nöronuyla aynı tarafta. Sol göz eksikliği görselin sol yarısını daha zayıf "görmek" anlamına geliyor. Bu biyolojik değil, veri kaynaklı bir asimetri; Faz 3'te telafi edilip edilmeyeceğine karar verilecek.
 
+**Faz 3 çözümü:**
+- İkinci tur oylamayla R7 kapsamı %99'a çıktı.
+- Kolon ızgarasının geometrisi ve bakış yönleri lamina hücre gövdelerinden çıkarıldı; gözün üst kenarı doğru yönde çıkıyor.
+- Kullanılan giriş nöronları (L2, L3, Mi1, Tm3) iki gözde de hemen hemen eksiksiz; sol göz eksikliği yalnızca fotoreseptörleri etkiliyor ve seçilen yöntem (K-012) fotoreseptörleri kullanmıyor.
+
+Ayrıntılar: [07-duyular.md](07-duyular.md#göz-geometrisi).
+
 ### Z-16 · Ağ çok sıkı bağlı: özgüllük nereden gelecek? 🔴
 
 Her duyu, beynin yaklaşık %98'ine birkaç sinaptik adımda ulaşıyor. Şeker nöronları da, acı nöronları da, dopamin nöronları da her motor havuzuna 2–3 adımda erişebiliyor.
@@ -113,6 +129,14 @@ Her duyu, beynin yaklaşık %98'ine birkaç sinaptik adımda ulaşıyor. Şeker 
 Dopamin, serotonin ve oktopamin reseptöre göre uyarıcı da olabilir ketleyici de. Model tek bir işaret istiyor.
 
 **Geçici çözüm:** Hepsi uyarıcı kabul edildi (K-008). Bu nöronlar toplamın %0,3'ü. Faz 8'de dopamin, öğrenme kuralındaki rolüyle (işaret yerine plastisite sinyali olarak) ayrıca modellenecek.
+
+### Z-18 · Sabit görseller dönme davranışını tetiklemiyor 🔴
+
+Solda ya da sağda duran koyu bir daire, dönme komut nöronlarında (DNa02) belirgin bir sol-sağ farkı yaratmadı (en fazla 1 Hz). Gerçek sinekte de dönme büyük ölçüde hareketle tetikleniyor.
+
+**Anlamı:** "Sekme değiştir = dönme" eşlemesi sabit görsellerle nadiren tetiklenebilir.
+
+**Çözüm yolları (Faz 4):** (a) Bunu kabul etmek. (b) Görseli küçük göz hareketleri (sakkadlar) ya da feed kaydırma hareketiyle sunmak; bu, T4/T5 hareket devrelerini de devreye sokar. (c) Reels videolarının kendi hareketinden yararlanmak.
 
 ---
 

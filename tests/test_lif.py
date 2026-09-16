@@ -121,3 +121,25 @@ def test_sensory_neurons_can_skip_depression():
     p = LIFParams(std_u=0.5, std_skip_sensory=True)
     sim = Simulator(conn, p)
     assert sim._std_u.tolist() == [0.0, 0.5]
+
+
+def test_tonic_bias_drives_firing_and_inhibition_modulates_it():
+    # 10 mV'luk tonik akım eşiği (7 mV) aşar: nöron kendiliğinden ateşler.
+    sim = Simulator(tiny({}, 1), bias_mv=np.array([10.0]))
+    rate = sim.run(1000).rates_hz[0]
+    assert rate > 5
+
+    # Ketleyici girdi bu tonik ateşlemeyi azaltır.
+    conn = tiny({(0, 1): -40}, 2)
+    quiet = Simulator(conn, bias_mv=np.array([0.0, 10.0]), seed=1).run(1000).counts[1]
+    inhibited = Simulator(conn, bias_mv=np.array([0.0, 10.0]), seed=1).run(
+        1000, stim_idx=[0], stim_hz=100.0).counts[1]
+    assert inhibited < 0.5 * quiet
+
+    with pytest.raises(ValueError):
+        Simulator(tiny({}, 2), bias_mv=np.zeros(3))
+
+
+def test_std_exempt_neurons():
+    sim = Simulator(tiny({}, 3), LIFParams(std_u=0.3), std_exempt=np.array([2]))
+    assert sim._std_u.tolist() == [0.3, 0.3, 0.0]
