@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+
+# Konnektom verisi ve önbellek (büyük dosyalar, yeniden indirilebilir)
+data/
+
+# Simülasyon çıktıları ve oturum kayıtları
+runs/
+
+# Instagram oturumu (çerezler, tarayıcı profili) ve gizli bilgiler
+secrets/
+browser-profile/
+.env
+
+# Editör / yerel araç ayarları
+.vscode/
+.idea/
+.DS_Store
