@@ -23,11 +23,12 @@ Her faz, bitiş kriterleri sağlanmadan kapanmaz. Gerçek Instagram hesabına il
 
 ## Faz 2 — Simülasyon çekirdeği
 
-- [ ] LIF motoru (olay güdümlü, seyrek)
-- [ ] Performans ölçümü (simülasyon saniyesi başına duvar saati)
-- [ ] **Doğrulama:** şeker tat nöronlarının (LB3b/c) uyarılması MN9'u ateşliyor mu, acı nöronlarının (LB1a–d) uyarılması ateşletmiyor mu? (Shiu ve ark. sonucunun MaleCNS'de tekrarı)
-- [ ] Uyarım yoğunluğuna karşı yanıt eğrileri (Z-16)
-- [ ] Taban aktivite ve kararlılık testleri (sessizlik / epilepsi)
+- [x] LIF motoru (olay güdümlü, seyrek); isteğe bağlı sinaptik depresyon ve adaptasyon
+- [x] Performans ölçümü: simülasyonun 1 saniyesi yaklaşık 1,2 saniye
+- [x] **Doğrulama:** şeker tat nöronlarının (LB3b/c) uyarılması MN9'u ateşliyor mu, acı nöronlarının (LB1a–d) uyarılması ateşletmiyor mu? Orijinal ağırlıklarla evet (166 / 14 Hz), fakat beyin kilitleniyor (Z-06)
+- [x] Ağırlık ölçeği ve mekanizma taraması (35 ayar), koku ayırt edilebilirliği ölçütü ([06-simulasyon.md](06-simulasyon.md))
+- [x] Kararlılık testleri: kalıcı çekici bulundu ve kararlı ayarlar belirlendi
+- [ ] Çalışma ayarının seçimi (K-011, kullanıcı kararı)
 
 **Bitiş:** Doğrulama deneyi yayınlanmış sonuçla nitel olarak uyuşuyor; 500 ms'lik bir karar penceresi makul sürede hesaplanıyor.
 
@@ -61,7 +62,7 @@ Her faz, bitiş kriterleri sağlanmadan kapanmaz. Gerçek Instagram hesabına il
 
 ## Faz 6 — Instagram bağlantısı
 
-- [ ] Seçilen bağlantı yöntemi (karar bekliyor)
+- [ ] Playwright ile tarayıcı bağlantısı (K-006)
 - [ ] Kalıcı oturum (giriş kullanıcı tarafından elle yapılır)
 - [ ] Güvenlik valisi: hız sınırları, doğrulama algılama → durdur ve bildir
 - [ ] Kuru çalıştırma modu: eylemleri loglar ama uygulamaz

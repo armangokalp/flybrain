@@ -15,6 +15,7 @@ runs/
 secrets/
 browser-profile/
 .env
+.env.*
 
 # Editör / yerel araç ayarları
 .vscode/

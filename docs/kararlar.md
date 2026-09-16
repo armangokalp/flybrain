@@ -70,3 +70,26 @@ Durumlar: **önerildi** · **kabul edildi** · **yerine geçti**
 - **Durum:** kabul edildi (2026-09-16); davranışsal doğrulama Faz 2 ve Faz 4'te
 - **Eşleşmeler:** oDN1 → `DNg97`; aDN1 → `DNg62`; aDN2 → `DNge078`; P1 → `pC1_*` (fru+dsx yüksek); şeker GRN → `LB3b`, `LB3c`; acı GRN → `LB1a–d`
 - **Kaynak:** Anotasyon tablosundaki `synonyms` ve `fruDsx` sütunları; şeker/acı eşlemesi için 2026 tam tat konnektomu çalışması. Ayrıntı: [05-veri-kesfi.md](05-veri-kesfi.md).
+
+## K-011 · Beynin çalışma ayarı
+
+- **Durum:** önerildi (2026-09-16), kullanıcı kararı bekleniyor
+- **Bağlam:** Orijinal Shiu ağırlıklarıyla MaleCNS, girdiden bağımsız, kalıcı bir çekiciye kilitleniyor (Z-06). Ağırlık ölçeği ve iki biyolojik mekanizma (sinaptik depresyon ve ateşleme hızı adaptasyonu) 35 ayarda tarandı. Ayrıntılar: [06-simulasyon.md](06-simulasyon.md).
+- **Ölçütler:**
+  1. **Kararlılık:** uyarım sonrası kalıcı aktivite yok.
+  2. **Ayırt edilebilirlik:** farklı kokular, inen nöronlarda farklı desenler üretmeli.
+  3. **Biyolojik doğrulama:** şeker MN9'u ateşletmeli, acı ateşletmemeli.
+- **Finalistler** (16 koku × 6 deneme):
+
+| Aday | Kararlı | Koku ayırt edilebilirliği | Şeker→MN9 doğrulaması |
+|---|---|---|---|
+| A: ölçek 0,45 + STD 0,1 | ✅ | %82 | ❌ |
+| B: ölçek 0,70 + STD 0,2, duyu muaf | ✅ | %62–64 | ✅ (3,7 Hz / 0 Hz; zayıf ama seçici) |
+| C: ölçek 0,55 + STD 0,2, duyu muaf | ✅ | %86–89 | ❌ |
+
+- **Öneri: B.** Gerekçeler:
+  - Modelin bilinen tek biyolojik doğrulamasını koruyan tek aday bu. Projenin "bu gerçekten çalışan bir sinek beyni" iddiasının dayanağı bu doğrulama.
+  - Ayırt edilebilirlik daha düşük olsa da şans düzeyinin yaklaşık 10 katı. Instagram kararları 16'lı ince bir sınıflandırma değil, kaba farklar gerektiriyor.
+  - Görme sinyali çok katmanlı bir yoldan geçecek (Z-02). Daha güçlü ağırlıklar sinyalin sönmeden merkezi beyne ulaşma şansını artırıyor.
+  - "Beğen = hortum" eşlemesi (Z-04) ancak bu adayda çalışabilir.
+- **Yeniden değerlendirme:** Faz 3'te görme sinyali ölçüldüğünde bu karar tekrar gözden geçirilecek.

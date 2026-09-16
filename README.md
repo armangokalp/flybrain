@@ -13,7 +13,7 @@ Kararları insan, dil modeli ya da eğitilmiş bir yorumlayıcı ağ vermez. Sin
 
 - ✅ **Faz 0:** araştırma ve mimari
 - ✅ **Faz 1:** konnektom veri hattı (165.122 nöron, 6,2 milyon bağlantı)
-- ⏭️ **Faz 2:** simülasyon çekirdeği
+- 🟡 **Faz 2:** simülasyon çekirdeği (motor hazır; beynin çalışma ayarı, K-011, karar bekliyor)
 
 İlerleme için [yol haritası](docs/04-yol-haritasi.md), günlük kayıtlar için [docs/gunluk](docs/gunluk/) klasörüne bakın.
 
@@ -39,6 +39,7 @@ python3.13 -m venv .venv
 | [03 — Zorluklar](docs/03-zorluklar.md) | Karşılaşılan/beklenen sorunlar ve çözüm yolları |
 | [04 — Yol haritası](docs/04-yol-haritasi.md) | Fazlar ve her fazın bitiş kriterleri |
 | [05 — Veri keşfi](docs/05-veri-kesfi.md) | MaleCNS verisinin analizi, doğrulanan nöron havuzları |
+| [06 — Simülasyon](docs/06-simulasyon.md) | LIF motoru, kalıcı çekici bulgusu, ayar taramaları |
 | [Kararlar](docs/kararlar.md) | Alınan tasarım kararlarının kaydı |
 | [Kaynaklar](docs/kaynaklar.md) | Veri setleri, makaleler, referans kodlar |
 | [Günlük](docs/gunluk/) | Oturum oturum süreç kaydı |
