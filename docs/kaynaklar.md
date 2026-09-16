@@ -36,6 +36,13 @@ Taban adres: `https://storage.googleapis.com/flyem-male-cns/v1.0/connectome-data
 - Bidaye ve ark. 2020, *Neuron* — ileri yürüme ve dönme için inen nöronlar
 - Rayshubskiy ve ark. 2020 — DNa02 ve dönme
 - Hampel ve ark. 2015, *eLife* — anten temizleme devresi
+- Pugliese ve ark. 2025, bioRxiv — [sinir kordonu konnektomu simülasyonlarıyla yürüme ritim devresi](https://pmc.ncbi.nlm.nih.gov/articles/PMC13142387/) (DNg100, E1/E2/I1 çekirdeği). Kod: <https://github.com/smpuglie/Pugliese_cpg_2025>
+- Stowers ve ark. 2017, *Nature Methods* — [serbest hareket eden hayvanlar için sanal gerçeklik (FreemoVR)](https://www.nature.com/articles/nmeth.4399)
+
+## Gövde modelleri
+
+- Wang-Chen ve ark. 2024, *Nature Methods* — [NeuroMechFly v2](https://www.nature.com/articles/s41592-024-02497-y). Kütüphane: [FlyGym](https://github.com/NeLy-EPFL/flygym) (Apache-2.0), belgeler: <https://neuromechfly.org/>
+- Vaxenburg ve ark. 2025, *Nature* — [flybody: tüm gövde fizik simülasyonu](https://www.nature.com/articles/s41586-025-09029-4). Kod: <https://github.com/TuragaLab/flybody>. Uçuş kontrolcüsü eğitilmiş olduğu için kullanılmıyor (Z-26).
 
 ## Referans uygulamalar
 
@@ -45,4 +52,5 @@ Taban adres: `https://storage.googleapis.com/flyem-male-cns/v1.0/connectome-data
 
 ## Bağlam
 
+- [Eon Systems: sanal gövdeli beyin emülasyonu](https://eon.systems/updates/embodied-brain-emulation) (Mart 2026): gövde hareketlerinin taklit öğrenmesiyle eğitilmiş kontrolcülerden geldiğini ekip kendisi belirtiyor. [K-019](kararlar.md#k-019--3d-gövde-neuromechfly-doğrudan-motor-nöron--kas--eklem) kararının arka planı.
 - [Konnektom sonrası viral demoların analizi](https://www.stork.ai/blog/google-unleashed-a-fly-brain-chaos-ensued): bu demoların çoğunun çıktıyı eğitilmiş bir yapay zekâyla yorumladığına dair eleştiri. [K-003](kararlar.md#k-003--eğitilmiş-yorumlayıcı-ve-dil-modeli-yok) kararının arka planı.

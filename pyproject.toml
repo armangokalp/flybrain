@@ -12,6 +12,7 @@ dependencies = [
     "pyarrow>=16",
     "numba>=0.61",
     "pillow>=10",
+    "flygym>=2.1,<2.2",  # NeuroMechFly v2 gövdesi ve MuJoCo fiziği; 2.x API'si henüz oturmadı
 ]
 
 [project.optional-dependencies]

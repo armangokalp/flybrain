@@ -31,7 +31,7 @@ Kodlayıcıların hepsi ortak bir `Stimulus` (nöron → Poisson hızı) yapıs�
 
 - Kendi postlarına gelen beğeni ve yorumlar ile yeni takipçiler PAM nöronlarını uyarır.
 - Takipçi kaybı PPL1 nöronlarını uyarır.
-- Hız: `150 Hz · n / (n + 5)`. Öğrenme kuralı Faz 8'de eklenecek.
+- Hız: `150 Hz · n / (n + 5)`. Öğrenme kuralı Faz 10'da eklenecek.
 
 ---
 

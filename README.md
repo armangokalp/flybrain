@@ -6,6 +6,7 @@ Bu deneysel projede bir meyve sineğinin (*Drosophila melanogaster*) tam sinir s
 - Caption'ları **koklar**: her kelime, koku alıcı nöronlara eşlenen bir "koku molekülü" gibi davranır.
 - **Davranışıyla** karar verir: ileri yürürse feed'i kaydırır, hortumunu uzatırsa beğenir, kur şarkısı söylerse yorum yapar, kaçarsa takipten çıkar.
 - Kendi postlarını ve caption'larını da kendi nöral aktivitesiyle üretir.
+- Bütün bunları **3D bir gövdede** görebilirsiniz. Gövdeyi yalnızca simüle edilen motor nöronlar hareket ettirir; animasyon ya da eğitilmiş hareket programı yoktur. Beyin aktivitesi de her nöronun gerçek konumunda izlenebilir.
 
 Kararları insan, dil modeli ya da eğitilmiş bir yorumlayıcı ağ vermez. Sinirsel aktivite ile Instagram arasındaki bütün eşlemeler sabittir, anatomiye dayanır ve belgelenmiştir. Ayrıntılar için [vizyon ve ilkeler](docs/01-vizyon-ve-ilkeler.md) belgesine bakın.
 
@@ -16,7 +17,10 @@ Kararları insan, dil modeli ya da eğitilmiş bir yorumlayıcı ağ vermez. Sin
 - ✅ **Faz 2:** simülasyon çekirdeği (neredeyse gerçek zamanlı, kararlı beyin ayarı)
 - ✅ **Faz 3:** duyu kodlayıcıları (görsel → göz, caption → koku, bildirim → dopamin)
 - ✅ **Faz 4:** motor kod çözücü (kas grupları → Instagram eylemleri, eylem bütçesi, eşik homeostazı)
-- ⏭️ **Faz 5:** yerel kum havuzu (sahte feed)
+- ⏭️ **Faz 5:** 3D gövde (motor nöron → kas → eklem, NeuroMechFly) — sürüyor
+- **Faz 6:** görselleştirme ve kayıt (3D sinek, 3D beyin, sineğin gördüğü)
+- **Faz 7:** yerel kum havuzu ve korku tepkisi
+- **Faz 8–10:** Instagram bağlantısı, içerik üretimi, öğrenme
 
 İlerleme için [yol haritası](docs/04-yol-haritasi.md), günlük kayıtlar için [docs/gunluk](docs/gunluk/) klasörüne bakın.
 
@@ -45,6 +49,7 @@ python3.13 -m venv .venv
 | [06 — Simülasyon](docs/06-simulasyon.md) | LIF motoru, kalıcı çekici bulgusu, ayar taramaları |
 | [07 — Duyular](docs/07-duyular.md) | Göz geometrisi, görme/koku/ödül kodlayıcıları ve deneyleri |
 | [08 — Motor](docs/08-motor.md) | Kas grubu okuması, eylem bütçesi, kalibrasyon ve homeostaz |
+| [09 — Gövde](docs/09-govde.md) | 3D gövde, motor nöron → kas → eklem, yürüme ritmi deneyleri |
 | [Kararlar](docs/kararlar.md) | Alınan tasarım kararlarının kaydı |
 | [Kaynaklar](docs/kaynaklar.md) | Veri setleri, makaleler, referans kodlar |
 | [Günlük](docs/gunluk/) | Oturum oturum süreç kaydı |
@@ -55,4 +60,4 @@ Projede Janelia FlyEM ve Google'ın 2026'da yayınladığı **Male CNS v1.0** ko
 
 ## Lisans
 
-Kod MIT lisanslıdır ([LICENSE](LICENSE)). Konnektom verisinin lisansı CC-BY 4.0'dır.
+Kod MIT lisanslıdır ([LICENSE](LICENSE)). Konnektom verisinin lisansı CC-BY 4.0'dır. 3D gövde [FlyGym / NeuroMechFly](https://github.com/NeLy-EPFL/flygym) (Apache-2.0) ile simüle edilir.

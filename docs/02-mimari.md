@@ -1,21 +1,30 @@
 # 02 — Mimari
 
-> Durum: **Faz 3 sonrası güncellendi.** Beyin ayarı K-011, duyu kodlaması K-012–K-014 ile belirlendi. Nöron havuzları MaleCNS anotasyon tablosunda doğrulandı (bkz. [05-veri-kesfi.md](05-veri-kesfi.md)); tek kaynak [`flybrain/anatomy.py`](../flybrain/anatomy.py). Havuzların *davranışsal* doğrulaması Faz 2 ve Faz 4'te yapılacak.
+> Durum: **Faz 5 başında güncellendi (2026-09-17).** 3D gövde katmanı eklendi (K-019–K-021); ayrıntı: [09-govde.md](09-govde.md). Önceki güncelleme Faz 3 sonrası: Beyin ayarı K-011, duyu kodlaması K-012–K-014 ile belirlendi. Nöron havuzları MaleCNS anotasyon tablosunda doğrulandı (bkz. [05-veri-kesfi.md](05-veri-kesfi.md)); tek kaynak [`flybrain/anatomy.py`](../flybrain/anatomy.py). Havuzların *davranışsal* doğrulaması Faz 2 ve Faz 4'te yapıldı.
 
 ## Genel akış
 
 ```mermaid
 flowchart LR
-    IG[Instagram] -->|ekran görüntüsü, caption,<br/>bildirimler| ENC[Duyu kodlayıcıları]
-    ENC -->|Poisson spike dizileri| BRAIN["LIF beyin simülasyonu<br/>(MaleCNS v1.0)"]
-    BRAIN -->|motor havuzlarının<br/>spike sayıları| DEC[Motor kod çözücü]
+    IG[Instagram] -->|ekran görüntüsü| SCENE["3D sahne<br/>(sineği izleyen ekran)"]
+    SCENE -->|sineğin gözlerinin<br/>gördüğü| ENC[Duyu kodlayıcıları]
+    IG -->|caption, bildirimler| ENC
+    ENC -->|Poisson spike dizileri| BRAIN["LIF simülasyonu<br/>(MaleCNS v1.0: beyin + sinir kordonu)"]
+    BRAIN -->|motor nöron spike'ları| MUS[Kas modeli]
+    MUS -->|eklem torkları| BODY["3D gövde<br/>(NeuroMechFly, MuJoCo)"]
+    BODY -->|eklem açısı, yük, temas| PROP[Propriyosepsiyon]
+    PROP -->|Poisson spike dizileri| BRAIN
+    BODY --> SCENE
+    BRAIN -->|kas gruplarının<br/>spike sayıları| DEC[Motor kod çözücü]
     DEC -->|seçilen eylem| GOV["Güvenlik valisi<br/>(yalnızca veto)"]
     GOV --> ACT[Instagram eylemcisi]
     ACT --> IG
     BRAIN -->|nöral durum,<br/>yürüyüş izi| CREATE[İçerik üretimi]
     CREATE -->|görsel + caption| GOV
-    DEC --> LOG[(Günlük / loglar)]
+    DEC --> LOG[(Oturum kaydı)]
     BRAIN --> LOG
+    BODY --> LOG
+    LOG --> VIEW[İzleme paneli]
 ```
 
 ## Bileşenler
@@ -26,6 +35,8 @@ flowchart LR
 | `flybrain/sim/` | Sızıntılı integrate-and-fire (LIF) simülasyon motoru |
 | `flybrain/senses/` | Görme, koku ve ödül kodlayıcıları |
 | `flybrain/motor/` | Motor nöron havuzlarının tanımı, kalibrasyon, eylem seçimi |
+| `flybrain/body/` | 3D gövde: motor nöron → kas → eklem, propriyosepsiyon, sahne, kapalı döngü (Faz 5) |
+| `flybrain/viz/` | Oturum kaydı ve izleme paneli: 3D sinek, 3D beyin, sineğin gördüğü, ekran (Faz 6) |
 | `flybrain/create/` | Post görseli ve caption üretimi |
 | `flybrain/instagram/` | Gerçek Instagram bağlantısı ve test için sahte (lokal) feed |
 | `flybrain/governor.py` | Hız sınırları ve içerik vetosu |
@@ -69,6 +80,17 @@ Neden MaleCNS kullanıyoruz? FlyWire (2024) yalnızca beyni kapsıyordu. MaleCNS
 
 Fotoreseptörler ketleyici olduğu için görme girişi doğrudan ON/OFF yolunun uyarıcı nöronlarına veriliyor. Kodlayıcının sürdüğü nöronlar sinaptik depresyondan muaf. Bu düzende 16 doğal istatistikli görsel %95–100, görsel + caption olarak 16 post %85 doğrulukla inen nöronlarda ayırt ediliyor ve beyin her posttan sonra dinlenime dönüyor ([07-duyular.md](07-duyular.md)).
 
+## Gövde (sinek → 3D dünya)
+
+Sineğin gövdesi NeuroMechFly v2'dir: gerçek bir sineğin mikro-BT taramasından oluşturulmuş 3D model, MuJoCo fizik motoru ve 126 eklem serbestlik derecesi (K-019). Gövdeyi yalnızca simüle edilen motor nöronlar hareket ettirir:
+
+1. **Motor nöron spike'ları:** Her motor nöron tipi, sürdüğü kas üzerinden bir eklem serbestlik derecesine ve yöne bağlıdır (anatomik tablo).
+2. **Kas aktivasyonu:** Spike dizisi kas seğirmesi süresinde süzülür.
+3. **Eklem torku → fizik:** Eklemlerin pasif yay ve sönümleyicileri gövdeyi motor girdi yokken duruşta tutar.
+4. **Geri besleme:** Eklem açıları, yük ve zemin teması propriyoseptif duyu nöronlarına döner. Sineğin gözleri 3D sahnedeki Instagram ekranını görür.
+
+Hazır yürüme programı, eğitilmiş kontrolcü ya da animasyon yoktur. Instagram eylemleri aşağıdaki nöral okumayla seçilmeye devam eder. Gövde aynı spike'larla hareket ettiği için ikisinin örtüşmesi ölçülür (K-020). Sahne: serbest sinek ve onu izleyen ekran (K-021). Ayrıntı: [09-govde.md](09-govde.md).
+
 ## Motor kod çözme (sinek → Instagram)
 
 İlk tasarım literatürdeki komut nöronlarına dayanıyordu. Faz 4'te bunların çoğu gerçekçi postlarda sessiz kaldı (Z-19). Okuma artık **kas gruplarından** yapılıyor (K-015); ayrıntılar: [08-motor.md](08-motor.md).
@@ -101,7 +123,7 @@ Fotoreseptörler ketleyici olduğu için görme girişi doğrudan ON/OFF yolunun
 
 **Karar (K-004, K-005):** Görsellerde A ve B seçenekleri birlikte kullanılacak; bir post için hangisinin kullanılacağına sinek karar verecek. Caption'lar koku-kelime seçimiyle (A) yazılacak.
 
-A/B seçimi için ilk öneri: post üretimi tetiklendiği anda motor aktivite baskınsa (sinek hareket halindeyse) yürüyüş resmi, merkezi beyin aktivitesi baskınsa (sinek "düşünüyorsa") nöral portre üretilir. Kesin kural Faz 7'de belirlenecek.
+A/B seçimi için ilk öneri: post üretimi tetiklendiği anda motor aktivite baskınsa (sinek hareket halindeyse) yürüyüş resmi, merkezi beyin aktivitesi baskınsa (sinek "düşünüyorsa") nöral portre üretilir. Kesin kural Faz 9'da belirlenecek.
 
 ### Görsel
 

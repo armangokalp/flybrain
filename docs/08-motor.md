@@ -233,7 +233,7 @@ python -m flybrain.experiments.calibrate --skip-calibration --homeostasis-test -
 - **Beğeni:** son blokta bütçeye ulaştı (%14).
 - **Kaydetme:** eşik 2,63'ten 2,03–2,14'e indi (7 spike kademesi); kaydetmeler son blokta başladı. Oturum boyunca hortum eylemlerinin %2'si kaydetme; hedef %13'e doğru yaklaşıyor ama 300 post yetmedi.
 - **Diğer eylemler:** bütçelerine yakın. Bu nadir eylemlerde blok başına yalnızca 300 bakış olduğu için ±1 puanlık oynamalar örnekleme gürültüsü.
-- **Başlangıç tercihi:** Kaydetme bilinçli olarak muhafazakâr bir noktadan başlıyor; azdan çoğa doğru ayarlanıyor. Eşik durumu (`ActionSelector.state()`) Faz 8'de oturumlar arasında saklanacak, böylece bu geçiş yalnızca ilk kullanımda yaşanacak.
+- **Başlangıç tercihi:** Kaydetme bilinçli olarak muhafazakâr bir noktadan başlıyor; azdan çoğa doğru ayarlanıyor. Eşik durumu (`ActionSelector.state()`) Faz 10'da oturumlar arasında saklanacak, böylece bu geçiş yalnızca ilk kullanımda yaşanacak.
 
 ### 6.6 Nötr uyaran
 

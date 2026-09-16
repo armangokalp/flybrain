@@ -29,7 +29,7 @@ Durumlar: **önerildi** · **kabul edildi** · **yerine geçti**
 
 - **Durum:** kabul edildi (2026-09-16)
 - **Seçenekler:** nöral portre / yürüyüş resmi / sinek güdümlü üretken model / ilk ikisinin karışımı
-- **Karar:** İlk ikisinin karışımı. İkisi de %100 sinek üretimi. Bir postta hangisinin kullanılacağını da sineğin o anki nöral durumu belirler (kural Faz 7'de kesinleşecek).
+- **Karar:** İlk ikisinin karışımı. İkisi de %100 sinek üretimi. Bir postta hangisinin kullanılacağını da sineğin o anki nöral durumu belirler (kural Faz 9'da kesinleşecek; K-022 ile yeniden numaralandı).
 - **Elenen:** Üretken model, çünkü çizimi sinek değil model yapıyor.
 
 ## K-005 · Caption: koku-kelime seçimi
@@ -193,3 +193,49 @@ Durumlar: **önerildi** · **kabul edildi** · **yerine geçti**
 - **Kaydetme denetleyicisi:** Yalnızca hortum kararlarında çalışıyor, bu kararlar içindeki kaydetme payını ~%13'e çekiyor (adım 0,15 z) ve beğeni eşiğinin en az 1 standart sapma üstünde kalıyor. İlk sürüm (tüm postlarda, bütçe %2) çok yavaş kaldı ve 720 bakışta hiç kaydetme üretmedi.
 - **Sınır:** Homeostaz yalnızca genel sıklığı etkiliyor; postlar arasındaki tercih sıralaması sinekte kalıyor.
 - **Ayrıntılar ve ölçümler:** [08-motor.md](08-motor.md#6-kalibrasyon-ve-doğrulama).
+
+## K-019 · 3D gövde: NeuroMechFly, doğrudan motor nöron → kas → eklem
+
+- **Durum:** kabul edildi (2026-09-17), kullanıcı isteği
+- **Bağlam:** Kullanıcı sineği 3D olarak görmek istiyor: yürümesini, Instagram kullanmasını, korkup kaçmasını ve beyin aktivitesini. Şartı açık: "animasyon, fake simülasyon, deterministik kod gibi sineğin karar vermediği bir çözüm değil; bire bir sineğin davranışlarını görmek istiyoruz."
+- **Seçenekler:**
+  - **Hazır kontrolcüler:** Beyinden birkaç inen nöron okunur, bunlar eğitilmiş yürüme/tımar programlarını tetikler. Eon Systems demosu (Mart 2026) böyle çalışıyor. Hareketi sinek üretmediği için reddedildi.
+  - **Beyin karar verir, adım ritmini hazır osilatör üretir:** Adım deseni sineğin değil; kullanıcı şartına aykırı.
+  - **Doğrudan:** Motor nöron spike'ları → kas aktivasyonu → eklem torku → fizik. Gövdeden gelen his beyne geri döner.
+- **Karar:** Doğrudan yol.
+  - **Gövde:** NeuroMechFly v2 (FlyGym 2.1, Apache-2.0, MuJoCo), 126 eklem serbestlik derecesi.
+  - **Eşleme:** Motor nöron tipi → kas → eklem tablosu anatomi literatürüne dayanır; davranışa bakılarak ayarlanmaz.
+  - **Kusurlar:** Hareket kusurluysa kusurlu gösterilir. Düzeltmeler yalnızca biyolojik gerekçeyle yapılır ve belgelenir.
+- **Neden mümkün:** MaleCNS sinir kordonunu ve kasa göre etiketli motor nöronları içeriyor. Pugliese ve ark. (2025), yürüme ritminin sinir kordonu konnektomundan eğitimsiz olarak çıktığını gösterdi.
+- **Ayrıntılar:** [09-govde.md](09-govde.md)
+
+## K-020 · Instagram eylemleri nöral okumadan; gövde aynı nöronlarla, tutarlılık ölçülür
+
+- **Durum:** kabul edildi (2026-09-17), kullanıcı kararı. Kullanıcının notu: "nöronlardan okuyalım, ama sineğin hareketleri de örtüşsün, tutarsızlık olmasın."
+- **Seçenekler:**
+  - **Fiziksel:** Yürünen mesafe feed'i kaydırır, hortum açısı beğeniyi belirler.
+  - **Nöral okuma + gövde:** Faz 4'teki kas grubu okuması korunur, gövde aynı motor nöronlarla paralel hareket eder.
+- **Karar:** Nöral okuma + gövde. İki çıktı aynı spike'lardan gelir.
+- **Güvence:** Her kararda ilgili gövde bölgesinin hareket edip etmediği ölçülür ve raporlanır. Örtüşmeyen durumlar (ilgi kaybı, yürümeden ileri kararı) Z-27'de izlenir ve kullanıcıyla birlikte çözülür.
+
+## K-021 · Sahne: serbest sinek, onu izleyen ekran
+
+- **Durum:** kabul edildi (2026-09-17), kullanıcı kararı
+- **Seçenekler:**
+  - Top üzerinde bağlı sinek (klasik laboratuvar düzeni)
+  - Serbest sinek + onu izleyen sanal gerçeklik yüzeyi (FreemoVR benzeri; Stowers ve ark. 2017)
+- **Karar:** Serbest sinek. Instagram ekranı sineğin önünde bir yüzeyde gösterilir ve sineğin konumunu izler. Kaçışta sinek gerçekten sıçrayıp uzaklaşabilir; yeniden yerleştirilmesi gerekmez.
+- **İlke notu:** Ekranın sineği izlemesi "dünyanın fiziği" kategorisinde bir insan kararıdır; sineğin kararlarına dokunmaz.
+
+## K-022 · Yol haritası: önce gövde ve görselleştirme
+
+- **Durum:** kabul edildi (2026-09-17), kullanıcı kararı
+- **Karar:** Yeni sıra:
+  - Faz 5: gövde
+  - Faz 6: görselleştirme ve kayıt
+  - Faz 7: yerel kum havuzu ve korku tepkisi
+  - Faz 8: Instagram bağlantısı
+  - Faz 9: içerik üretimi
+  - Faz 10: öğrenme ve uzun dönem çalışma
+- **Sonuç:** Instagram bağlantısı iki faz ertelendi.
+- **Kayıt ve oynatma:** Simülasyon gerçek zamandan yavaş olduğu için her oturum kaydedilir ve gerçek hızda oynatılabilir. Oynatma animasyon değildir: her spike ve her eklem açısı simülasyondan gelir ve olduğu gibi gösterilir. Canlı mod ise ağır çekimdir.

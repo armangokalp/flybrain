@@ -40,7 +40,7 @@ Bir koşul gerekti: kodlayıcının sürdüğü nöronların sinaptik depresyond
 
 LIF modelinde bağlantılar sabit. Sinek beğeni alsa bile bundan bir şey öğrenmez. Böyle kalırsa feed yalnızca Instagram'ın algoritması tarafından şekillenir.
 
-**Çözüm yolu (Faz 8):** Mantar gövdesinde (mushroom body) dopaminle kapılanan bir öğrenme kuralı eklemek. Sinekteki öğrenmenin gerçek mekanizması bu: Kenyon hücresi → MBON sinapsları, dopamin sinyali geldiğinde zayıflar. Ödül (beğeni, takipçi) PAM nöronlarını uyarır; böylece sinek neyin ödül getirdiğini öğrenebilir.
+**Çözüm yolu (Faz 10):** Mantar gövdesinde (mushroom body) dopaminle kapılanan bir öğrenme kuralı eklemek. Sinekteki öğrenmenin gerçek mekanizması bu: Kenyon hücresi → MBON sinapsları, dopamin sinyali geldiğinde zayıflar. Ödül (beğeni, takipçi) PAM nöronlarını uyarır; böylece sinek neyin ödül getirdiğini öğrenebilir.
 
 ### Z-04 · Sinek resim yemez: "beğen" hiç tetiklenmeyebilir 🟢
 
@@ -130,7 +130,7 @@ Her duyu, beynin yaklaşık %98'ine birkaç sinaptik adımda ulaşıyor. Şeker 
 
 Dopamin, serotonin ve oktopamin reseptöre göre uyarıcı da olabilir ketleyici de. Model tek bir işaret istiyor.
 
-**Geçici çözüm:** Hepsi uyarıcı kabul edildi (K-008). Bu nöronlar toplamın %0,3'ü. Faz 8'de dopamin, öğrenme kuralındaki rolüyle (işaret yerine plastisite sinyali olarak) ayrıca modellenecek.
+**Geçici çözüm:** Hepsi uyarıcı kabul edildi (K-008). Bu nöronlar toplamın %0,3'ü. Faz 10'da dopamin, öğrenme kuralındaki rolüyle (işaret yerine plastisite sinyali olarak) ayrıca modellenecek.
 
 ### Z-18 · Sabit görseller dönme davranışını tetiklemiyor 🟡
 
@@ -140,7 +140,7 @@ Solda ya da sağda duran koyu bir daire, dönme komut nöronlarında (DNa02) bel
 
 **Çözüm yolları (Faz 4):** (a) Bunu kabul etmek. (b) Görseli küçük göz hareketleri (sakkadlar) ya da feed kaydırma hareketiyle sunmak; bu, T4/T5 hareket devrelerini de devreye sokar. (c) Reels videolarının kendi hareketinden yararlanmak.
 
-**Faz 4:** Dönme artık DNa02 yerine boyun motor nöronlarının sol−sağ farkından okunuyor. Bu fark her postta var ama tekrarlar arasında tutarlılığı düşük (r ≈ 0,2–0,3). "Sekme değiştir" eyleminin yönü bu yüzden büyük ölçüde gürültüye dayanıyor. Hareket girdisi (b, c) Faz 5–6'da ele alınacak.
+**Faz 4:** Dönme artık DNa02 yerine boyun motor nöronlarının sol−sağ farkından okunuyor. Bu fark her postta var ama tekrarlar arasında tutarlılığı düşük (r ≈ 0,2–0,3). "Sekme değiştir" eyleminin yönü bu yüzden büyük ölçüde gürültüye dayanıyor. Hareket girdisi (b, c) Faz 7'de zamansal görmeyle birlikte ele alınacak (Z-25).
 
 ### Z-19 · Komut nöronları sessiz 🟢
 
@@ -162,7 +162,67 @@ Görsel girdide yaklaşık 7.400 nöron her 0,1 ms'de rastgele sayı çekiyor. B
 - Poisson olaylarını olay zamanlamasıyla üretmek (rastgele sayı sayısı yaklaşık 40 kat azalır, ama rastgele sayı akışı değişir ve önceki deney sonuçları birebir tekrarlanamaz).
 - Durum güncellemesini Numba ile paralelleştirmek.
 
-Faz 5–6'da gerçek zamanlı kullanım için ele alınacak.
+3D gövdeyle birlikte önemi arttı: beyin, fizik ve görme aynı döngüde çalışacak. Fizik tek başına gerçek zamandan hızlı (tüm eklemlerle 1,3 kat), yani darboğaz beyin. Faz 5 hedefi: kapalı döngü gerçek zamanın en fazla 3 katı yavaşlıkta.
+
+---
+
+## Gövde ve görselleştirme zorlukları
+
+### Z-22 · Sinaptik depresyon sürekli komutları boğuyor 🔴
+
+K-011'deki depresyon (U = 0,2, τ = 800 ms), ateşleme hızı ne kadar yüksek olursa olsun bir sinapsın iletimini saniyede en fazla 6,25 tam spike'a eşdeğer düzeyde tutuyor. Faz 2'de kalıcı çekiciyi önleyen bu mekanizma, yürüme komut nöronu DNg100 saniyede 180 kez ateşlediğinde bile ritim çekirdeğini tamamen sessiz bırakıyor. İnen nöronlar muaf tutulunca çekirdek ve 30–70 bacak motor nöronu ateşliyor ([09-govde.md](09-govde.md#3-yürüme-ritmi-yoklaması-dng100)).
+
+**Çözüm yolları:**
+- İnen nöronları (ya da sinir kordonunu) depresyondan muaf tutmak. Muafiyetin kalıcı çekiciyi yeniden getirip getirmediği kararlılık testleriyle ölçülmeli.
+- Depresyonu hücre tipine göre ayarlamak (ör. inen nöron sinapslarında daha kısa τ). Parametreler ancak literatürdeki ölçümlere dayanıyorsa kullanılabilir.
+
+### Z-23 · Bacaklar arası koordinasyon ve gövdeden gelen his 🔴
+
+Pugliese ve ark. (2025), konnektomun tek bir bacakta ritim ürettiğini, ama bacaklar arası koordinasyonun (tripod yürüyüş) gövdeden gelen his olmadan ortaya çıkmadığını bildiriyor. Bizim ölçümümüzde ritim zayıf; tepe frekansın güç payı 0,06–0,10.
+
+**Çözüm yolları:**
+- Propriyosepsiyon: eklem açısı, yük ve zemin teması → konnektomdaki karşılık gelen duyu nöronları.
+- Ritmi kas grubu başına ölçmek. Bükücü ve açıcı kaslar zıt fazda çalıştığından toplam ölçüm ritmi gizliyor olabilir.
+- Pugliese ve ark.'nın kullandığı nöron boyutuna göre uyarılabilirlik ölçeklemesini değerlendirmek.
+- **Yapılmayacak:** Hazır ritim üreteci eklemek (K-019).
+
+### Z-24 · Kas–eklem eşlemesi ve kuvvet ölçeği 🔴
+
+Motor nöronlar kas adıyla etiketli, ama NeuroMechFly'ın eklem serbestlik derecelerine hangi kasın hangi yönde tork uyguladığı bir tablo olarak hazır değil. FlyGym'deki kas modeli yalnızca sol ön bacakta var ve deneysel.
+
+**Çözüm yolu:** Anatomi literatüründen (bacak kaslarının bağlanma noktaları ve işlevleri) bir tablo derlemek, kaynaklarını belgelemek. Kuvvet ölçeğini kas fizyolojisinden ve eklem sertliğinden türetmek. Davranışa bakıp ayarlama yapılmayacak.
+
+### Z-25 · Korku tepkisi zamansal görme gerektiriyor 🔴
+
+Kaçış devresi (LPLC2/LC4 → dev lif DNp01 → TTMn) konnektomda mevcut. Ama bu devre yaklaşan (büyüyen) nesnelere tepki veriyor. Durağan bir post görseli bu tepkiyi üretemez.
+
+**Çözüm yolları:**
+- Görme kodlayıcısına zaman boyutu eklemek: Reels videoları kare kare, kaydırma hareketi ekranda gerçek hareket olarak.
+- Kaynak testi: yaklaşan bir disk dev lifi ateşletiyor mu? Hareket yönünü seçen T4/T5 devrelerinin LIF modelinde çalışıp çalışmadığı bilinmiyor.
+
+### Z-26 · Uçuş yok 🟡
+
+Uçabilen hazır gövde modelinin (flybody) uçuş kontrolcüsü eğitilmiş bir sinir ağı; kullanılamaz. Uçuş aerodinamiği ve dolaylı uçuş kaslarının mekaniği ayrı bir iş.
+
+**İlk sürüm:** Kaçış sıçrama olarak görünür (TTMn → orta bacaklar), sinek uçmaz. Kur şarkısı için kanat titreşimi ayrıca modellenecek.
+
+### Z-27 · Nöral karar ile görünen hareketin tutarlılığı 🔴
+
+Instagram eylemleri nöral okumadan seçiliyor, gövde aynı nöronlarla hareket ediyor (K-020). Yine de iki tutarsızlık olasılığı var:
+- **İlgi kaybı:** Hiçbir kanal eşiği aşmadığında feed kayıyor, ama gövdede buna karşılık gelen bir hareket yok.
+- **İleri kanalı:** Bacak motor nöronlarının toplamını okuyor. Sinek yürümeden (ör. yerinde kıpırdanarak) bu eşiği aşabilir.
+
+**Çözüm yolu:** Her kararda ilgili gövde bölgesinin hareketini ölçüp raporlamak. Örtüşmeyen durumlar veriye bakılarak kullanıcıyla birlikte çözülecek.
+
+### Z-28 · Görselleştirme verisinin boyutu ve canlı izleme 🔴
+
+- **Veri hacmi:** 165 bin nöronun spike'ları, 126 eklemin açıları ve ekran kareleri, saniyede yüzbinlerce olay demek.
+- **Hız:** Simülasyon gerçek zamandan yavaş.
+
+**Çözüm yolları:**
+- Sıkıştırılmış oturum kaydı ve gerçek hızda oynatma.
+- Canlı modun ağır çekim olarak açıkça etiketlenmesi.
+- Beyin görünümünde spike'ların kısa zaman kutularında toplanması.
 
 ---
 

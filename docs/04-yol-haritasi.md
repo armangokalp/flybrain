@@ -1,6 +1,6 @@
 # 04 — Yol Haritası
 
-Her faz, bitiş kriterleri sağlanmadan kapanmaz. Gerçek Instagram hesabına ilk dokunuş **Faz 6**'da olacak; o zamana kadar her şey yerelde test edilir.
+Her faz, bitiş kriterleri sağlanmadan kapanmaz. Gerçek Instagram hesabına ilk dokunuş **Faz 8**'de olacak; o zamana kadar her şey yerelde test edilir. 2026-09-17'de sineğin 3D gövdesi ve görselleştirme eklendi, Instagram bağlantısı iki faz ertelendi (K-022).
 
 ## Faz 0 — Araştırma ve mimari ✅
 
@@ -53,16 +53,55 @@ Her faz, bitiş kriterleri sağlanmadan kapanmaz. Gerçek Instagram hesabına il
 
 **Bitiş:** Gri ekranda hiçbir eylem tetiklenmiyor; gerçek görsellerde eylem dağılımı dejenere değil (tek bir eylem baskın değil). ✅ (2026-09-16: gri ekran → ilgi kaybı; homeostazlı oturumlarda eylemler bütçeye yakın dağılıyor, beğeni son blokta %14)
 
-## Faz 5 — Yerel kum havuzu (sahte feed)
+## Faz 5 — Gövde (bedenlenme)
 
-- [ ] Lisansı serbest görsellerden oluşan yerel bir feed
-- [ ] Tam kapalı döngü: feed → beyin → eylem → feed
+Ayrıntı: [09-govde.md](09-govde.md). Kararlar: K-019, K-020, K-021.
+
+- [x] Gövde kütüphanesi (FlyGym 2.1, NeuroMechFly): 126 eklem serbestlik derecesi, fizik gerçek zamandan hızlı
+- [x] Yürüme ritmi yoklaması: DNg100 → ritim çekirdeği → bacak motor nöronları (Z-22)
+- [ ] Motor nöron → kas → eklem tablosu (bacaklar, baş, hortum, kanatlar, karın, sıçrama) ve kas modeli (Z-24)
+- [ ] Gövdeden beyne his: eklem açısı, yük, zemin teması, baş konumu (Z-23)
+- [ ] Sineğin gözleriyle görme: ommatidyumlar → konnektom göz kolonları
+- [ ] Sahne: serbest sinek ve onu izleyen Instagram ekranı (K-021)
+- [ ] Kapalı döngü (beyin + gövde + görme) ve hız iyileştirmesi (Z-21)
+- [ ] Neden–sonuç testleri: MN9 → hortum, dev lif → sıçrama, DNg100 → bacak ritmi, şeker → hortum
+- [ ] Nöral karar ile gövde hareketinin örtüşme ölçümü (K-020, Z-27)
+
+**Bitiş:**
+- Beyin sessizken gövde hareketsiz.
+- Uyarılan her motor devresi, beklenen gövde bölgesini hareket ettiriyor.
+- Kapalı döngü gerçek zamanın en fazla 3 katı yavaşlıkta çalışıyor.
+
+## Faz 6 — Görselleştirme ve kayıt
+
+- [ ] Oturum kaydı: spike'lar, gövde pozları, sineğin göz görüntüsü, ekran, kararlar
+- [ ] Yerel izleme paneli, senkron görünümler:
+  - 3D sinek
+  - 3D beyin (her spike nöronun gerçek konumunda)
+  - sineğin gördüğü
+  - Instagram ekranı
+  - karar günlüğü
+- [ ] Canlı mod (ağır çekim, açıkça etiketli) ve gerçek hızda oynatma (Z-28)
+- [ ] Beyin bölgesi yüzeyleri ve önemli nöronların şekilleri (indirme için ayrıca izin istenecek)
+- [ ] Paylaşılabilir video dışa aktarımı
+
+**Bitiş:** Bir oturum baştan sona izlenebiliyor. Görülen her hareket, o anda ateşleyen motor nöronlara kadar geriye doğru izlenebiliyor.
+
+## Faz 7 — Yerel kum havuzu ve korku tepkisi
+
+- [ ] Lisansı serbest görsellerden ve videolardan oluşan yerel bir feed
+- [ ] Tam kapalı döngü: feed → gözler → beyin → gövde + eylem → feed
 - [ ] Karar günlüğü (her eylemin nöral gerekçesi)
 - [ ] Tekrarlanabilirlik testi (aynı seed → aynı davranış)
+- [ ] Zamansal görme: videolar ve kaydırma hareketi (Z-25)
+- [ ] Korku testi: yaklaşan nesne → LPLC2/LC4 → dev lif → sıçrama
 
-**Bitiş:** Sinek sahte feed'de saatlerce çökmeden "geziniyor" ve her eylemi açıklanabiliyor.
+**Bitiş:**
+- Sinek sahte feed'de saatlerce çökmeden "geziniyor".
+- Her eylemi açıklanabiliyor.
+- Kaçış tepkisi yalnızca sineğin kendi devresinden doğuyor.
 
-## Faz 6 — Instagram bağlantısı
+## Faz 8 — Instagram bağlantısı
 
 - [ ] Playwright ile tarayıcı bağlantısı (K-006)
 - [ ] Kalıcı oturum (giriş kullanıcı tarafından elle yapılır)
@@ -72,20 +111,20 @@ Her faz, bitiş kriterleri sağlanmadan kapanmaz. Gerçek Instagram hesabına il
 
 **Bitiş:** Sinek gerçek feed'de bir oturumu sorunsuz tamamlıyor.
 
-## Faz 7 — İçerik üretimi
+## Faz 9 — İçerik üretimi
 
-- [ ] Görsel üretimi (seçilen yöntem)
+- [ ] Görsel üretimi (nöral portre ve gövdenin gerçek yürüyüş izinden yürüyüş resmi)
 - [ ] Caption üretimi (seçilen yöntem)
 - [ ] Paylaşım zamanlaması (P1 birikimi)
 - [ ] İçerik vetosu (yasaklı kelimeler)
 
 **Bitiş:** Sinek ilk postunu kendi kararıyla paylaşıyor.
 
-## Faz 8 — Öğrenme ve uzun dönem çalışma
+## Faz 10 — Öğrenme ve uzun dönem çalışma
 
 - [ ] Mantar gövdesi plastisitesi (dopamin kapılı)
-- [ ] Beyin durumunun oturumlar arası kalıcılığı
+- [ ] Beyin durumunun (homeostaz eşikleri dahil) oturumlar arası kalıcılığı
 - [ ] Zamanlanmış oturumlar
-- [ ] "Sinek günlüğü" paneli: feed nasıl değişti, sinek neyi öğrendi
+- [ ] "Sinek günlüğü": feed nasıl değişti, sinek neyi öğrendi
 
 **Bitiş:** Haftalık raporlar feed'in ve sineğin tercihlerinin birlikte değiştiğini gösteriyor.
