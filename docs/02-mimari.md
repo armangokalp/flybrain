@@ -1,6 +1,6 @@
 # 02 — Mimari
 
-> Durum: **Faz 1 sonrası güncellendi.** Nöron havuzları MaleCNS anotasyon tablosunda doğrulandı (bkz. [05-veri-kesfi.md](05-veri-kesfi.md)); tek kaynak [`flybrain/anatomy.py`](../flybrain/anatomy.py). Havuzların *davranışsal* doğrulaması Faz 2 ve Faz 4'te yapılacak.
+> Durum: **Faz 2 sonrası güncellendi.** Beyin ayarı K-011 ile belirlendi. Nöron havuzları MaleCNS anotasyon tablosunda doğrulandı (bkz. [05-veri-kesfi.md](05-veri-kesfi.md)); tek kaynak [`flybrain/anatomy.py`](../flybrain/anatomy.py). Havuzların *davranışsal* doğrulaması Faz 2 ve Faz 4'te yapılacak.
 
 ## Genel akış
 

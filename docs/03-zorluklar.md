@@ -65,16 +65,16 @@ Uyarı yokken model tamamen sessiz kalabilir. Çok uyarı verilirse de tüm beyi
 
 ## Mühendislik zorlukları
 
-### Z-07 · Hesaplama maliyeti 🔴
+### Z-07 · Hesaplama maliyeti 🟢
 
 166.000 nöron, 0,1 ms adım: 1 saniyelik simülasyon 10.000 adım ediyor. Benzer bir NumPy uygulaması (FlyWire, 139 bin nöron) dizüstü bilgisayarda simülasyonun 1 saniyesi başına yaklaşık 8 saniye harcıyor.
 
 **Çözüm yolları:**
 - **Olay güdümlü güncelleme:** Her adımda nöronların yalnızca küçük bir kısmı ateşliyor. Bu yüzden seyrek matrisin yalnızca ateşleyen sütunlarını toplamak yeterli.
-- Numba ile paralel çekirdek; Apple Silicon üzerinde PyTorch/MPS seçeneği de denenecek.
+- Numba ile derlenmiş çekirdek; Apple Silicon üzerinde PyTorch/MPS seçeneği de denenecek.
 - **Zaman ayrıştırma:** Instagram gerçek zamanlı yanıt beklemiyor. Beyin hesap yaparken tarayıcı postta bekleyebilir. Bakma süresini duvar saati değil, simülasyon zamanı belirler.
 
-Faz 2'de ölçüm yapılacak.
+**Faz 2 ölçümü:** Olay güdümlü Numba çekirdeği tek çekirdekte simülasyonun 1 saniyesini yaklaşık 1,2 saniyede hesaplıyor; ağır aktivitede bile 1,3 saniyeyi geçmiyor. Bu, 500 ms'lik bir karar penceresi için yaklaşık 0,6 saniye demek. Paralelleştirmeye şimdilik gerek yok. Deney taramaları 5 işlemle paralel çalıştırılıyor.
 
 ### Z-08 · Bellek ve disk 🟢
 
