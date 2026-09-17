@@ -135,7 +135,8 @@ Instagram eylemleri Faz 4'teki kas grubu okumasıyla seçilmeye devam ediyor. G�
 - [ ] DNg100 uyarımı → bacaklarda ritmik hareket (ne kadar yürüdüğü ölçülüp raporlanır)
 - [x] Bacak hareketi → propriyoseptif duyu nöronları ateşliyor (bkz. 7)
 - [ ] Nöral kararlar ile gövde hareketinin örtüşmesi ölçülüyor
-- [ ] Kapalı döngü (beyin + gövde + görme) gerçek zamanın en fazla 3 katı yavaşlıkta
+- [x] Sinek sahneyi kendi gözleriyle görüyor (bkz. 9)
+- [ ] Kapalı döngü (beyin + gövde + görme) gerçek zamanın en fazla 3 katı yavaşlıkta: şu an ~5 kat (bkz. 9.3)
 
 ## 6. İlk uygulama (2026-09-17)
 
@@ -545,3 +546,34 @@ Biyolojik dayanak:
 | Kabul açısı | 5° | Faz 3 ile aynı |
 
 Görüntü çizimi 10 ms'de bir yapılıyor ve beyin + gövde + görme döngüsü gerçek zamanın ~5 katı yavaş (1 sn için 4,9 sn).
+
+## 10. Kaldığımız yer (2026-09-17)
+
+**Bitenler:**
+
+| Adım | Durum |
+|---|---|
+| Motor nöron → kas → eklem | ✅ Hortum, sıçrama, refleksler nöronlardan (6) |
+| Propriyosepsiyon | ✅ İlk sürüm: FeCO ve kıl plakaları (7) |
+| Sinir kordonu hız modeli | ⚠️ Deneysel (8); yürüme ertelendi (K-026) |
+| Sineğin kendi gözleriyle görmesi | ✅ Zamansal uyumla (9) |
+
+**Sıradakiler:**
+
+1. **Instagram ekranlı sahne (K-021).** Hazırlık yapıldı, kod yazılmadı. Tasarım önerisi:
+   - **Yüzey:** Sineğin önünde, sineği konum ve yönle izleyen kavisli bir yüzey. Önerilen boyutlar: 180°'lik yay, 6 mm uzaklık; zeminden başlıyor, gözden −10° ile +60° arasını kaplıyor.
+   - **Görünürlük:** Yüzey fiziksel engel değil, yalnızca görülüyor.
+   - **Uygulanabilirlik (doğrulandı):**
+     - MjSpec'te kendi ağ geometrisi ve UV koordinatları olan bir yüzey tanımlanabiliyor (`add_mesh`: `uservert`, `userface`, `usertexcoord`).
+     - Doku çalışma sırasında `model.tex_data` üzerinden değiştirilip her renderer'ın bağlamına `mjr_uploadTexture` ile yüklenebiliyor.
+   - **Arena:** Arka plan gri; gökyüzü ve zemin kontrastı düşük tutulacak.
+   - **Karar bekleyen konular:** Ekranın boyutu ve izleme biçimi (gövdeye kilitli mi, gecikmeli mi). Post görme alanının ne kadarını kaplayacak (K-014)?
+2. **Yaklaşan nesne → kaçış testi (Z-25).** Gözler hazır; sahnede büyüyen bir disk dev lifi ateşletiyor mu?
+3. **Hız (Z-21).** Döngü şu an gerçek zamanın ~5 katı yavaş; hedef 3 kat.
+4. **Nöral karar ile gövdenin örtüşmesi (K-020, Z-27).** Faz 4 okumasında TTMn "yorum" kanalında; gövdeli sinekte kararlar zamansal görmeyle yeniden kalibre edilmeli.
+5. **Faz 6: görselleştirme.** 3D sinek, 3D beyin, sineğin gördüğü, ekran ve karar günlüğü.
+6. **Sonraya bırakılanlar:**
+   - yürüme (Z-33),
+   - yük ve zemin teması algısı (Z-32),
+   - duruş tonusu (Z-29),
+   - uçuş (Z-26).
