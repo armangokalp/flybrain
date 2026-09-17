@@ -353,7 +353,7 @@ DNg100 uyarımı (150 Hz, 1,5 sn) altında bacak motor nöronlarının ortalama 
 - **Hızlar düşük:** Hiçbir ayarda bacak motor nöronları yürümede beklenen onlarca Hz'e çıkmıyor.
 - **Kazanç artınca:** Koordinasyon gelmiyor; sıçrama kası tekrar tekrar ateşliyor ve sinek savruluyor.
 - **Karşılaştırma:** Pugliese ve ark. (2025) ritmi LIF ile değil, nöron boyutuna göre ölçeklenmiş kazanç ve eşikli, 200 Hz'de doyan hız tabanlı bir modelle elde etti. O modelde de tek bacak içinde ritim çıktı, bacaklar arası koordinasyon çıkmadı.
-- **Sonuç:** Mevcut LIF ayarında yürüme için eksik olan yalnızca propriyosepsiyon değil. Sinir kordonunun dinamiği de (kazanç, doyum, nöron boyutu) modellenmeli. Yön kararı kullanıcıya soruldu.
+- **Sonuç:** Mevcut LIF ayarında yürüme için eksik olan yalnızca propriyosepsiyon değil. Sinir kordonunun dinamiği de (kazanç, doyum, nöron boyutu) modellenmeli. Kullanıcı hız modelini seçti (bölüm 8, K-025).
 
 ### 7.5 Varsayımlar
 
@@ -366,3 +366,133 @@ DNg100 uyarımı (150 Hz, 1,5 sn) altında bacak motor nöronlarının ortalama 
 | Kıl plakası bölgesi | aralığın son %30'u | Kaynak yok |
 | Kıl plakası yönü | uyardığı kasların tersindeki sınır | CxHP8'de ölçülen düzenin genellemesi |
 | Eşiklerin nöronlara dağılımı | bodyId sırasıyla | Hangi nöronun hangi açıya duyarlı olduğu bilinmiyor |
+
+## 8. Sinir kordonu hız modeli (2026-09-17)
+
+Karar: K-025 (kullanıcı: "Sinir kordonu hıza dayalı model"). Durum: **deneysel**; varsayılan model şimdilik tamamen LIF (`EmbodiedFly(vnc="lif")`), hız modeli `vnc="rate"` ile açılıyor.
+
+### 8.1 Yöntem
+
+- **Model (Pugliese ve ark. 2025):**
+
+  τ dR/dt = max(Rmax · tanh(a/Rmax · (I + Σ w R − θ)), 0) − R
+
+  - w = 0,03 × işaretli sinaps sayısı
+  - a = a′/s, θ = θ′·s; s = nöron boyutu / ağın medyan boyutu
+  - τ′ 20 ± 2 ms, a′ 1 ± 0,1, θ′ 7,5 ± 0,6, Rmax 200 ± 10 Hz; nöron başına kesik normal
+
+  Yazarların kodu (MIT lisanslı) kopyalanmadı. Model makaleden yeniden yazıldı (`flybrain/sim/rate.py`, numba, Euler 0,1 ms). Salınım skoru yazarların tanımıyla hesaplanıyor.
+- **Nöron boyutu:**
+  - MaleCNS'in açık düz dosyalarında hacim yok. Hacim neuPrint girdi tablosunda (`Neuprint_Neurons.feather`, 4,6 GB).
+  - Arrow dosyası HTTP aralık istekleriyle açıldı; yalnızca gövde kimliği ve boyut sütunları, izlenmiş nöronların bulunduğu ilk 6 parçadan okundu (3,8 MB, kullanıcı izniyle; `connectome/sizes.py`).
+  - Kapsam: nöronların %98,8'i. Yazarların tablosuyla ortak nöronların %99,3'ünde değer birebir aynı.
+  - Eksik boyutlar için aynı tipin, o da yoksa aynı süper sınıfın medyanı kullanılıyor.
+- **Yazarların ayarı:** MaleCNS koşusunun yapılandırması, Zenodo'daki 846 MB'lık zip'in yalnızca dizininden ve küçük yaml dosyasından okundu (67 KB). Sağ DNg100'e I = 400, süre 2 sn.
+- **Ağ seçimi (yazarların ölçütü):**
+  - motor nöronlar,
+  - onlara en az bir sinaps yapan nöronlar (nörotransmitter tahmini olanlar),
+  - bunlara sinaps yapan inen nöronlar;
+  - ağırlıklarda 5 sinaps eşiği.
+
+  Bu ölçüt yazarların ön bacak tablosunun 4.309 nöronunun tamamını buluyor (`connectome/motor_network.py`).
+
+### 8.2 Ön bacak ritminin yeniden üretimi
+
+`python -m flybrain.experiments.vnc_rhythm` (yazarların tablosundaki ağ, bizim bağlantılarımız):
+
+| Koşul | Koşu | Salınan (skor ≥ 0,5) | Skor medyanı | Frekans medyanı | Etkin motor nöron |
+|---|---|---|---|---|---|
+| Gerçek boyut, dt 0,1 ms | 48 | %97,9 | 0,99 | 11,2 Hz | 8 |
+| Sinaps sayısı vekili, dt 0,1 ms | 48 | %0 | 0 | — | 0 |
+| Gerçek boyut, dt 0,025 ms | 12 | %91,7 | 0,98 | 11,5 Hz | 8 |
+
+- **Ritim yeniden üretildi.** Frekans, gerçek yürümedeki 7–15 Hz aralığında.
+- **Faz farkı:** Kalçayı öne ve arkaya iten motor nöronlar arasında −60° ile −95° arası.
+- **Az motor nöron etkin:** Yazarların MaleCNS grafiği de az sayıda etkin motor nöron gösteriyor.
+- **Sinaps sayısı vekili işe yaramıyor:** Gerçek boyutla sıra korelasyonu 0,925 olmasına rağmen ritim tamamen kayboluyor. Vekil, inen nöronları ve ritim çekirdeğini ~2 kat büyük, motor nöronları ~2 kat küçük gösteriyor.
+- **Adım:** 0,1 ms yeterli.
+
+### 8.3 Ölçeği büyütmek: altı bacak ve tüm kordon
+
+**Tüm kordon (kanat, halter, karın, boyun ağları dahil):**
+- DNg100 12 Hz'in altında neredeyse sessiz.
+- Üstünde ~7.800 nöronun doyumda ateşlediği, kendini sürdüren bir duruma geçiyor. Bu durumda DNg100 bile ağ tarafından susturuluyor.
+- Normalizasyonu değiştirmek geçişin yerini kaydırıyor ama ara bir rejim bırakmıyor.
+- Yazarlar da 1.500'den fazla nöronun devreye girdiği koşuları kararsız sayıyor.
+
+**Altı bacağın motor ağı:** 381 motor nöron, 7.946 dinamik ara/çıkan nöron. İnen nöronlar kelepçeli, DNg100 pürüzsüz hızla, 8 tohum (`--bacaklar`):
+
+| DNg100 | Etkin nöron (medyan) | lf | rf | lm | rm | lh | rh |
+|---|---|---|---|---|---|---|---|
+| 10 Hz | 106 | 0/0 | 0/0 | 6/0 | 0/0 | 8/6 | 8/2 |
+| 12 Hz | 266 | 1/1 | 0/0 | 8/6 | 4/4 | 8/8 | 8/8 |
+| 14 Hz | 412 | 8/8 | 0/0 | 8/7 | 7/7 | 8/8 | 8/8 |
+| 17 Hz | 644 | 8/8 | 8/6 | 8/8 | 8/5 | 8/2 | 8/4 |
+| 20 Hz | 853 | 8/8 | 8/8 | 8/8 | 8/7 | 8/2 | 8/2 |
+| 25 Hz | 1.123 | 8/8 | 8/8 | 8/2 | 8/1 | 8/1 | 8/0 |
+
+Hücreler: etkin motor nöronu olan tohum / salınan tohum (8'den).
+
+- **Ritim rejimi:** 14–20 Hz'de bacakların çoğu güvenilir biçimde ~10 Hz'de salınıyor.
+- **Motor çıktı düşük:** Bacak başına 2–20 motor nöron etkin (bacak başına ~60 var) ve en yüksek hızları 2–38 Hz.
+- **Sonuç:** Kanat, karın ve boyun devreleri LIF'te kaldı.
+
+### 8.4 Melez: LIF beyin + hız modeli bacak ağı
+
+`sim/hybrid.py`:
+- **LIF → hız ağı:** Hız ağına sinaps yapan LIF nöronlarının (çoğu inen nöron) spike'ları süzülüp kelepçeli hız olarak giriyor.
+- **Hız ağı → LIF:** LIF'e sinaps yapan hız ağı nöronları, LIF'te kendi hızlarında Poisson ateşliyor.
+- **Motor nöronlar:** Spike sayıları hızlarından Poisson olarak örnekleniyor.
+
+DNg100 17 Hz, 2 sn (`--hibrit`):
+
+| DNg100 girdisi | Ağda etkin | lf | rf | lm | rm | lh | rh |
+|---|---|---|---|---|---|---|---|
+| Pürüzsüz 17 Hz | 525 | 6 / 0,82 | 3 / 0,18 | 10 / 0,86 | 7 / 0,61 | 18 / 0,44 | 17 / 0,41 |
+| Spike, süzgeç 20 ms | 2.009 | 50 / 0,03 | 31 / 0,07 | 27 / 0,00 | 36 / 0,03 | 34 / 0,04 | 35 / 0,08 |
+| Spike, süzgeç 100 ms | 2.215 | 49 / 0,01 | 29 / 0,01 | 29 / 0,00 | 33 / 0,00 | 39 / 0,01 | 41 / 0,03 |
+| Spike, süzgeç 300 ms | 523 | 8 / 0,14 | 6 / 0,18 | 14 / 0,20 | 12 / 0,13 | 21 / 0,23 | 21 / 0,26 |
+| Spike, süzgeç 1000 ms | 350 | 6 / 0,06 | 0 / 0 | 10 / 0,12 | 2 / 0 | 18 / 0,05 | 14 / 0,18 |
+
+Hücreler: etkin motor nöron / salınım skoru.
+
+- **Kısa süzgeçte doyum:** Tek bir inen nöronun 15 Hz'lik spike dizisi, 20 ms'lik süzgeçten sonra 90 Hz'e varan anlık sıçramalar üretiyor. Bu sıçramalar bacak ağını kalıcı doyuma (motor nöronlar ~200 Hz) kilitliyor.
+- **300 ms'de ritim korunuyor:** İzlerde ritim, süzülmüş hız ~12 Hz'i geçtikten sonra (~550 ms) açıkça görülüyor. Skorun düşük olmasının nedeni baştaki sessiz dönem ve genlik dalgalanması.
+- **Süzgeç seçimi (VARSAYIM):** 300 ms. Hız modeli girdisini bir popülasyon hızı olarak yorumluyor; 15 Hz'de bu süre ~4–5 spike aralığına denk geliyor.
+- **Akson ucu geri bildirimi:** Hız ağı nöronlarının inen nöronlara sinapsları kordonda, inen nöronun akson uçlarında bulunuyor. Tek bölmeli LIF'te bu sinapslar beyindeki spike başlangıç bölgesini de susturuyor, bu yüzden kesildi (VARSAYIM). Ölçülen etkisi küçük.
+
+### 8.5 Gövdede
+
+Tüm koşular propriyosepsiyon kapalı, `--vnc rate`:
+- **Sessiz beyin:** Tamamen hareketsiz (0 spike).
+- **DNg100 17 Hz, 2,5 sn (ritim rejimi):** 2,8 sn'de 201 bacak motor nöronu spike'ı. Gövde 0,25 mm kıpırdıyor, 6° yalpalıyor. **Bacaklar adım atacak kadar hareket etmiyor.**
+- **DNg100 150 Hz (LIF deneyi için seçilen hız):** Ağ doyuma gidiyor; bacak motor nöronları grup başına 100–400 spike/s. Sinek savruluyor (47°), sıçrama kası etkinleşiyor. Ritim yok.
+
+**Propriyosepsiyon açık:**
+- **Dinlenmede bile 2.000–3.500 hız nöronu etkin.** Yazarların ağında duyu nöronları girdi almıyordu, yani bu ölçek hiç kalibre edilmedi. Bizim tonik propriyoseptör hızlarımız hız ağında eşiğin yüzlerce katı girdi yaratıyor (tek bir kıl plakası grubunda 2.388 birim).
+- **Sonuç:** Sessiz sinek kıpırdanıyor, duruşu bozuluyor.
+
+### 8.6 Varsayımlar
+
+| Parametre | Değer | Dayanak |
+|---|---|---|
+| Model parametreleri | Pugliese ve ark. | Makale ve yazarların MaleCNS yapılandırması |
+| Eksik boyut | aynı tipin / süper sınıfın medyanı | %1,5 nöron |
+| Boyut normalizasyonu | bacak motor ağının medyanı | Yazarlar ağın kendi medyanını kullanıyor |
+| Spike → hız süzgeci | 300 ms | 8.4 |
+| Akson ucu geri bildirimi | LIF'te kesik | 8.4 |
+| Duyu nöronları | kodlayıcı hızına kelepçeli | Yazarların ağında 0 |
+| Motor nöron spike'ları | hızdan Poisson | Kas modeli spike bekliyor |
+| Kanat/karın/boyun ağları | LIF | 8.3 |
+
+### 8.7 Sonuç
+
+- **Başarılar:**
+  - Yayımlanmış yürüme ritmi modeli MaleCNS'te yeniden üretildi.
+  - Altı bacağın ağına genişletildi.
+  - LIF beyinle birlikte çalışıyor.
+- **Gövdeyi yürütmesi için üç engel (Z-33):**
+  1. Ritim rejiminde motor çıktı çok düşük.
+  2. Güçlü girdide ağ doyuma kilitleniyor.
+  3. Duyu girdisinin ölçeği kalibre edilmemiş.
+- **Sonraki yön:** Kullanıcıya soruldu.

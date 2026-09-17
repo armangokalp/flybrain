@@ -2,7 +2,8 @@
 
 Her COUPLE_MS milisaniyede:
   1. Gövdenin eklem açıları ve hızları propriyoseptör hızlarına çevrilir.
-  2. Beyin COUPLE_MS boyunca çalışır (propriyosepsiyon + dışarıdan verilen uyarım).
+  2. Sinir sistemi COUPLE_MS boyunca çalışır (propriyosepsiyon + dışarıdan verilen uyarım):
+     varsayılan tamamen LIF; `vnc="rate"` ile bacak motor ağı hız modelinde (K-025, deneysel).
   3. Motor nöronların spike sayıları kas modeline gider.
   4. Kas torkları gövdeye uygulanır, fizik aynı süre boyunca ilerler.
 
@@ -20,6 +21,7 @@ from flybrain.body.proprio import build_proprioception
 from flybrain.connectome.connectome import Connectome, load_connectome
 from flybrain.connectome.electrical import with_electrical
 from flybrain.sim import BRAIN_PARAMS, LIFParams, Simulator, Stimulus
+from flybrain.sim.hybrid import HybridCNS
 
 COUPLE_MS = 1.0
 # Nötr pozdan pasif duruşa oturma süresi (ölçüm: 500 ms'den sonra eklemler < 0,002 rad/100 ms).
@@ -61,7 +63,9 @@ class EmbodiedFly:
         camera_res: tuple[int, int] = (360, 480),
         electrical: bool = True,
         proprioception: bool = True,
+        vnc: str = "lif",
     ):
+        """vnc: "lif" — tüm sinir sistemi LIF; "rate" — bacak motor ağı hız modeliyle (K-025, deneysel)."""
         self.conn = conn or load_connectome()
         self.gap_junctions = []
         if electrical:
@@ -75,7 +79,16 @@ class EmbodiedFly:
             flex = {leg: v["tibia_flexion_sign"] for leg, v in self.body.geom["nmf"]["legs"].items()}
             self.proprio = build_proprioception(self.conn, self.table, self.body.dofs,
                                                 self.body.dof_ranges(), flex)
-        self.brain = Simulator(self.conn, params, seed=seed, std_exempt=std_exempt)
+        self.vnc = vnc
+        if vnc == "rate":
+            sensors = self.proprio.idx if self.proprio is not None else None
+            self.cns = HybridCNS(self.conn, params, seed=seed, std_exempt=std_exempt, sensors=sensors)
+            self.brain = self.cns.brain
+        elif vnc == "lif":
+            self.cns = None
+            self.brain = Simulator(self.conn, params, seed=seed, std_exempt=std_exempt)
+        else:
+            raise ValueError(f"bilinmeyen sinir kordonu modeli: {vnc}")
         self._steps = int(round(COUPLE_MS / 1000 / TIMESTEP_S))
         self._joint_index = {n: i for i, n in enumerate(self.body.joint_names)}
 
@@ -88,7 +101,10 @@ class EmbodiedFly:
         Oturma sırasında propriyosepsiyon kapalıdır: model sineği havada nötr pozda
         başlatır ve zemine iniş gerçek bir durum değildir. Beyin bu sürede girdi almaz.
         """
-        self.brain.reset()
+        if self.cns is not None:
+            self.cns.reset()
+        else:
+            self.brain.reset()
         self.body.reset()
         self.muscles.reset()
         if settle:
@@ -121,11 +137,14 @@ class EmbodiedFly:
         pr_acc = np.zeros(len(pr), dtype=np.int32)
         for k in range(n):
             angles = self.body.dof_angles()
-            drive = stim
-            if self.proprio is not None:
-                hz = self.proprio.rates(angles, self.body.dof_velocities())
-                drive = Stimulus(pr, hz) if stim is None or len(stim) == 0 else Stimulus.of(np.r_[pr, stim.idx], np.r_[hz, stim.hz])
-            result = self.brain.run(COUPLE_MS, drive).counts
+            hz = self.proprio.rates(angles, self.body.dof_velocities()) if self.proprio is not None else None
+            if self.cns is not None:
+                result = self.cns.step(COUPLE_MS, stim, hz)
+            else:
+                drive = stim
+                if hz is not None:
+                    drive = Stimulus(pr, hz) if stim is None or len(stim) == 0 else Stimulus.of(np.r_[pr, stim.idx], np.r_[hz, stim.hz])
+                result = self.brain.run(COUPLE_MS, drive).counts
             counts = result[mn]
             acc += counts
             pr_acc += result[pr]

@@ -22,6 +22,8 @@ Kullanılacak dosyalar (token gerektirmez):
 
 Taban adres: `https://storage.googleapis.com/flyem-male-cns/v1.0/connectome-data/flat-connectome/`
 
+- Nöron boyutları: MaleCNS neuPrint girdi tablosu `v1.0/database/neuprint-inputs/Neuprint_Neurons.feather` (yalnızca `bodyId` ve `size` sütunları, ilk 6 parça; `flybrain/connectome/sizes.py`)
+
 ### FlyWire FAFB v783 (yedek / doğrulama)
 
 - Dorkenwald ve ark. 2024, *Nature* 634:124–138
@@ -36,7 +38,7 @@ Taban adres: `https://storage.googleapis.com/flyem-male-cns/v1.0/connectome-data
 - Bidaye ve ark. 2020, *Neuron* — ileri yürüme ve dönme için inen nöronlar
 - Rayshubskiy ve ark. 2020 — DNa02 ve dönme
 - Hampel ve ark. 2015, *eLife* — anten temizleme devresi
-- Pugliese ve ark. 2025, bioRxiv — [sinir kordonu konnektomu simülasyonlarıyla yürüme ritim devresi](https://pmc.ncbi.nlm.nih.gov/articles/PMC13142387/) (DNg100, E1/E2/I1 çekirdeği). Kod: <https://github.com/smpuglie/Pugliese_cpg_2025>
+- Pugliese ve ark. 2025, bioRxiv — [sinir kordonu konnektomu simülasyonlarıyla yürüme ritim devresi](https://pmc.ncbi.nlm.nih.gov/articles/PMC13142387/) (DNg100, E1/E2/I1 çekirdeği). Kod (MIT): <https://github.com/smpuglie/Pugliese_cpg_2025>. Simülasyon verisi: [Zenodo 22260924](https://zenodo.org/records/22260924). Hız modelimizin kaynağı (K-025); ön bacak MaleCNS tablosu (`wTable_20260210_vncRoisOnly.csv`) doğrulama için indirildi
 - McKellar ve ark. 2020, *eLife* 9:e54978 — [hortumun tüm kaslarının motor nöronları](https://elifesciences.org/articles/54978): MN9 rostrum ileri + haustellum açma, MN4 haustellum açma, MN1/MN2 geri çekme, MN3 haustellum bükme
 - Zumstein ve ark. 2004, *J Exp Biol* 207:3515 — [sıçramada kuvvet üretimi](https://journals.biologists.com/jeb/article/207/20/3515/14914/Distance-and-force-production-during-jumping-in): TTM, orta bacak ucunda 101 µN, tepeye 8,2 ms
 - Tanouye ve Wyman 1980, *J Neurophysiol*; Allen ve ark. 2006, *Curr Opin Neurobiol* — dev lif sistemi, dev lif → TTMn ve PSI elektriksel sinapsları (K-023)

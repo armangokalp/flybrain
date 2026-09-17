@@ -17,7 +17,7 @@ Kararları insan, dil modeli ya da eğitilmiş bir yorumlayıcı ağ vermez. Sin
 - ✅ **Faz 2:** simülasyon çekirdeği (neredeyse gerçek zamanlı, kararlı beyin ayarı)
 - ✅ **Faz 3:** duyu kodlayıcıları (görsel → göz, caption → koku, bildirim → dopamin)
 - ✅ **Faz 4:** motor kod çözücü (kas grupları → Instagram eylemleri, eylem bütçesi, eşik homeostazı)
-- ⏭️ **Faz 5:** 3D gövde (motor nöron → kas → eklem, NeuroMechFly) — sürüyor
+- ⏭️ **Faz 5:** 3D gövde (motor nöron → kas → eklem, NeuroMechFly), propriyosepsiyon, deneysel sinir kordonu hız modeli — sürüyor; yürüme henüz yok
 - **Faz 6:** görselleştirme ve kayıt (3D sinek, 3D beyin, sineğin gördüğü)
 - **Faz 7:** yerel kum havuzu ve korku tepkisi
 - **Faz 8–10:** Instagram bağlantısı, içerik üretimi, öğrenme

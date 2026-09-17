@@ -277,3 +277,21 @@ Durumlar: **önerildi** · **kabul edildi** · **yerine geçti**
   - Yönü belirsiz kordotonal tipler.
   - Boyun kıl plakaları: bağlantıları çelişkili.
 - **Sonuç:** Refleks yönü doğrulandı. Refleks genliği zayıf (Z-31); ön bacaklarda veri eksik (Z-32).
+
+## K-025 · Sinir kordonu için hız modeli (Pugliese ve ark.) — deneysel
+
+- **Durum:** kabul edildi, deneysel (2026-09-17). Varsayılan model şimdilik tamamen LIF.
+- **Bağlam:** LIF ayarında bacak motor nöronları yürüme komutu altında 2–8 Hz'de kalıyor ve kazancı artırmak koordinasyon getirmiyor (Z-31). Bu konnektomda yürüme ritmini gösteren tek çalışma (Pugliese ve ark. 2025) nöron boyutuna göre ölçeklenmiş, hız tabanlı bir model kullanıyor.
+- **Kullanıcı kararı:** "Sinir kordonu hıza dayalı model" (seçenekler: hız modeli / LIF'i ayarlamak / yürümeyi ertelemek).
+- **Uygulama:**
+  - **Model:** `flybrain/sim/rate.py`. Denklem ve parametreler makaledeki gibi; kod yazarların deposundan kopyalanmadı, makaleden yeniden yazıldı.
+  - **Nöron boyutu:** MaleCNS neuPrint girdi tablosundan, dosyanın tamamı indirilmeden (HTTP aralık istekleri, ~4 MB) okundu. Kullanıcı izniyle: `flybrain/connectome/sizes.py`.
+    - Sinaps sayısı boyut vekili olarak denendi. Sıra korelasyonu 0,925 olmasına rağmen ritmi tamamen yok etti.
+  - **Ağ:** Yazarların seçim ölçütü (motor nöronlar, onlara en az bir sinaps yapanlar, bunlara sinaps yapan inen nöronlar) altı bacağa uygulandı: `connectome/motor_network.py`. Kanat, karın ve boyun ağları eklenince model kendini sürdüren doygun bir duruma geçiyor; bu ağlar LIF'te kaldı.
+  - **Melez:** `sim/hybrid.py`. Beyin ve inen nöronlar LIF, bacak motor ağı hız modeli. İnen nöron spike'ları 300 ms'lik süzgeçle hıza çevriliyor.
+- **Doğrulama:** Yazarların MaleCNS ön bacak deneyi yeniden üretildi: koşuların %98'i salınıyor, 11 Hz.
+- **Neden deneysel:**
+  - Ritim rejiminde bacak motor nöronu hızları 1–6 Hz; gövde neredeyse kıpırdamıyor.
+  - Güçlü girdide ağ doyuma kilitleniyor (motor nöronlar 200 Hz).
+  - Propriyosepsiyonun hız modelindeki ölçeği kalibre edilmemiş: dinlenmede bile ağı doyuruyor.
+  - Ayrıntılar: [09-govde.md](09-govde.md#8-sinir-kordonu-hız-modeli-2026-09-17), Z-33. Sonraki yön kullanıcıya soruldu.

@@ -275,7 +275,7 @@ Uçtan uca testte şeker tadı hortum nöronlarına ulaşıyor. Ama en çok çal
 - **Neden (olası):** Shiu ve ark.'nın LIF modeli beyindeki duyu → karar yolları için doğrulanmıştı. Sinir kordonu için bir doğrulaması yok. Pugliese ve ark. (2025) sinir kordonunda ritmi, nöron boyutuna göre ölçeklenmiş kazanç ve eşik kullanan, 200 Hz'de doyan hız tabanlı bir modelle elde etti.
 
 **Çözüm yolları (kullanıcıya soruldu):**
-- Sinir kordonunu Pugliese ve ark.'nın hız tabanlı modeliyle simüle etmek; beyin LIF olarak kalır, arayüz inen ve çıkan nöronlar.
+- Sinir kordonunu Pugliese ve ark.'nın hız tabanlı modeliyle simüle etmek; beyin LIF olarak kalır, arayüz inen ve çıkan nöronlar. **Seçildi (K-025); sonuç Z-33.**
 - Sinir kordonu için ayrı bir kazanç, literatürdeki sinir kordonu ölçümlerine (motor nöron hızları, ritim frekansı, direnç refleksi) göre kalibre edilir (K-011'in yöntemi).
 - Yürümeyi araştırma olarak paralel sürdürüp sonraki adımlara (görme, sahne, görselleştirme) geçmek.
 
@@ -288,6 +288,27 @@ Uçtan uca testte şeker tadı hortum nöronlarına ulaşıyor. Ama en çok çal
 **Çözüm yolları:**
 - MaleCNS'in sonraki sürümlerini izlemek.
 - FANC/BANC eşleşmelerinden tip kimliği aktarmak (indirme gerektirir).
+
+### Z-33 · Hız modeli: ritim var ama zayıf, güçlü girdide doyum 🔴
+
+Pugliese ve ark.'nın modeli MaleCNS'te yeniden üretildi (K-025): ön bacak ağının koşularının %98'i 11 Hz'de salınıyor. Gövdeye bağlanınca üç sorun çıktı ([09-govde.md](09-govde.md#8-sinir-kordonu-hız-modeli-2026-09-17)):
+
+1. **İki kararlı durum:**
+   - Bacak ağı ya ritim üreten düşük aktiviteli bir durumda ya da kendini sürdüren doygun bir durumda (binlerce nöron, motor nöronlar 200 Hz) duruyor.
+   - DNg100'ün 15 Hz'lik spike dizisi 20 ms'lik süzgeçle anlık 90 Hz'e çıkıyor ve ağı doyuma kilitliyor. 300 ms'lik süzgeç ritmi koruyor.
+   - Tüm kordon (kanat, karın, boyun ağlarıyla) DNg100 12 Hz'i geçince doyuma gidiyor. Yazarlar da 1.500'den fazla nöronun devreye girdiği koşuları "kararsız" sayıp dışarıda bırakıyor.
+2. **Ritim rejiminde motor çıktı çok düşük:**
+   - Etkin bacak motor nöronları 1–30 Hz'de.
+   - DNg100 17 Hz'de gövde 2,8 sn'de 0,25 mm kıpırdıyor (201 motor nöron spike'ı).
+   - Yazarlar da yürümede etkin olması gereken kasların çoğunun modelde sessiz ya da ritimsiz kaldığını bildiriyor.
+3. **Duyu girdisinin ölçeği kalibre edilmemiş:**
+   - Yazarların ağında duyu nöronları girdi almıyordu (hızları 0).
+   - Bizim propriyoseptörlerimizin dinlenmedeki tonik hızları hız ağında eşiğin yüzlerce katı girdi yaratıyor ve 2.000–3.500 nöronu etkinleştiriyor.
+
+**Çözüm yolları (kullanıcıya soruldu):**
+- İki kalibrasyon: hız modeli → kas eşlemesi ve duyu girdisi kazancı. Hedefler literatürden: yürümede motor nöron hızları, dinlenmede sessiz duruş, direnç refleksinin yönü.
+- Hız modeline biyolojik bir dengeleyici eklemek (ateşleme adaptasyonu). Doygun durumu sonlandırabilir; ön bacak ritminin korunduğu yeniden doğrulanmalı.
+- Yürümeyi araştırma olarak bırakıp sonraki adımlara geçmek. Varsayılan model şimdilik LIF: sessiz duruş, refleksler ve sıçrama orada doğru çalışıyor.
 
 ---
 

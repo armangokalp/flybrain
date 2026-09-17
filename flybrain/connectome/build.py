@@ -18,6 +18,7 @@ import pyarrow.compute as pc
 import pyarrow.feather as pf
 import scipy.sparse as sp
 
+from flybrain.connectome.sizes import SIZES
 from flybrain.paths import CACHE, RAW
 
 ANNOTATIONS = RAW / "body-annotations-male-cns-v1.0-minconf-0.5.feather"
@@ -76,6 +77,9 @@ def _neuron_table() -> pd.DataFrame:
         [consensus_ok, predicted_ok], ["consensus", "predicted"], default="default"
     )
     a["sign"] = a.nt.map(SIGN).fillna(DEFAULT_SIGN).astype(np.int8)
+    # Nöron boyutu (voksel); neuPrint tablosunun okunan kısmında olmayanlar NaN (bkz. sizes.py).
+    if SIZES.exists():
+        a = a.merge(pd.read_parquet(SIZES), on="bodyId", how="left")
     return a.drop(columns=["consensus_nt", "predicted_nt"])
 
 
