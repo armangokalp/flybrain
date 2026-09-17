@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from flybrain.body.phone import SCROLL_MS, FeedPost, PhoneFeed, post_box
+from flybrain.body.phone import DEFAULT_THEME, SCROLL_MS, THEMES, USER_ROW, FeedPost, PhoneFeed, post_box
 from flybrain.body.scene import PHONE_ASPECT, SceneConfig
 from flybrain.fly import VISION
 
@@ -39,6 +39,19 @@ def test_feed_scrolls_to_next_post():
     assert not feed.scrolling
     assert np.all(feed.frame()[top:bottom, left:right] == 0)
     assert not feed.update(SCROLL_MS + 10)
+
+
+@pytest.mark.parametrize("theme", list(THEMES))
+def test_theme_colors_feed_background(theme):
+    bg = THEMES[theme].bg
+    feed = PhoneFeed(CFG.texture_shape, previous=_post(0.5), theme=theme)
+    feed.show(_post(0.5))
+    feed.update(0.0)
+    top, bottom, left, right = post_box(CFG.texture_shape)
+    frame = feed.frame()
+    gap = frame[top - int(round(USER_ROW * CFG.texture_shape[1])) - 10, left:right]  # önceki postun altı
+    assert np.all(gap == bg)
+    assert np.all(frame[top:bottom, left:right] == 128)
 
 
 @pytest.fixture(scope="module")
@@ -140,7 +153,7 @@ def test_video_plays_on_post_image_and_keeps_last_frame():
     assert np.all(feed.frame()[top:bottom, left:right] == 10)
     feed.update(30.0)
     assert np.all(feed.frame()[top:bottom, left:right] == 10)
-    assert feed.frame()[top - 5, left + 5].tolist() == [255, 255, 255]  # kullanıcı satırı değişmez
+    assert feed.frame()[top - 5, left + 5].tolist() == list(THEMES[DEFAULT_THEME].bg)  # kullanıcı satırı değişmez
 
 
 def test_looming_disc_triggers_giant_fiber():

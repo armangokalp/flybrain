@@ -65,9 +65,10 @@ Ayrıntı: [09-govde.md](09-govde.md). Kararlar: K-019–K-029.
 - [x] Sinir kordonu hız modeli (K-025, deneysel): Pugliese ve ark. ön bacak ritmi yeniden üretildi, altı bacağa genişletildi, LIF beyinle melez
 - [ ] Yürüme: hız modelinde motor çıktı düşük, doyum ve duyu kazancı kalibre değil (Z-33) — ertelendi (K-026)
 - [x] Sineğin gözleriyle görme: başa bağlı kameralar → konnektom göz kolonları, zamansal uyum (K-027)
-- [x] Sahne: serbest sinek ve onu izleyen dikey, kavisli telefon ekranı; Instagram benzeri akış ve gerçek kaydırma (K-021, K-028)
-- [x] Yaklaşan nesne → kaçış: ekranda büyüyen disk dev lifi %91 ateşletiyor; gövdeli görme kazancı 125 Hz (K-029, Z-25)
-- [ ] Dinlenen sineğin kendi hareketinden gelen kendiliğinden kaçışlar (~17 sn'de bir, Z-34); kaydırma her seferinde kaçış tetikliyor (Z-35, modelin öngörüsü olarak kabul edildi)
+- [x] Sahne: serbest sinek ve onu izleyen dikey, kavisli telefon ekranı; Instagram benzeri akış, koyu tema, sonraki posta solarak geçiş (K-021, K-028, K-030)
+- [x] Yaklaşan nesne → kaçış: ekranda büyüyen disk dev lifi açık temada %91–96, koyu temada %77 ateşletiyor; gövdeli görme kazancı 125 Hz (K-029, K-030, Z-25)
+- [ ] Dinlenen sineğin kendi hareketinden gelen kendiliğinden kaçışlar (~17 sn'de bir, Z-34)
+- [x] Post geçişinde kaçış: kaydırma her seferinde kaçış tetikliyordu; geçiş solma ve koyu temayla çözüldü (Z-35, K-030)
 - [ ] Kapalı döngü (beyin + gövde + görme + ekran) ve hız iyileştirmesi (Z-21) — döngü çalışıyor, gerçek zamanın ~4–5 katı yavaş
 - [x] Neden–sonuç testleri: MN9 → hortum ✅, dev lif → sıçrama ✅ (K-023), DNg100 → bacaklar kıpırdıyor ama yürüme yok, şeker → kısmi (Z-30)
 - [ ] Nöral karar ile gövde hareketinin örtüşme ölçümü (K-020, Z-27)
@@ -100,6 +101,7 @@ Ayrıntı: [09-govde.md](09-govde.md). Kararlar: K-019–K-029.
 - [ ] Tekrarlanabilirlik testi (aynı seed → aynı davranış)
 - [ ] Zamansal görme: videolar ve kaydırma hareketi (Z-25)
 - [ ] Korku testi: yaklaşan nesne → LPLC2/LC4 → dev lif → sıçrama
+- [ ] Kaçışın yaklaşmaya özgüllüğü: model kararmaya da yaklaşma kadar güçlü kaçıyor; gerçek LPLC2 kaçmıyor. Hareket yönü hesabı (T4/T5) ve kontroller (Z-25)
 
 **Bitiş:**
 - Sinek sahte feed'de saatlerce çökmeden "geziniyor".

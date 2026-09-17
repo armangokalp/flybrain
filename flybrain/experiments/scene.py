@@ -8,10 +8,13 @@
             bacak motor nöronları ve göğsün yer değiştirmesi kaydedilir.
   acilis  : ekran kapalıyken (siyah) 300 ms, sonra post açılır.
 
+Geçişler ekran temalarıyla (phone.THEMES) ayrı ayrı ölçülebilir (--themes).
+
 Her denemede sinek sıfırlanır (beyin ve gövde); ekranın akışı yeniden kurulur.
 
 Kullanım:
     python -m flybrain.experiments.scene [--pairs 8] [--seeds 0] [--workers 4] [--video]
+    python -m flybrain.experiments.scene --no-extras --modes kaydir --themes acik koyu gri
 """
 
 import argparse
@@ -21,6 +24,7 @@ from concurrent.futures import ProcessPoolExecutor
 
 import numpy as np
 
+from flybrain.body.phone import DEFAULT_THEME, FADE_MS, THEMES
 from flybrain.paths import RUNS
 
 BASE_MS = 500.0
@@ -29,8 +33,9 @@ AFTER_MS = 1500.0
 TRANSITIONS = {
     "ani": ("show", 0.0),
     "kaydir": ("scroll", 400.0),
+    "kaydir_hizli": ("scroll", 250.0),
     "kaydir_yavas": ("scroll", 1200.0),
-    "solma": ("fade", 300.0),
+    "solma": ("fade", FADE_MS),
 }
 EARLY_MS = 100.0
 IMAGE_SEED = 11
@@ -100,14 +105,14 @@ def _summary(fly, counter, trace, t0: float, t_event: float) -> dict:
     }
 
 
-def transitions(pairs: list[tuple[int, int]], seed: int, mode: str) -> list[dict]:
+def transitions(pairs: list[tuple[int, int]], seed: int, mode: str, theme: str = DEFAULT_THEME) -> list[dict]:
     from flybrain.body.phone import PhoneFeed
 
     fly = _fly(seed)
     counter = _Counter(fly, _groups(fly))
     out = []
     for i, j in pairs:
-        fly.feed = PhoneFeed(fly.scene.cfg.texture_shape, previous=_post(100 + i))
+        fly.feed = PhoneFeed(fly.scene.cfg.texture_shape, previous=_post(100 + i), theme=theme)
         fly.show_post(_post(i))
         fly.reset()
         counter.log.clear()
@@ -122,7 +127,8 @@ def transitions(pairs: list[tuple[int, int]], seed: int, mode: str) -> list[dict
         else:
             fly.fade_to_post(_post(j), duration)
         fly.run(AFTER_MS, trace=trace)
-        out.append({"i": i, "j": j, "yontem": mode, "seed": seed, **_summary(fly, counter, trace, t0, t_event)})
+        out.append({"i": i, "j": j, "yontem": mode, "tema": theme, "seed": seed,
+                    **_summary(fly, counter, trace, t0, t_event)})
     return out
 
 
@@ -144,22 +150,31 @@ def onset(seed: int, video: bool = False) -> dict:
     return out
 
 
-def scroll_video(seed: int = 0) -> str:
-    """Ekran açık, sinek bakar, akış iki kez kayar."""
+def transition_video(seed: int = 0, theme: str = DEFAULT_THEME, mode: str = "solma") -> str:
+    """Ekran açık, sinek bakar, akış iki kez sonraki posta geçer (TRANSITIONS[mode])."""
     from flybrain.body.phone import PhoneFeed
 
+    def go(post):
+        kind, duration = TRANSITIONS[mode]
+        if kind == "show":
+            fly.show_post(post)
+        elif kind == "scroll":
+            fly.scroll_to_post(post, duration)
+        else:
+            fly.fade_to_post(post, duration)
+
     fly = _fly(seed)
-    fly.feed = PhoneFeed(fly.scene.cfg.texture_shape, previous=_post(100))
+    fly.feed = PhoneFeed(fly.scene.cfg.texture_shape, previous=_post(100), theme=theme)
     fly.show_post(_post(0))
     fly.reset()
     frames = []
     grab = recorder(frames)
     trace = fly.run(600, on_step=grab)
-    fly.scroll_to_post(_post(1))
+    go(_post(1))
     fly.run(1500, on_step=grab, trace=trace)
-    fly.scroll_to_post(_post(4))
+    go(_post(4))
     fly.run(1500, on_step=grab, trace=trace)
-    return str(write_video(frames, f"scene-kaydirma-{seed}"))
+    return str(write_video(frames, f"scene-{mode}-{theme}-{seed}"))
 
 
 def recorder(frames: list, fps: float = 30.0, camera: str = "izleme"):
@@ -219,6 +234,7 @@ def main():
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--video", action="store_true")
     ap.add_argument("--modes", nargs="+", default=list(TRANSITIONS), choices=list(TRANSITIONS))
+    ap.add_argument("--themes", nargs="+", default=[DEFAULT_THEME], choices=list(THEMES))
     ap.add_argument("--no-extras", action="store_true", help="kapsama ve açılış ölçümlerini atla")
     args = ap.parse_args()
     RUNS.mkdir(exist_ok=True)
@@ -226,22 +242,23 @@ def main():
     rng = np.random.default_rng(0)
     pairs = [tuple(int(x) for x in rng.choice(12, 2, replace=False)) for _ in range(args.pairs)]
     chunks = [pairs[k::args.workers] for k in range(args.workers)]
-    jobs = [(c, s, m) for s in args.seeds for m in args.modes for c in chunks if c]
+    jobs = [(c, s, m, th) for th in args.themes for s in args.seeds for m in args.modes for c in chunks if c]
     with ProcessPoolExecutor(args.workers) as ex:
         results = {}
         if not args.no_extras:
             results["kapsama"] = ex.submit(coverage)
             results["acilis"] = [ex.submit(onset, s, args.video) for s in args.seeds]
         if args.video:
-            results["kaydirma_video"] = ex.submit(scroll_video, args.seeds[0])
+            results["gecis_video"] = [ex.submit(transition_video, args.seeds[0], th, args.modes[0])
+                                      for th in args.themes]
         runs = [ex.submit(transitions, *j) for j in jobs]
         out = {k: (v.result() if not isinstance(v, list) else [x.result() for x in v]) for k, v in results.items()}
         out["gecis"] = [r for f in runs for r in f.result()]
     rows = out["gecis"]
     out["ozet"] = {}
-    for mode in args.modes:
-        sel = [r for r in rows if r["yontem"] == mode]
-        out["ozet"][mode] = {
+    for th, mode in [(th, m) for th in args.themes for m in args.modes]:
+        sel = [r for r in rows if r["yontem"] == mode and r["tema"] == th]
+        out["ozet"][f"{th}/{mode}"] = {
             "deneme": len(sel),
             "dev_lif_ateslenen": sum(r["ilk_100ms"]["dev_lif"] + r["sonra"]["dev_lif"] > 0 for r in sel),
             "dev_lif_spike_ort": round(float(np.mean([r["ilk_100ms"]["dev_lif"] + r["sonra"]["dev_lif"] for r in sel])), 1),
@@ -255,7 +272,7 @@ def main():
     for r in out.get("acilis", []):
         print("açılış", r)
     for r in rows:
-        print(r["yontem"], r["i"], "->", r["j"], "dev lif", r["ilk_100ms"]["dev_lif"], r["sonra"]["dev_lif"],
+        print(r["tema"], r["yontem"], r["i"], "->", r["j"], "dev lif", r["ilk_100ms"]["dev_lif"], r["sonra"]["dev_lif"],
               "LC4", r["ilk_100ms"]["lc4"], r["sonra"]["lc4"], "göğüs", r["gogus_mm"])
     print(f"sonuçlar: {path}")
 

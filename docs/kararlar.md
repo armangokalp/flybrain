@@ -324,7 +324,7 @@ Durumlar: **önerildi** · **kabul edildi** · **yerine geçti**
 
 ## K-028 · Sahne: sineğin önünde dikey, kavisli telefon ekranı
 
-- **Durum:** kabul edildi (2026-09-17). Ekran boyu, izleme ve geçiş kullanıcı kararı; geometrinin ayrıntıları ölçümle seçildi.
+- **Durum:** kabul edildi (2026-09-17). Ekran boyu, izleme ve geçiş kullanıcı kararı; geometrinin ayrıntıları ölçümle seçildi. **Geçiş kısmı yerine geçti: K-030.**
 - **Bağlam:** K-021 sahneyi "serbest sinek + onu izleyen ekran" olarak belirlemişti. Ekranın boyu, izleme biçimi ve post geçişi açıktı.
 - **Karar:**
   - **Boyut (kullanıcı):** Önde geniş ekran, ama akıllı telefon oranında (9:19,5, dikey). Bu, K-014'teki tam panoramanın yerini alıyor.
@@ -332,7 +332,7 @@ Durumlar: **önerildi** · **kabul edildi** · **yerine geçti**
   - **Post konumu:** Görsel gezinme çubuğunun hemen üstünde (aşağı kaydırılmış akış).
   - **Yuva:** Telefon zemindeki bir yuvaya oturuyor; gezinme çubuğu ve alt çerçeve (0,95 mm) zeminin altında kalıyor.
   - **İzleme (kullanıcı):** Ekran başın konumunu ve göğsün yönünü 500 ms zaman sabitiyle izliyor.
-  - **Geçiş (kullanıcı):** Sonraki posta gerçek kaydırmayla geçiliyor (400 ms, hızlı başlayıp yavaşlayan).
+  - **Geçiş (kullanıcı):** Sonraki posta gerçek kaydırmayla geçiliyor (400 ms, hızlı başlayıp yavaşlayan). *(Yerine geçti: K-030, solarak geçiş.)*
   - **Arena:** Gri; gökyüzü 0,5, zemin 0,40/0,45. Işık yukarıdan geliyor, kameraya bağlı ışık zayıf.
 - **Gerekçe:**
   - **Görünen bölge:** Gözler 0,7 mm yüksekte ve kolonların en üstü ~75° yukarı bakıyor. Sinek dikey bir telefonun yalnızca alt ~%60'ını görüyor; post bu bölgeye konuldu.
@@ -341,6 +341,7 @@ Durumlar: **önerildi** · **kabul edildi** · **yerine geçti**
 - **Sonuç ([09-govde.md](09-govde.md#11-telefon-ekranlı-sahne-2026-09-17)):**
   - Ekran kolonların %66'sını, post görseli %62'sini kaplıyor.
   - Kaydırma, sineği her geçişte kaçırıyor (12/12). Kullanıcı bunu modelin kendi öngörüsü olarak kabul etti (Z-35).
+  - *Sonradan:* Kontroller kaçışın yaklaşmaya özgü olmadığını gösterdi (Z-25); "öngörü" çerçevesi geri çekildi ve geçiş değişti (K-030).
   - Ani değişim ve solarak geçiş deneyler için seçenek olarak duruyor.
 - **İlke notu:** Ekranın izlemesi ve geçişin biçimi "dünya fiziği" kararları; sineğin kararlarına dokunmuyor.
 
@@ -368,3 +369,42 @@ Durumlar: **önerildi** · **kabul edildi** · **yerine geçti**
   - Kalan kendiliğinden kaçışlar (Z-34).
   - Dev lifin yaklaşma sırasındaki zamanlaması literatürle karşılaştırılmadı (Z-25).
   - Instagram kararları gövdeli sinekte yeniden kalibre edilecek (K-020).
+
+## K-030 · Sonraki posta solarak geçiş, koyu tema
+
+- **Durum:** kabul edildi (2026-09-17), kullanıcı kararı. K-028'in geçiş kısmının yerine geçti.
+- **Bağlam:**
+  - K-028'de gerçek kaydırma seçilmiş, sineğin her kaydırmada kaçması "modelin öngörüsü" sayılmıştı (Z-35).
+  - Kullanıcı sineğin telefondan korkmasının nasıl önleneceğini sordu: kaçan sinek akışı kaydıramaz.
+  - **Kontroller (Z-25):** Kaçış yaklaşmaya özgü değil. Büyümeden kararan bir bölge de, yaklaşan disk kadar kaçış tetikliyor. Gerçek sinekte yaklaşma algılayıcısı LPLC2 kararmaya ve geniş alan kaymasına yanıt vermiyor (Klapoetke ve ark. 2017). Kaydırmadaki kaçış bu yüzden büyük olasılıkla modelin bir eksikliği, öngörüsü değil.
+- **Seçenekler:**
+  - **Gözü seçici yapmak** (hareket yönü hesabı, yaklaşma algılayıcısı): asıl çözüm, bir araştırma işi.
+  - **Ekranı yumuşatmak** (tema ve geçiş biçimi): hızlı ama modelin eksikliğini gizliyor. *Kullanıcı bunu seçti.*
+  - **Dopamin:** Denendi, kaçışı önlemiyor (Z-35).
+  - **Görme kazancını düşürmek:** 100 Hz'de yaklaşan diske kaçış 4/8'e, 75 Hz'de 0/7'ye iniyor (K-029); sinek tehlikeyi de görmez olur.
+- **Ölçüm (125 Hz, her hücrede 12 geçiş; dev lifin ateşlendiği deneme, parantez içinde sıçrama sayısı):**
+
+  | Tema | Kaydırma 400 ms | Kaydırma 250 ms | Anında | Solma 300 ms |
+  |---|---|---|---|---|
+  | Açık (Instagram varsayılanı) | 12/12 (11) | 8/12 (6) | 1/12 (1) | 1/12 (1) |
+  | **Koyu** (Instagram karanlık modu) | 11/12 (11) | 11/12 (7) | 2/12 (1) | **0/12 (0)** |
+  | Gri (görsellerin ortalama parlaklığı) | 9/12 (5) | 6/12 (4) | 6/12 (3) | 2/12 (3) |
+
+  - Gri temada 2 postta sinek geçişten önce, beklerken de kaçtı; açık temada 1 postta. Sıçrama sayısı beklemeyi de kapsıyor, bu yüzden gri temada dev lif sayısından büyük çıkabiliyor.
+  - 12 deneme az ve sonuçlar ölçümden ölçüme oynuyor. Açık temada anında geçiş önceki ölçümde 5/12, solma 2/12 çıkmıştı. Koyu temada solmanın tekrarında 2/12 çıktı: biri gerçek kaçış (12 spike, sıçrama), öteki tek spike. Aynı tekrarda bir postta sinek beklerken kaçtı.
+- **Karar (kullanıcı):**
+  - Sonraki posta geçiş **solarak**, 300 ms (`EmbodiedFly.next_post`, `phone.FADE_MS`).
+  - Ekran **koyu temada** (`phone.DEFAULT_THEME`).
+  - Kaydırma, anında geçiş, açık ve gri tema deneyler için duruyor.
+- **Gerekçe:**
+  - Solma, açık ve koyu temada en düşük kaçışı veriyor: iki ölçümün toplamında koyu 2/24, açık 3/24.
+  - Solmada iki tema arasındaki fark gürültü düzeyinde. Tema kullanıcı tercihi.
+- **Ek ölçüm, koyu temanın yan etkisi (kullanıcıya soruldu):**
+  - Koyu temada yaklaşan diske tepki zayıflıyor. İki ölçümün toplamında (8 + 16 post, beklerken kaçanlar hariç) kaçış açık temada 22/23 (%96), koyu temada 17/22 (%77). Ortalama LC4 spike'ı açık temada 178–179, koyu temada 68–130.
+  - Solma iki temada da düşük kalıyor: 16 postluk tekrarda açık 1/15, koyu 1/14, sıçrama yok.
+  - Açık tema önerildi; kullanıcı koyu temada kalmayı seçti.
+- **Bedel:**
+  - Instagram akışında solarak geçiş yok; gerçekçilik azaldı.
+  - Koyu temada yaklaşan nesneye kaçış %96'dan %77'ye iniyor.
+  - Faz 8'de gerçek ekran görüntüleri de karanlık modda alınmalı.
+- **İlke notu:** Dünya tarafında bir karar; sineğin nöronlarına ve kaçış devresine dokunulmadı. Gözün yaklaşmayı kararmadan ayıramaması (Z-25) açık kalıyor. Korku tepkisinin anlam taşıması gereken Faz 7'de yeniden ele alınmalı.

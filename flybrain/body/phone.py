@@ -10,13 +10,20 @@ Ekran iki katmandan oluşur:
 
 Bir posta "bakılırken" görseli gezinme çubuğunun hemen üstündedir (aşağı kaydırılmış akış):
 sinek ekranın yalnızca alt ~%60'ını görür (body/scene.py) ve görsel bu bölgeyi kaplar.
-Sonraki posta geçiş gerçek bir telefondaki gibi kaydırmadır: akış SCROLL_MS içinde, hızlı
-başlayıp yavaşlayarak bir post boyu yukarı kayar.
-
-Geçiş türleri: doğrudan (`show`), kaydırarak (`scroll_to`), solarak (`fade_to`: eski ekran
-görüntüsü yenisine karışarak dönüşür).
+Geçiş türleri:
+  - solarak (`fade_to`): eski ekran görüntüsü FADE_MS içinde yenisine karışarak dönüşür.
+    Sonraki posta varsayılan geçiş budur (K-030).
+  - kaydırarak (`scroll_to`): gerçek telefondaki gibi akış SCROLL_MS içinde, hızlı başlayıp
+    yavaşlayarak bir post boyu yukarı kayar. Sinek bunda neredeyse her seferinde kaçar (Z-35);
+    deneyler için duruyor.
+  - doğrudan (`show`): ekran hemen değişir.
 
 Bakılan postun görseli yerine video da oynatılabilir (`play`); video bitince son karesi kalır.
+
+Tema (THEMES): koyu (Instagram'ın karanlık modu; varsayılan, K-030), açık (Instagram'ın
+varsayılanı) ve gri (zemin, post görsellerinin ortalama parlaklığında; gerçek Instagram'da yok,
+kontrol için). Sinek, kaydırmada ekrandan geçen geniş açık-koyu alanlardan kaçar (Z-35); tema
+bu alanların parlaklığını belirler.
 
 Yazılar insan izleyici içindir; sinek onları yalnızca açık-koyu desen olarak görür.
 """
@@ -39,10 +46,29 @@ BELOW_IMAGE = 0.38   # görselin altındaki simgeler, beğeni, açıklama, yorum
 POST_ASPECT = 5 / 4  # görsel yükseklik / genişlik
 # Kaydırmanın süresi (VARSAYIM; parmakla hızlı kaydırmada akış ~0,3-0,5 sn'de durur).
 SCROLL_MS = 400.0
-BG = (255, 255, 255)
-INK = (20, 20, 20)
-MUTED = (142, 142, 142)
-LINE = (219, 219, 219)
+# Sonraki posta solarak geçişin süresi (K-030; ölçülen tek süre).
+FADE_MS = 300.0
+
+
+@dataclass(frozen=True)
+class Theme:
+    bg: tuple[int, int, int]
+    ink: tuple[int, int, int]
+    muted: tuple[int, int, int]
+    line: tuple[int, int, int]
+    avatar: tuple[int, int, int]
+
+
+# Koyu tema renkleri Instagram'ın karanlık moduna yakın (yaklaşık değerler).
+THEMES = {
+    "acik": Theme(bg=(255, 255, 255), ink=(20, 20, 20), muted=(142, 142, 142), line=(219, 219, 219),
+                  avatar=(200, 200, 200)),
+    "koyu": Theme(bg=(0, 0, 0), ink=(245, 245, 245), muted=(168, 168, 168), line=(38, 38, 38),
+                  avatar=(60, 60, 60)),
+    "gri": Theme(bg=(128, 128, 128), ink=(20, 20, 20), muted=(70, 70, 70), line=(100, 100, 100),
+                 avatar=(160, 160, 160)),
+}
+DEFAULT_THEME = "koyu"  # K-030
 
 
 @dataclass(frozen=True)
@@ -111,94 +137,98 @@ def post_box(shape: tuple[int, int]) -> tuple[int, int, int, int]:
     return p["bottom"] - p["image"], p["bottom"], p["b"], p["w"] - p["b"]
 
 
-def _heart(d: ImageDraw.ImageDraw, x: float, y: float, s: float, width: int):
+def _heart(d: ImageDraw.ImageDraw, x: float, y: float, s: float, width: int, color: tuple[int, int, int]):
     t = np.linspace(0, 2 * np.pi, 60)
     hx = 16 * np.sin(t) ** 3
     hy = -(13 * np.cos(t) - 5 * np.cos(2 * t) - 2 * np.cos(3 * t) - np.cos(4 * t))
-    d.line(list(zip(x + (hx + 17) / 34 * s, y + (hy + 13) / 31 * s)), fill=INK, width=width, joint="curve")
+    d.line(list(zip(x + (hx + 17) / 34 * s, y + (hy + 13) / 31 * s)), fill=color, width=width, joint="curve")
 
 
-def _chrome(shape: tuple[int, int]) -> np.ndarray:
+def _chrome(shape: tuple[int, int], theme: Theme) -> np.ndarray:
     """Sabit katman: durum çubuğu, başlık, gezinme çubuğu ve çerçeve."""
     p = _px(shape)
+    ink, line = theme.ink, theme.line
     h, w, b = p["h"], p["w"], p["b"]
     left, right = b, w - b
-    canvas = Image.new("RGB", (w, h), BG)
+    canvas = Image.new("RGB", (w, h), theme.bg)
     d = ImageDraw.Draw(canvas)
     pad, lw = 0.035 * w, max(1, int(round(w / 270)))
-    d.text((left + pad, b + 0.02 * w), "9:41", fill=INK, font=_font(0.04 * w))
+    d.text((left + pad, b + 0.02 * w), "9:41", fill=ink, font=_font(0.04 * w))
     d.rounded_rectangle([right - pad - 0.07 * w, b + 0.025 * w, right - pad, b + 0.055 * w],
-                        radius=0.008 * w, outline=INK, width=lw)
+                        radius=0.008 * w, outline=ink, width=lw)
     y = b + STATUS * w
-    d.text((left + pad, y + 0.02 * w), "Instagram", fill=INK, font=_font(0.065 * w))
-    _heart(d, right - pad - 0.06 * w, y + 0.035 * w, 0.055 * w, lw)
-    d.line([left, p["top"] - lw, right, p["top"] - lw], fill=LINE, width=lw)
+    d.text((left + pad, y + 0.02 * w), "Instagram", fill=ink, font=_font(0.065 * w))
+    _heart(d, right - pad - 0.06 * w, y + 0.035 * w, 0.055 * w, lw, ink)
+    d.line([left, p["top"] - lw, right, p["top"] - lw], fill=line, width=lw)
     bottom = p["bottom"]
-    d.line([left, bottom, right, bottom], fill=LINE, width=lw)
+    d.line([left, bottom, right, bottom], fill=line, width=lw)
     ny, s = bottom + NAV * w * 0.2, 0.055 * w
     for k in range(5):
         cx = left + p["inner"] * (k + 0.5) / 5
         if k == 0:
             d.polygon([(cx - s / 2, ny + s), (cx - s / 2, ny + s * 0.4), (cx, ny), (cx + s / 2, ny + s * 0.4),
-                       (cx + s / 2, ny + s)], outline=INK, width=lw)
+                       (cx + s / 2, ny + s)], outline=ink, width=lw)
         elif k == 1:
-            d.ellipse([cx - s / 2, ny, cx + s * 0.3, ny + s * 0.8], outline=INK, width=lw)
-            d.line([cx + s * 0.2, ny + s * 0.7, cx + s / 2, ny + s], fill=INK, width=lw)
+            d.ellipse([cx - s / 2, ny, cx + s * 0.3, ny + s * 0.8], outline=ink, width=lw)
+            d.line([cx + s * 0.2, ny + s * 0.7, cx + s / 2, ny + s], fill=ink, width=lw)
         elif k == 4:
-            d.ellipse([cx - s / 2, ny, cx + s / 2, ny + s], fill=(200, 200, 200))
+            d.ellipse([cx - s / 2, ny, cx + s / 2, ny + s], fill=theme.avatar)
         else:
-            d.rounded_rectangle([cx - s / 2, ny, cx + s / 2, ny + s], radius=s * 0.25, outline=INK, width=lw)
-    d.rounded_rectangle([w * 0.35, h - b - 0.022 * w, w * 0.65, h - b - 0.012 * w], radius=0.005 * w, fill=INK)
+            d.rounded_rectangle([cx - s / 2, ny, cx + s / 2, ny + s], radius=s * 0.25, outline=ink, width=lw)
+    d.rounded_rectangle([w * 0.35, h - b - 0.022 * w, w * 0.65, h - b - 0.012 * w], radius=0.005 * w, fill=ink)
     d.rectangle([0, 0, w - 1, h - 1], outline=(0, 0, 0), width=b)
     return np.asarray(canvas).copy()
 
 
-def _post_block(post: FeedPost, shape: tuple[int, int]) -> np.ndarray:
+def _post_block(post: FeedPost, shape: tuple[int, int], theme: Theme) -> np.ndarray:
     """Akıştaki bir post: kullanıcı satırı, görsel ve altındakiler (genişlik = iç genişlik)."""
     p = _px(shape)
+    ink, muted = theme.ink, theme.muted
     w, inner = p["w"], p["inner"]
     height = p["user"] + p["image"] + p["below"]
-    canvas = Image.new("RGB", (inner, height), BG)
+    canvas = Image.new("RGB", (inner, height), theme.bg)
     d = ImageDraw.Draw(canvas)
     pad, lw = 0.035 * w, max(1, int(round(w / 270)))
     cy, r = p["user"] / 2, 0.035 * w
-    d.ellipse([pad, cy - r, pad + 2 * r, cy + r], fill=(200, 200, 200), outline=(214, 41, 118), width=lw * 2)
-    d.text((pad + 2.6 * r, cy - 0.022 * w), post.username, fill=INK, font=_font(0.04 * w))
+    d.ellipse([pad, cy - r, pad + 2 * r, cy + r], fill=theme.avatar, outline=(214, 41, 118), width=lw * 2)
+    d.text((pad + 2.6 * r, cy - 0.022 * w), post.username, fill=ink, font=_font(0.04 * w))
     for k in range(3):
         cx = inner - pad - k * 0.018 * w
-        d.ellipse([cx - lw, cy - lw, cx + lw, cy + lw], fill=INK)
+        d.ellipse([cx - lw, cy - lw, cx + lw, cy + lw], fill=ink)
     canvas.paste(Image.fromarray(fit(post.image, inner, p["image"])), (0, p["user"]))
     y = p["user"] + p["image"] + 0.03 * w
     s = 0.06 * w
-    _heart(d, pad, y, s, lw)
-    d.ellipse([pad + 1.6 * s, y, pad + 2.6 * s, y + s], outline=INK, width=lw)
+    _heart(d, pad, y, s, lw, ink)
+    d.ellipse([pad + 1.6 * s, y, pad + 2.6 * s, y + s], outline=ink, width=lw)
     x = pad + 3.2 * s
-    d.polygon([(x, y + s * 0.45), (x + s, y), (x + s * 0.6, y + s)], outline=INK, width=lw)
+    d.polygon([(x, y + s * 0.45), (x + s, y), (x + s * 0.6, y + s)], outline=ink, width=lw)
     y += 0.09 * w
-    d.text((pad, y), f"{post.likes} beğenme", fill=INK, font=_font(0.037 * w))
+    d.text((pad, y), f"{post.likes} beğenme", fill=ink, font=_font(0.037 * w))
     y += 0.055 * w
     caption = _printable(post.caption)
     if caption:
-        d.text((pad, y), f"{post.username} {caption}"[:42], fill=INK, font=_font(0.037 * w))
+        d.text((pad, y), f"{post.username} {caption}"[:42], fill=ink, font=_font(0.037 * w))
     y += 0.055 * w
-    d.text((pad, y), "Tüm yorumları gör", fill=MUTED, font=_font(0.034 * w))
+    d.text((pad, y), "Tüm yorumları gör", fill=muted, font=_font(0.034 * w))
     y += 0.05 * w
-    d.text((pad, y), "2 saat önce", fill=MUTED, font=_font(0.03 * w))
+    d.text((pad, y), "2 saat önce", fill=muted, font=_font(0.03 * w))
     return np.asarray(canvas).copy()
 
 
-def _ease_out(x: float) -> float:
+def ease_out(x: float) -> float:
     return 1.0 - (1.0 - x) ** 3
 
 
 class PhoneFeed:
     """Kaydırılabilir akış ve ekran görüntüsü; zaman simülasyon saatinden gelir."""
 
-    def __init__(self, shape: tuple[int, int], previous: FeedPost | None = None):
-        """previous: bakılan posttan önceki post (üst kısmı ekranda görünür)."""
+    def __init__(self, shape: tuple[int, int], previous: FeedPost | None = None, theme: str = DEFAULT_THEME):
+        """previous: bakılan posttan önceki post (üst kısmı ekranda görünür); theme: THEMES anahtarı."""
         self.shape = shape
+        self.theme = theme
+        self._theme = THEMES[theme]
         self._p = _px(shape)
-        self._chrome = _chrome(shape)
+        self._chrome = _chrome(shape, self._theme)
         self._blocks: list[np.ndarray] = []
         self._starts: list[int] = []
         self._length = 0
@@ -217,7 +247,7 @@ class PhoneFeed:
             self._offset = self._aligned(0)
 
     def _append(self, post: FeedPost) -> int:
-        block = _post_block(post, self.shape)
+        block = _post_block(post, self.shape, self._theme)
         self._blocks.append(block)
         self._starts.append(self._length)
         self._length += len(block)
@@ -232,6 +262,12 @@ class PhoneFeed:
     @property
     def scrolling(self) -> bool:
         return self._scroll is not None or self._fade is not None
+
+    @property
+    def post_height(self) -> int:
+        """Akışta bir postun boyu (sonraki posta kaydırma mesafesi, piksel)."""
+        p = self._p
+        return p["user"] + p["image"] + p["below"]
 
     @property
     def image_shape(self) -> tuple[int, int]:
@@ -257,7 +293,7 @@ class PhoneFeed:
         self._stop_video()
         self._changed = True
 
-    def fade_to(self, post: FeedPost, now_ms: float, duration_ms: float) -> None:
+    def fade_to(self, post: FeedPost, now_ms: float, duration_ms: float = FADE_MS) -> None:
         """Yeni postu akışa ekler; ekran eski görüntüden yenisine solarak geçer."""
         old = self.frame()
         self.show(post)
@@ -277,7 +313,7 @@ class PhoneFeed:
         if self._scroll is not None:
             start, end, t0, dur = self._scroll
             x = min(1.0, max(0.0, (now_ms - t0) / dur))
-            offset = start + (end - start) * _ease_out(x)
+            offset = start + (end - start) * ease_out(x)
             if x >= 1.0:
                 self._scroll = None
             if int(round(offset)) != int(round(self._offset)):
@@ -306,7 +342,8 @@ class PhoneFeed:
             self._strip = np.concatenate(self._blocks) if self._blocks else np.zeros((0, p["inner"], 3), np.uint8)
         out = self._chrome.copy()
         view = p["bottom"] - p["top"]
-        window = np.full((view, p["inner"], 3), 255, np.uint8)
+        window = np.empty((view, p["inner"], 3), np.uint8)
+        window[:] = self._theme.bg
         o = int(round(self._offset))
         lo, hi = max(o, 0), min(o + view, len(self._strip))
         if hi > lo:

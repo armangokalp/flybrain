@@ -53,10 +53,12 @@ Taban adres: `https://storage.googleapis.com/flyem-male-cns/v1.0/connectome-data
 - Warren ve Göpfert 2024, *J Exp Biol* — [larva kordotonal organının (lch5) mekanik uyarıya spike yanıtları](https://pmc.ncbi.nlm.nih.gov/articles/PMC11418168/): tek nöron hızları 1,5–78 Hz
 - Marin ve ark. 2024, *eLife* — [MANC'ın sistematik adlandırması](https://elifesciences.org/reviewed-preprints/97766v1) (SNpp duyu nöronu tipleri)
 - Yang ve Clandinin 2018, *Annual Review of Vision Science* — [Drosophila'da temel hareket algılama](https://pmc.ncbi.nlm.nih.gov/articles/PMC8097889/): L1/L2 geçici, L3 kalıcı; Mi1/Tm3 çift fazlı (K-027)
-- Arenz ve ark. 2017, *Current Biology* — [hareket algılayıcılarının zamansal ayarı girdi hücrelerinin dinamiğinden gelir](https://www.sciencedirect.com/science/article/pii/S0960982217300866)
+- Arenz ve ark. 2017, *Current Biology* 27:929–944 — [hareket algılayıcılarının zamansal ayarı girdi hücrelerinin dinamiğinden gelir](https://www.sciencedirect.com/science/article/pii/S0960982217300866): T5'e giden Tm9 alçak geçiren, Tm1/Tm2/Tm4 bant geçiren (Z-25)
 - Nikolaev ve ark. 2009, *PLoS One* — [ağ adaptasyonu, sinek gözünde doğal uyaranların zamansal temsilini iyileştirir](https://pmc.ncbi.nlm.nih.gov/articles/PMC2628722/): fotoreseptör ve lamina adaptasyonu saniyeler içinde
 - Stowers ve ark. 2017, *Nature Methods* — [serbest hareket eden hayvanlar için sanal gerçeklik (FreemoVR)](https://www.nature.com/articles/nmeth.4399)
 - von Reyn ve ark. 2014, *Nature Neuroscience* 17:962–970 — [eylem seçimi için spike zamanlaması mekanizması](https://www.nature.com/articles/nn.3741): yaklaşan uyarana kaçışta dev lifin kısa kalkışı zorlaması; yaklaşan disk uyaranımızın türü (Z-25)
+- Klapoetke ve ark. 2017, *Nature* 551:237–241 — [radyal hareket karşıtlığıyla çok seçici yaklaşma algılama](https://www.nature.com/articles/nature24626) ([açık erişim](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7457385/)): LPLC2 dışa yayılan harekete seçici; kararma, daralma ve geniş alan kaymasına yanıt yok (Z-25, K-030)
+- Lebestky ve ark. 2009, *Neuron* — [iki uyarılmışlık biçimi, dopamin reseptörü DopR tarafından ayrı devreler üzerinden zıt yönde düzenlenir](https://pubmed.ncbi.nlm.nih.gov/19945394/) ([açık erişim](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2908595/)): DopR kaybı tekrarlanan irkilmeden sonraki uyarılmışlığı artırıyor; bu etki elipsoid gövdede (Z-35)
 
 ## Gövde modelleri
 

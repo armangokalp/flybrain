@@ -225,6 +225,31 @@ Kaçış devresi (LPLC2/LC4 → dev lif DNp01 → TTMn) konnektomda mevcut. Ama 
   - Gerçek sineklerde kalkışın zamanı l/v'ye bağlı; literatürle nicel karşılaştırma yapılmadı.
   - von Reyn ve ark. (2014) dev lifin kısa, uçuş dengesini feda eden kalkışı zorladığını gösteriyor. Bizim sineğimizde yalnızca bu yol var: uzun kalkış dizisi ve uçuş yok (Z-26).
 
+**Durum (2026-09-17, özgüllük kontrolleri):** Kaçış devresi yaklaşmaya özgü değil.
+- **Ölçüm** (125 Hz, açık tema, 8'er deneme; `python -m flybrain.experiments.escape --rmax 125 --kontroller --dopamin`):
+
+  | Uyaran | Dev lifin ateşlendiği deneme | Ort. dev lif spike'ı | Ort. LC4 spike'ı | Sıçrama |
+  |---|---|---|---|---|
+  | Yaklaşan disk | 8/8 | 17,5 | 178 | 8 |
+  | Kararma: diskin son bölgesi büyümeden, aynı zamanlama ve aynı toplam kararmayla | 7/8 | 14,0 | 136 | 7 |
+  | Kaydırma | 8/8 | 9,4 | 96 | 7 |
+  | Yalnızca post görseli kayıyor (geniş alan hareketi) | 1/8 | 0,5 | 7 | 1 |
+  | Durağan | 2/8 | 0,2 | 3 | 1 |
+
+- **Tekrar:** İlk yoklamada (500 ms bekleme, farklı postlar) kararma yaklaşmadan da güçlüydü: 8/8 ve 22,9 spike'a karşı 7/8 ve 14,0.
+- **Gerçek sinekle fark:** Yaklaşma algılayıcısı LPLC2 kenarların dışa doğru yayılmasına seçici. Kararmaya, daralmaya ve geniş alan kaymasına yanıt vermiyor (Klapoetke ve ark. 2017). Modelde kararma, yaklaşma kadar güçlü kaçış tetikliyor.
+- **Kaydırmadaki kaçışın kaynağı:** Görselin kayması tek başına zayıf. Kaçışı, ekrandan geçen geniş açık-koyu alanlar tetikliyor (Z-35).
+- **Olası neden (ölçülmedi):** Hareket yönünü T4/T5 hücreleri, hızlı ve yavaş girdilerin zaman farkıyla hesaplıyor. Örneğin T5'e giden Tm9 alçak geçiren, Tm1, Tm2 ve Tm4 bant geçiren süzgeç gibi davranıyor (Arenz ve ark. 2017).
+  - Bizim LIF modelde bütün nöronların zaman sabitleri aynı.
+  - Görme yalnızca L2, L3, Mi1 ve Tm3'e veriliyor.
+  - Bu yüzden yön seçiciliği büyük olasılıkla oluşmuyor.
+- **Çözüm yolu:**
+  1. Kayan çizgilerle T4/T5'in yön seçiciliğini ölçmek.
+  2. Girdi hücrelerine ölçülmüş zamansal süzgeçleri vermek.
+  3. Kontrollerle doğrulamak: yaklaşma kaçışa yol açmalı; kararma, uzaklaşma ve kayma nadiren.
+- **Koyu tema (K-030):** Yaklaşan diske kaçışı %96'dan %77'ye indiriyor; kararma ise koyu temada da güçlü kalıyor (8 denemede yaklaşma 5, kararma 6).
+- **Şimdilik:** Kullanıcı yalnızca ekran tarafını seçti (K-030). Korku tepkisinin anlam taşıması gereken Faz 7'de bu sorun yeniden ele alınmalı: sinek her karanlık görselden de kaçabilir.
+
 ### Z-26 · Uçuş yok 🟡
 
 Uçabilen hazır gövde modelinin (flybody) uçuş kontrolcüsü eğitilmiş bir sinir ağı; kullanılamaz. Uçuş aerodinamiği ve dolaylı uçuş kaslarının mekaniği ayrı bir iş.
@@ -355,7 +380,7 @@ Yani döngü, ekranın içeriğinden değil, sineğin kendi hareketinden besleni
 - Duruş tonusu (Z-29) ve propriyosepsiyon kazancı (Z-33): dinlenen sinek kıpırdamamalı.
 - Kendi hareketinin görmedeki izinin bastırılması. Uçan ve yürüyen sineklerde görme nöronlarına motor kaynaklı sinyaller geliyor; bu devreler konnektomda aranmalı, elle eklenemez.
 
-### Z-35 · Kaydırma sineği kaçırıyor 🟡
+### Z-35 · Kaydırma sineği kaçırıyor 🟢 (ekran tarafında; kök neden Z-25)
 
 Ekran sineğe çok yakın (2 mm). Bu yüzden bir post boyu kaydırma, sineğin gözünde ~80°'lik ve saniyede yüzlerce derecelik bir hareket oluyor; araya giren beyaz şerit de büyük bir parlaklık değişimi yaratıyor.
 
@@ -371,6 +396,19 @@ Ekran sineğe çok yakın (2 mm). Bu yüzden bir post boyu kaydırma, sineğin g
 **Karar (kullanıcı, K-028):** Gerçek kaydırma kalıyor; sineğin kaydırmada kaçması modelin kendi öngörüsü olarak kabul edildi.
 
 **Sonuç:** Sinek her "sonraki post" kararında sıçrayacak. Karar ile gövdenin örtüşmesi (Z-27) bu tepkiyle birlikte değerlendirilmeli.
+
+**Durum (2026-09-17, K-030):**
+- **Soru (kullanıcı):** Sinek kaçarsa akışı kaydıramaz; telefondan korkmasının önüne nasıl geçilir, telefona bakarken dopamin salgılatmak işe yarar mı?
+- **Dopamin kaçışı önlemiyor:**
+  - Ödül nöronları (PAM, 316 nöron), beğeni kodlayıcısının en yüksek düzeyinde (~150 Hz) bütün deneme boyunca sürüldü.
+  - Kaydırmada dev lif yine 8/8 ateşledi; sıçrama 7'den 5'e, ortalama spike 9,4'ten 7,0'a indi.
+  - Yaklaşan diskte 8/8'e karşı 7/8, kararmada 7/8'e karşı 8/8. Durağan ekranda dopamin tek başına kaçış üretmedi (0/8).
+  - İlk yoklamada kaydırmada 8/8'e karşı 8/8 (12,0'a karşı 11,2 spike).
+  - **Neden:** Modelde dopamin hızlı, uyarıcı bir verici (K-008); yavaş reseptör etkileri ve öğrenme yok. Gerçek sinekte dopaminin irkilmeye bilinen etkisi de dev lifin sıçrama refleksini kesmek değil. DopR reseptörü üzerinden, elipsoid gövdede, tekrarlanan irkilmeden sonraki uyarılmışlığı düzenliyor (Lebestky ve ark. 2009).
+- **"Modelin öngörüsü" çerçevesi geri çekildi:** Kontroller kaçışın yaklaşmaya özgü olmadığını gösterdi (Z-25). Gerçek sineğin yaklaşma algılayıcısı kaydırmadaki parlaklık değişimine büyük olasılıkla yanıt vermez.
+- **Ekran temaları:** Hiçbir tema kaydırmayı güvenli yapmadı (9–12/12). Solarak geçiş iki ölçümün toplamında koyu temada 2/24, açık temada 3/24 (tablo: K-030).
+- **Karar (kullanıcı, K-030):** Sonraki posta solarak geçiliyor, ekran koyu temada.
+- **Kalan:** Gözün seçiciliği (Z-25). Kaydırma ve anında geçiş deneyler için duruyor.
 
 ---
 

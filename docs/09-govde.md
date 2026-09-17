@@ -652,7 +652,7 @@ Ekran baştan açık. Sinek 500 ms bakıyor, sonra sonraki posta geçiliyor ve 1
 
 - **Ekranın açılması:** Ekran siyahken açılınca (görme uyarımı 173 kHz) dev lif ateşlemedi. 250 Hz'de bu durumda 28 spike'la kaçıyordu.
 - **Kaydırmanın etkisi:** Ekran yakın olduğu için bir post boyu kaydırma sineğin gözünde ~80°'lik hızlı bir hareket; araya giren beyaz şerit ayrıca büyük bir parlaklık değişimi. LC4 30–100 spike üretiyor, dev lif ateşliyor.
-- **Karar:** Kullanıcı kararıyla gerçek kaydırma kaldı ve sineğin kaçması modelin öngörüsü olarak kabul edildi (Z-35).
+- **Karar:** Kullanıcı kararıyla gerçek kaydırma kaldı ve sineğin kaçması modelin öngörüsü olarak kabul edildi (Z-35). *(Sonradan değişti: kaçış yaklaşmaya özgü çıkmadı, geçiş solma oldu; [bölüm 14](#14-telefon-korkusu-kontroller-dopamin-ve-ekran-2026-09-17), K-030.)*
 
 **Videolar:**
 - `runs/scene-kaydirma-0.mp4`: üstte dışarıdan görünüm, altta sineğin iki gözünün gördüğü.
@@ -709,6 +709,8 @@ Yaklaşma denemelerinde yalnızca bekleme sırasında kaçmamış ("temiz") dene
 
 ## 13. Kaldığımız yer (sahneden sonra)
 
+> Güncel durum [bölüm 15](#15-kaldığımız-yer-telefon-korkusundan-sonra)'te.
+
 | Adım | Durum |
 |---|---|
 | Motor nöron → kas → eklem | ✅ (6) |
@@ -730,3 +732,121 @@ Yaklaşma denemelerinde yalnızca bekleme sırasında kaçmamış ("temiz") dene
    - yük algısı (Z-32),
    - uçuş (Z-26).
 
+
+## 14. Telefon korkusu: kontroller, dopamin ve ekran (2026-09-17)
+
+Kararlar: K-030 (K-028'in geçiş kısmının yerine geçti). Deneyler:
+- `python -m flybrain.experiments.escape --rmax 125 --kontroller [--dopamin] [--tema acik]`
+- `python -m flybrain.experiments.scene --no-extras --modes kaydir kaydir_hizli ani solma --themes acik koyu gri`
+
+**Soru (kullanıcı):** Sinek kaçarsa akışı kaydıramaz. Telefondan korkmasının önüne nasıl geçilir? Telefona bakarken dopamin salgılatmak işe yarar mı?
+
+### 14.1 Kaçış yaklaşmaya özgü mü?
+
+Yaklaşan diske iki kontrol eklendi:
+- **Kararma:** Diskin son hâlinin bölgesi büyümeden kararıyor. Zamanlama ve toplam kararma yaklaşmayla aynı; yalnızca kenarın dışa doğru hareketi yok.
+- **Kayan görsel:** Yalnızca post görseli, kaydırmadaki gibi yavaşlayarak bir post boyu kayıyor. Ekranın geri kalanı duruyor; geniş alan hareketi var, geçen açık-koyu şerit yok.
+
+Açık tema, 125 Hz, 8'er deneme:
+
+| Uyaran | Dev lifin ateşlendiği deneme | Ort. dev lif spike'ı | Ort. LC4 spike'ı | Sıçrama |
+|---|---|---|---|---|
+| Yaklaşan disk | 8/8 | 17,5 | 178 | 8 |
+| Kararma | 7/8 | 14,0 | 136 | 7 |
+| Kaydırma | 8/8 | 9,4 | 96 | 7 |
+| Kayan görsel | 1/8 | 0,5 | 7 | 1 |
+| Durağan | 2/8 | 0,2 | 3 | 1 |
+
+Aynı kontroller koyu temada (K-030), 8'er deneme:
+
+| Uyaran | Dev lifin ateşlendiği deneme | Ort. dev lif spike'ı | Ort. LC4 spike'ı | Sıçrama |
+|---|---|---|---|---|
+| Yaklaşan disk | 5/8 | 8,0 | 68 | 5 |
+| Kararma | 6/8 | 12,5 | 106 | 6 |
+| Kaydırma | 8/8 | 11,2 | 123 | 7 |
+| Kayan görsel | 4/8 | 1,5 | 10 | 3 |
+| Solma (sonraki post) | 0/8 | 0 | 0 | 0 |
+| Durağan | 0/8 | 0 | 1 | 0 |
+
+**Koyu temada yaklaşmaya tepki zayıflıyor.** Başka bir seed ve 16 postla tekrarlandı; beklerken zaten kaçılan denemeler hariç:
+
+| | Açık tema | Koyu tema |
+|---|---|---|
+| Yaklaşan disk | 14/15 (15,7 spike; LC4 179) | 12/14 (14,6 spike; LC4 130) |
+| Solma | 1/15, sıçrama yok | 1/14, sıçrama yok |
+| Beklerken kaçış | 1/16 | 2/16 |
+
+- İki ölçümün toplamında yaklaşan diske kaçış açık temada 22/23 (%96), koyu temada 17/22 (%77).
+- Nedeni ölçülmedi. Koyu temada ekranın geri kalanı da karanlık; kolonların uyum düzeyi ve diskin çevreyle kontrastı farklı.
+
+- **Sonuç:** Kararma, yaklaşma kadar güçlü kaçış tetikliyor. İlk yoklamada (500 ms bekleme, farklı postlar) kararma yaklaşmadan da güçlüydü: 22,9 spike'a karşı 14,0.
+- **Gerçek sinekle fark:** Yaklaşma algılayıcısı LPLC2 kararmaya ve geniş alan kaymasına yanıt vermiyor (Klapoetke ve ark. 2017). Modelde ise LC4 ve dev lif parlaklık değişimine de yanıt veriyor.
+- **Kaydırmadaki kaçış:** Hareketten değil, ekrandan geçen geniş açık-koyu alanlardan geliyor. K-028'de kabul edilen "modelin öngörüsü" çerçevesi bu yüzden geri çekildi.
+- **Olası neden (ölçülmedi):** Hareket yönü hesabı (T4/T5) hızlı ve yavaş girdilerin zaman farkına dayanıyor (Arenz ve ark. 2017). Modelde bütün nöronların zaman sabitleri aynı; görme yalnızca L2, L3, Mi1 ve Tm3'e veriliyor. Çözüm yolu Z-25'te.
+
+### 14.2 Dopamin
+
+Ödül nöronları (PAM, 316 nöron), beğeni kodlayıcısının en yüksek düzeyinde (~150 Hz) bütün deneme boyunca sürüldü. Açık tema, 8'er deneme:
+
+| Uyaran | Dopaminsiz | Dopaminle |
+|---|---|---|
+| Kaydırma | 8/8, 9,4 spike, 7 sıçrama | 8/8, 7,0 spike, 5 sıçrama |
+| Yaklaşan disk | 8/8, 17,5 spike, 8 sıçrama | 7/8, 13,1 spike, 6 sıçrama |
+| Kararma | 7/8, 14,0 spike, 7 sıçrama | 8/8, 15,0 spike, 8 sıçrama |
+| Kayan görsel | 1/8 | 2/8 |
+| Durağan | 2/8 | 0/8 |
+
+- **Sonuç:** Dopamin kaçışı önlemiyor; kaydırmada ve yaklaşmada sıçramaları biraz azaltıyor. İlk yoklamada kaydırmada fark yoktu (8/8'e karşı 8/8).
+- **Neden:** Modelde dopamin hızlı, uyarıcı bir verici (K-008); yavaş reseptör etkileri ve öğrenme yok. Gerçek sinekte dopaminin irkilmeye bilinen etkisi de dev lif refleksini kesmek değil. DopR reseptörü üzerinden, elipsoid gövdede, tekrarlanan irkilmeden sonraki uyarılmışlığı düzenliyor (Lebestky ve ark. 2009).
+- **İleride:** Öğrenme eklenince (Faz 10) ödülün telefonla eşleşmesi çekim yaratabilir; bu da refleksi doğrudan durdurmaz.
+
+### 14.3 Ekran: tema ve geçiş
+
+Kullanıcı yalnızca ekran tarafını seçti. Üç tema eklendi (`phone.THEMES`):
+- **açık:** Instagram'ın varsayılanı;
+- **koyu:** Instagram'ın karanlık modu;
+- **gri:** zemin, post görsellerinin ortalama parlaklığında (0,5); gerçek Instagram'da yok.
+
+Her tema dört geçişle ölçüldü (125 Hz, 12'şer geçiş; dev lifin ateşlendiği deneme, parantez içinde sıçrama):
+
+| Tema | Kaydırma 400 ms | Kaydırma 250 ms | Anında | Solma 300 ms |
+|---|---|---|---|---|
+| Açık | 12/12 (11) | 8/12 (6) | 1/12 (1) | 1/12 (1) |
+| Koyu | 11/12 (11) | 11/12 (7) | 2/12 (1) | 0/12 (0) |
+| Gri | 9/12 (5) | 6/12 (4) | 6/12 (3) | 2/12 (3) |
+
+- **Kaydırma:** Hiçbir temada güvenli değil. Gri tema spike sayısını düşürüyor (2,8'e karşı açıkta 9,3) ama önlemiyor. Koyu temada geçen siyah şerit kararma gibi etki ediyor.
+- **Solma:** En düşük kaçış. Koyu temada tekrar ölçüldü: 2/12, bunlardan biri gerçek kaçış (12 spike, sıçrama). İlk ölçümle toplam: koyu 2/24, açık 3/24.
+- **Gürültü:** 12 deneme az. Açık temada anında geçiş bir önceki ölçümde 5/12 çıkmıştı. Beklemede kaçışlar da var: gri temada 2 postta, açık ve koyu temada 1'er postta. Sıçrama sayısı beklemeyi de kapsıyor.
+- **Karar (kullanıcı, K-030):**
+  - Sonraki posta solarak geçiliyor: `EmbodiedFly.next_post`, 300 ms.
+  - Ekran koyu temada. Kullanıcı, koyu temada yaklaşmaya tepkinin zayıfladığı (14.1) öğrenildikten sonra da koyu temayı seçti.
+  - Kaydırma, anında geçiş ve öteki temalar deneyler için duruyor.
+- **Bedel:**
+  - Instagram akışında solma yok.
+  - Koyu temada yaklaşan diske kaçış %96'dan %77'ye iniyor.
+  - Faz 8'de gerçek ekran görüntüleri karanlık modda alınmalı.
+
+**Video:** `runs/scene-solma-koyu-0.mp4`. Koyu tema; sinek bakıyor, akış iki kez solarak sonraki posta geçiyor.
+
+## 15. Kaldığımız yer (telefon korkusundan sonra)
+
+| Adım | Durum |
+|---|---|
+| Motor nöron → kas → eklem | ✅ (6) |
+| Propriyosepsiyon | ✅ İlk sürüm (7) |
+| Sinir kordonu hız modeli | ⚠️ Deneysel; yürüme ertelendi (8, K-026) |
+| Sineğin kendi gözleriyle görmesi | ✅ (9) |
+| Telefon ekranlı sahne | ✅ Dikey, kavisli, izleyen ekran; koyu tema, solarak geçiş (11, 14, K-028, K-030) |
+| Yaklaşan nesne → kaçış | ✅ Çalışıyor: açık temada %96, koyu temada %77. Yaklaşmaya özgü değil, kararma da aynı güçte (12, 14, Z-25) |
+
+**Sıradakiler:**
+1. **Hız (Z-21):** Döngü gerçek zamanın ~4–5 katı yavaş; hedef 3 kat.
+2. **Nöral karar ile gövdenin örtüşmesi (K-020, Z-27):** Gövdeli sinekte zamansal görme, 125 Hz ve solarak geçişle kararlar yeniden kalibre edilmeli.
+3. **Faz 6: görselleştirme.** Videolardaki üst/alt düzen (dışarıdan görünüm, sineğin gözleri) ilk adım. Eksikler: 3D beyin, ekran ve karar günlüğü.
+4. **Faz 7'den önce:** Kaçışın yaklaşmaya özgüllüğü (Z-25). Korkutucu içeriğe tepkinin anlam taşıması için gerekli.
+5. **Sonraya bırakılanlar:**
+   - dinlenmede kıpırdanma ve duruş tonusu (Z-29, Z-34),
+   - yürüme (Z-33),
+   - yük algısı (Z-32),
+   - uçuş (Z-26).

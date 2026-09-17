@@ -22,7 +22,7 @@ import numpy as np
 
 from flybrain.body.body import TIMESTEP_S, Body
 from flybrain.body.muscles import MuscleModel, build_table
-from flybrain.body.phone import SCROLL_MS, FeedPost, PhoneFeed
+from flybrain.body.phone import FADE_MS, SCROLL_MS, FeedPost, PhoneFeed
 from flybrain.body.proprio import build_proprioception
 from flybrain.body.scene import SceneConfig
 from flybrain.body.sight import FlyEyes
@@ -176,11 +176,15 @@ class EmbodiedFly:
         self._need_feed().show(post)
         self._refresh_screen()
 
+    def next_post(self, post: FeedPost) -> None:
+        """Akışta sonraki posta geçer: solarak (K-030). Geçiş sonraki `run` sırasında oynar."""
+        self.fade_to_post(post)
+
     def scroll_to_post(self, post: FeedPost, duration_ms: float = SCROLL_MS) -> None:
         """Akışı yeni posta kaydırır; kaydırma sonraki `run` sırasında oynar."""
         self._need_feed().scroll_to(post, self.brain.time_ms, duration_ms)
 
-    def fade_to_post(self, post: FeedPost, duration_ms: float) -> None:
+    def fade_to_post(self, post: FeedPost, duration_ms: float = FADE_MS) -> None:
         """Ekran yeni posta solarak geçer; geçiş sonraki `run` sırasında oynar."""
         self._need_feed().fade_to(post, self.brain.time_ms, duration_ms)
         self._refresh_screen()
