@@ -308,3 +308,16 @@ Durumlar: **önerildi** · **kabul edildi** · **yerine geçti**
     2. Instagram ekranlı sahne,
     3. beyin aktivitesi ve kayıt paneli (Faz 6).
   - Yürümeye sonra dönülecek.
+
+## K-027 · Gövdeli sinekte görme: kolon başına örnekleme ve zamansal uyum
+
+- **Durum:** kabul edildi (2026-09-17)
+- **Bağlam:** Faz 3'teki görme kodlaması durağan bir görselin kontrastını sürekli ateşlemeye çeviriyordu. Gövdeli sinek durağan bir dünyaya bakınca bu, sürekli ~900 kHz'lik bir uyarım yarattı ve dev lif hiçbir şey hareket etmezken 63 Hz ateşledi.
+- **Karar:**
+  - **Örnekleme:** Sahne, sineğin başına bağlı iki kameradan çiziliyor ve konnektomdaki her kolon kendi bakış yönünden örnekleniyor. FlyGym'in ommatidyum ızgarası kullanılmıyor.
+  - **Zamansal kodlama:** Her kolon kendi parlaklığına uyum sağlıyor (1 sn). Geçici hücreler (L2, Mi1, Tm3) kontrast değişimini, kalıcı hücreler (L3) kontrastı görüyor.
+  - **Faz 3'e etki yok:** Panoramik post görselleriyle çalışan durağan kodlama (Fly sınıfı) değişmedi.
+- **Sonuç:** Durağan sahne kaçışı tetiklemiyor. Değişen, hareket eden ve yaklaşan şeyler yanıt üretiyor; yaklaşan nesneye kaçış tepkisi (Faz 7) ayrıca sınanacak.
+- **Açık:**
+  - Geçici süzgecin zaman sabiti için kaynak bulunamadı.
+  - Instagram kararları (K-020) gövdeli sinekte zamansal yanıtlarla yeniden kalibre edilmeli.

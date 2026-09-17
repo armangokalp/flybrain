@@ -7,7 +7,8 @@ Her COUPLE_MS milisaniyede:
   3. Motor nöronların spike sayıları kas modeline gider.
   4. Kas torkları gövdeye uygulanır, fizik aynı süre boyunca ilerler.
 
-Sineğin gözleriyle görme sonraki adımda bu döngüye eklenecek (docs/09-govde.md, 5.3).
+Görme açıksa her VISION_EVERY_MS milisaniyede sineğin göz kameraları sahneyi çizer ve
+göz kolonlarının uyarımı güncellenir (body/sight.py).
 """
 
 from collections.abc import Callable
@@ -18,14 +19,19 @@ import numpy as np
 from flybrain.body.body import TIMESTEP_S, Body
 from flybrain.body.muscles import MuscleModel, build_table
 from flybrain.body.proprio import build_proprioception
+from flybrain.body.sight import FlyEyes
 from flybrain.connectome.connectome import Connectome, load_connectome
 from flybrain.connectome.electrical import with_electrical
 from flybrain.sim import BRAIN_PARAMS, LIFParams, Simulator, Stimulus
+from flybrain.senses.vision import VisionConfig
 from flybrain.sim.hybrid import HybridCNS
 
 COUPLE_MS = 1.0
 # Nötr pozdan pasif duruşa oturma süresi (ölçüm: 500 ms'den sonra eklemler < 0,002 rad/100 ms).
 SETTLE_MS = 500.0
+# Göz görüntüsünün yenilenme aralığı (VARSAYIM; 100 kare/sn, sineğin titreşim birleşme
+# frekansının altında; çizim maliyeti nedeniyle).
+VISION_EVERY_MS = 10.0
 
 
 @dataclass
@@ -39,6 +45,7 @@ class Trace:
     activation: list[np.ndarray] = field(default_factory=list)
     mn_spikes: list[np.ndarray] = field(default_factory=list)  # önceki kayıttan bu yana, muscles.mn sırası
     proprio_spikes: list[np.ndarray] = field(default_factory=list)  # önceki kayıttan bu yana, proprio.idx sırası
+    vision_hz: list[float] = field(default_factory=list)  # kayıt anında görme uyarımının toplam hızı
     frames: dict[str, list[np.ndarray]] = field(default_factory=dict)
 
     def arrays(self) -> dict[str, np.ndarray]:
@@ -50,6 +57,7 @@ class Trace:
             "activation": np.array(self.activation),
             "mn_spikes": np.array(self.mn_spikes),
             "proprio_spikes": np.array(self.proprio_spikes),
+            "vision_hz": np.array(self.vision_hz),
         }
 
 
@@ -64,14 +72,24 @@ class EmbodiedFly:
         electrical: bool = True,
         proprioception: bool = True,
         vnc: str = "lif",
+        vision: VisionConfig | None = None,
     ):
-        """vnc: "lif" — tüm sinir sistemi LIF; "rate" — bacak motor ağı hız modeliyle (K-025, deneysel)."""
+        """vnc: "lif" — tüm sinir sistemi LIF; "rate" — bacak motor ağı hız modeliyle (K-025, deneysel).
+        vision: verilirse sinek sahneyi kendi gözleriyle görür (body/sight.py).
+        """
         self.conn = conn or load_connectome()
         self.gap_junctions = []
         if electrical:
             self.conn, gap_exempt, self.gap_junctions = with_electrical(self.conn, params)
             std_exempt = gap_exempt if std_exempt is None else np.union1d(std_exempt, gap_exempt)
         self.body = Body(camera_res=camera_res)
+        self.eyes = None
+        if vision is not None:
+            if vision.mode == "foto":
+                raise ValueError("gövdeli sinekte 'foto' görme yöntemi henüz desteklenmiyor")
+            self.eyes = FlyEyes(self.body.sim, self.body.fly.name, "c_head", self.conn, vision)
+            std_exempt = self.eyes.input_neurons if std_exempt is None else np.union1d(std_exempt, self.eyes.input_neurons)
+        self._vision_stim = Stimulus.empty()
         self.table = build_table(self.conn, self.body.passive)
         self.muscles = MuscleModel(self.table, self.body.dofs, self.body.dof_ranges())
         self.proprio = None
@@ -98,7 +116,7 @@ class EmbodiedFly:
     def reset(self, settle: bool = True):
         """Beyni ve gövdeyi sıfırlar; gövde pasif duruşuna oturana kadar ikisi birlikte çalışır.
 
-        Oturma sırasında propriyosepsiyon kapalıdır: model sineği havada nötr pozda
+        Oturma sırasında propriyosepsiyon ve görme kapalıdır: model sineği havada nötr pozda
         başlatır ve zemine iniş gerçek bir durum değildir. Beyin bu sürede girdi almaz.
         """
         if self.cns is not None:
@@ -107,12 +125,18 @@ class EmbodiedFly:
             self.brain.reset()
         self.body.reset()
         self.muscles.reset()
+        self._vision_stim = Stimulus.empty()
+        if self.eyes is not None:
+            self.eyes.reset()
         if settle:
             proprio, self.proprio = self.proprio, None
+            eyes, self.eyes = self.eyes, None
             try:
                 self.run(SETTLE_MS)
             finally:
-                self.proprio = proprio
+                self.proprio, self.eyes = proprio, eyes
+            if self.eyes is not None:
+                self.eyes.reset()
 
     def run(
         self,
@@ -135,15 +159,21 @@ class EmbodiedFly:
         acc = np.zeros(len(mn), dtype=np.int32)
         pr = self.proprio.idx if self.proprio is not None else np.zeros(0, dtype=np.int64)
         pr_acc = np.zeros(len(pr), dtype=np.int32)
+        vision_every = max(1, int(round(VISION_EVERY_MS / COUPLE_MS)))
         for k in range(n):
+            if self.eyes is not None and int(round(self.brain.time_ms / COUPLE_MS)) % vision_every == 0:
+                self._vision_stim = self.eyes.encode(VISION_EVERY_MS)
+            drive_stim = stim
+            if len(self._vision_stim):
+                drive_stim = self._vision_stim if stim is None or len(stim) == 0 else stim + self._vision_stim
             angles = self.body.dof_angles()
             hz = self.proprio.rates(angles, self.body.dof_velocities()) if self.proprio is not None else None
             if self.cns is not None:
-                result = self.cns.step(COUPLE_MS, stim, hz)
+                result = self.cns.step(COUPLE_MS, drive_stim, hz)
             else:
-                drive = stim
+                drive = drive_stim
                 if hz is not None:
-                    drive = Stimulus(pr, hz) if stim is None or len(stim) == 0 else Stimulus.of(np.r_[pr, stim.idx], np.r_[hz, stim.hz])
+                    drive = Stimulus(pr, hz) if drive is None or len(drive) == 0 else Stimulus.of(np.r_[pr, drive.idx], np.r_[hz, drive.hz])
                 result = self.brain.run(COUPLE_MS, drive).counts
             counts = result[mn]
             acc += counts
@@ -164,6 +194,7 @@ class EmbodiedFly:
                 trace.activation.append(self.muscles.activation.copy())
                 trace.mn_spikes.append(acc.copy())
                 trace.proprio_spikes.append(pr_acc.copy())
+                trace.vision_hz.append(float(self._vision_stim.hz.sum()))
                 acc[:] = 0
                 pr_acc[:] = 0
         return trace

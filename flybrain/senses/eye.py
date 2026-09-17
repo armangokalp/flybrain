@@ -162,6 +162,24 @@ class Eye:
 
         Döndürür: (idx, u, v).
         """
+        idx, side, h1, h2 = self.neuron_columns(idx)
+        u, v = self.uv(side, h1, h2)
+        return idx, u, v
+
+    def neuron_directions(self, idx: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Nöronların bakış yönleri; kolonu bulunamayanlar düşürülür.
+
+        Döndürür: (idx, taraf, φ, θ); φ 0° yan, +90° ön; θ + sırt (derece).
+        """
+        idx, side, h1, h2 = self.neuron_columns(idx)
+        phi, theta = self.view(h1, h2)
+        return idx, side, phi, theta
+
+    def neuron_columns(self, idx: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Nöronların kolonları (hex1, hex2); koordinatı olmayanlar partner oylamasıyla bulunur.
+
+        Döndürür: (idx, taraf, hex1, hex2); kolonu bulunamayanlar düşürülür.
+        """
         nn = self.conn.neurons
         idx = np.asarray(idx)
         h1 = nn.hex1.to_numpy()[idx].astype(float)
@@ -181,8 +199,7 @@ class Eye:
             if np.isnan(h1[k]) and int(n) in self._inferred:
                 h1[k], h2[k] = self._inferred[int(n)]
         ok = ~np.isnan(h1)
-        u, v = self.uv(nn.side.to_numpy()[idx][ok], h1[ok], h2[ok])
-        return idx[ok], u, v
+        return idx[ok], nn.side.to_numpy()[idx][ok], h1[ok], h2[ok]
 
     def _prime_partners(self, idx: np.ndarray) -> None:
         """Verilen nöronların koordinatsız partnerlerinin kolonlarını önceden çıkarır."""

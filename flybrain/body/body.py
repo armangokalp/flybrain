@@ -72,6 +72,7 @@ class Body:
         dofs = fly.skeleton.get_actuated_dofs_from_preset(ActuatedDOFPreset.ALL)
         fly.add_actuators(dofs, actuator_type=ActuatorType.MOTOR, forcerange=(-TORQUE_LIMIT, TORQUE_LIMIT))
         fly.colorize()
+        fly.add_vision()  # başa bağlı iki göz kamerası (body/sight.py)
         self.camera = fly.add_tracking_camera(name="izleme")
         self.side_camera = fly.add_tracking_camera(
             name="yan", pos_offset=(0.0, -6.0, 0.8),

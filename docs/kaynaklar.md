@@ -52,6 +52,9 @@ Taban adres: `https://storage.googleapis.com/flyem-male-cns/v1.0/connectome-data
 - Agrawal ve ark. 2020, *eLife* — [bacak propriyosepsiyonunun merkezi işlenmesi](https://elifesciences.org/articles/60299): bükülmüş (0–90°) ve açılmış (90–180°) açıları kodlayan pençe alt tipleri
 - Warren ve Göpfert 2024, *J Exp Biol* — [larva kordotonal organının (lch5) mekanik uyarıya spike yanıtları](https://pmc.ncbi.nlm.nih.gov/articles/PMC11418168/): tek nöron hızları 1,5–78 Hz
 - Marin ve ark. 2024, *eLife* — [MANC'ın sistematik adlandırması](https://elifesciences.org/reviewed-preprints/97766v1) (SNpp duyu nöronu tipleri)
+- Yang ve Clandinin 2018, *Annual Review of Vision Science* — [Drosophila'da temel hareket algılama](https://pmc.ncbi.nlm.nih.gov/articles/PMC8097889/): L1/L2 geçici, L3 kalıcı; Mi1/Tm3 çift fazlı (K-027)
+- Arenz ve ark. 2017, *Current Biology* — [hareket algılayıcılarının zamansal ayarı girdi hücrelerinin dinamiğinden gelir](https://www.sciencedirect.com/science/article/pii/S0960982217300866)
+- Nikolaev ve ark. 2009, *PLoS One* — [ağ adaptasyonu, sinek gözünde doğal uyaranların zamansal temsilini iyileştirir](https://pmc.ncbi.nlm.nih.gov/articles/PMC2628722/): fotoreseptör ve lamina adaptasyonu saniyeler içinde
 - Stowers ve ark. 2017, *Nature Methods* — [serbest hareket eden hayvanlar için sanal gerçeklik (FreemoVR)](https://www.nature.com/articles/nmeth.4399)
 
 ## Gövde modelleri

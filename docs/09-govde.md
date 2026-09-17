@@ -496,3 +496,52 @@ Tüm koşular propriyosepsiyon kapalı, `--vnc rate`:
   2. Güçlü girdide ağ doyuma kilitleniyor.
   3. Duyu girdisinin ölçeği kalibre edilmemiş.
 - **Sonraki yön:** Kullanıcıya soruldu.
+
+## 9. Sineğin kendi gözleriyle görme (2026-09-17)
+
+Karar: K-027. Kod: `flybrain/body/sight.py`, `EmbodiedFly(vision=...)`.
+
+### 9.1 Yöntem
+
+- **Kameralar:** NeuroMechFly'ın başına iki göz kamerası bağlı (FlyGym `add_vision`).
+  - Görüş açısı 157°; yandan 27° öne bakıyor.
+  - Çözünürlük 512 × 450.
+  - Gözün kendi başını görmemesi için gizlenen parçalar FlyGym'deki gibi.
+- **Kolon başına örnekleme:** Görüntü FlyGym'in 721 ommatidyumuna indirgenmiyor; konnektomdaki her kolon nöronu kendi bakış yönünden örnekleniyor.
+  - **Bakış yönü:** Kolon koordinatları Faz 3'teki eşlemeyle φ, θ açılarına çevriliyor (senses/eye.py). Baş çerçevesinde x ileri, y sol, z yukarı; bu kural gövde modelinde doğrulandı.
+  - **İzdüşüm:** Her karede baş ve kamera yönelimi fizikten okunuyor; yön, kameranın düz görüntüsüne izdüşürülüyor. Balık gözü düzeltmesine gerek kalmıyor.
+  - **Kabul açısı:** 5°. Yedi noktalı, Gauss ağırlıklı bir örnekle uygulanıyor.
+  - **Kapsam:** 7.378 görme nöronunun (L2, L3, Mi1, Tm3) tamamı kameraların görüş alanında.
+- **Zamansal kodlama:**
+  - **Yerel uyum:** Her kolon kendi parlaklığına uyum sağlıyor (1 sn). Kontrast, uyum sağlanan parlaklığa göre hesaplanıyor.
+  - **Geçici hücreler (L2, Mi1, Tm3):** Kontrastın yüksek geçiren süzgeçten geçmiş halini görüyor (100 ms).
+  - **Kalıcı hücreler (L3):** Kontrastın kendisini görüyor.
+  - **Hıza çevirme:** Faz 3 ile aynı (K-012: açık/kapalı yöntemi, 250 Hz).
+- **Yenileme:** 10 ms'de bir.
+
+### 9.2 Neden zamansal kodlama? (K-027)
+
+Faz 3'teki kodlama, tüm görüntünün ortalamasına göre sürekli kontrast üretiyordu. Durağan bir post görseli için bu yeterliydi. Gövdeli sinekte ise durağan sahne (beyaz gökyüzü, koyu zemin) sürekli bir uyarıma dönüştü:
+
+| Koşul (sessiz beyin, yalnızca görme) | Görme uyarımı | LC4 | Dev lif (DNp01) | Bacak MN spike'ı |
+|---|---|---|---|---|
+| Durağan kodlama, 500 ms | ~900 kHz | 37 Hz | **63 Hz** | 308 |
+| Uyumlu kodlama, 1 sn | 17–36 kHz | 0 | 0 | 27 |
+
+Dev lif hiçbir şey hareket etmezken ateşliyordu, yani sinek sürekli kaçmaya çalışıyordu. Uyumlu kodlamada kalan uyarım, sineğin kendi küçük hareketlerinden geliyor (çökme, bacak seğirmeleri).
+
+Biyolojik dayanak:
+- L1 ve L2 hızlı ve geçici, L3 yavaş ve kalıcı yanıt veriyor. Mi1 ve Tm3'ün dürtü yanıtı çift fazlı (Yang ve Clandinin 2018; Arenz ve ark. 2017).
+- Fotoreseptör ve lamina adaptasyonu saniyeler içinde gerçekleşiyor (Nikolaev ve ark. 2009).
+
+### 9.3 Varsayımlar ve sınırlar
+
+| Parametre | Değer | Dayanak |
+|---|---|---|
+| Uyum zaman sabiti | 1 sn | "Saniyeler içinde" (Nikolaev ve ark. 2009) |
+| Geçici süzgeç | 100 ms | Kaynak yok; yayımlanmış sayılara ulaşılamadı |
+| Yenileme | 10 ms | Çizim maliyeti; sineğin titreşim birleşme frekansı bunun üstünde |
+| Kamera konumu | Başın ortası, iki göz aynı noktada | FlyGym modeli; iki göz arası paralaks yok |
+| Kabul açısı | 5° | Faz 3 ile aynı |
+
+Görüntü çizimi 10 ms'de bir yapılıyor ve beyin + gövde + görme döngüsü gerçek zamanın ~5 katı yavaş (1 sn için 4,9 sn).

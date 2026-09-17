@@ -211,6 +211,11 @@ Kaçış devresi (LPLC2/LC4 → dev lif DNp01 → TTMn) konnektomda mevcut. Ama 
 - Görme kodlayıcısına zaman boyutu eklemek: Reels videoları kare kare, kaydırma hareketi ekranda gerçek hareket olarak.
 - Kaynak testi: yaklaşan bir disk dev lifi ateşletiyor mu? Hareket yönünü seçen T4/T5 devrelerinin LIF modelinde çalışıp çalışmadığı bilinmiyor.
 
+**Durum (2026-09-17):**
+- **Zamansal kodlama eklendi (K-027):** Gövdeli sinekte her kolon parlaklığa uyum sağlıyor; L2, Mi1 ve Tm3 geçici yanıt veriyor.
+- **Tetikleme sorunu çözüldü:** Durağan sahne artık dev lifi ateşletmiyor. Durağan kodlamada ateşletiyordu (63 Hz).
+- **Açık:** Yaklaşan nesne testi, sahne kurulduktan sonra yapılacak.
+
 ### Z-26 · Uçuş yok 🟡
 
 Uçabilen hazır gövde modelinin (flybody) uçuş kontrolcüsü eğitilmiş bir sinir ağı; kullanılamaz. Uçuş aerodinamiği ve dolaylı uçuş kaslarının mekaniği ayrı bir iş.
