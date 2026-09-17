@@ -408,3 +408,88 @@ Durumlar: **önerildi** · **kabul edildi** · **yerine geçti**
   - Koyu temada yaklaşan nesneye kaçış %96'dan %77'ye iniyor.
   - Faz 8'de gerçek ekran görüntüleri de karanlık modda alınmalı.
 - **İlke notu:** Dünya tarafında bir karar; sineğin nöronlarına ve kaçış devresine dokunulmadı. Gözün yaklaşmayı kararmadan ayıramaması (Z-25) açık kalıyor. Korku tepkisinin anlam taşıması gereken Faz 7'de yeniden ele alınmalı.
+
+## K-031 · Düşen sineği deneyci yeniden yerleştirir
+
+- **Durum:** kabul edildi (2026-09-17), kullanıcı kararı
+- **Bağlam:**
+  - Gövdeli sinekte kalibrasyon için 6 sinek 80'er posta art arda baktı. Pencerelerin %60'ında sinek dik değildi.
+  - **Neden:** Kaçış sıçraması (dev lif → TTMn) sineği ~1,3 mm fırlatıyor ve sinek sırtüstü iniyor. Modelde iniş denetimi ve doğrulma davranışı yok (Z-26, Z-29), bu yüzden sinek ters kalıyor.
+  - **Sıklık:** Kendiliğinden kaçışlar ~17 sn'de bir oluyor (Z-34). Uzun bir oturumda neredeyse her sinek bir noktada sırtüstü kalıyor. 6 sinekten yalnızca biri 80 post boyunca dik kaldı; üçü ilk postta ya da ondan önce düştü.
+- **Seçenekler:**
+  - **Deneyci yeniden yerleştirsin.** *Önerildi, kullanıcı bunu seçti.*
+  - **Kaçış oturumu bitirsin:** Çıkış kanalının anlamıyla uyumlu, ama oturumlar birkaç post sürerdi.
+  - **Doğrulma davranışını modellemek:** En doğru yol ama büyük bir araştırma işi; yürüme bile henüz yok.
+- **Karar:**
+  - **Tetik:** Sinek `REPOSITION_MS` (1 sn) boyunca dik değilse deneyci onu oturma sonundaki dik duruşuna geri koyar. "Dik değil": göğüs dikeyi ile dünya dikeyi arasındaki açının kosinüsü `UPRIGHT_MIN`'den küçük (ilk sürümde 0,5; güncelleme aşağıda: 0,9).
+  - **Yerleştirme:** Sinek olduğu yerde kalır, yönü telefona çevrilir.
+  - **Tutma:** Deneyci sineği `HOLD_MS` (1 sn) boyunca bu duruşta tutar, sonra bırakır. Bu sürede beyin, görme ve propriyosepsiyon çalışır, gövde hareket etmez.
+  - **Kayıt:** Her yerleştirme `EmbodiedFly.repositions` ve `Trace.repositions` içinde işaretlidir; görselleştirmede de açıkça gösterilmelidir.
+  - Sahne kurulmuşsa varsayılan olarak açık.
+- **Neden tutma var:**
+  - Tutma olmadan sinek yerleştirildiği anda ters görüntüden telefon görüntüsüne geçiyordu. Görme uyarımı ~195 kHz'e sıçradı ve 40 ms içinde yeni bir kaçış tetiklendi; sinek yine devrildi.
+  - Gerçek bir deneyci de sineği bir süre tutarak yerleştirir. Tutma süresinde gözler yeni görüntüye kendiliğinden uyum sağlıyor. Süre görme uyumunun zaman sabitine eşit alındı (VARSAYIM).
+- **İlke notu:**
+  - Bu bir dünya müdahalesi; sineğin davranışı değil.
+  - Kaçış ve düşüş olduğu gibi görünür; müdahale yalnızca sinek sırtüstü kaldıktan sonra gelir.
+  - Tutma sırasında dev lif ateşlerse gövde sıçramaz. Bu kaçışlar kayıtta görünür, gövdede görünmez.
+- **Güncelleme (2026-09-17, kullanıcı kararı): yatık sinek de yerleştirilir.**
+  - **Bulgu:** Homeostaz oturumunda son 50 postta tımar %41'e çıktı. Karar vermeden yapılan uzun gözlemde (3 sinek × 300 sn) nedeni görüldü:
+    - Sinek yan yatmış ama devrilmemiş bir duruşa takılıyor: diklik 0,55–0,80, göğüs 0,45 mm'de (dik sinekte 0,65 mm), bacaklar dağınık.
+    - Bu duruş 55–80 sn sürdü ve 0,5 eşiğine yakalanmadı. Bu sırada bacaklar dik duruştakinden çok hareket ediyor: ön bacak yolu medyanı sinek 0'da 13°, sinek 2'de 2,3° (dik sinekte 0,5–0,9°). Tımar ve ileri kanalları gövde onayını kolayca geçiyor.
+    - Sayaç da her anlık düzelmede sıfırlanıyordu. 0,5 çizgisinin iki yanında sallanan sinek 15 sn boyunca yalnızca bir kez yerleştirildi.
+    - Pencerelerin %24'ünde sinek dik değildi. Dik pencerelerde en düşük diklik ≥ 0,98, yatıklarda ≤ 0,80; arada 1800 pencereden yalnızca biri var.
+  - **Seçenekler:**
+    - **Yerleştirme kuralını sıkılaştırmak.** *Önerildi, kullanıcı bunu seçti.*
+    - **Yatık sinek karar vermesin:** Takılma sürer, akış bir dakikayı aşan süreler boyunca durur.
+    - **İkisi birden.**
+  - **Karar:**
+    - `UPRIGHT_MIN` = 0,9 (~25° yatma).
+    - Dik olmayan süre sayacı dik anlarda sıfırlanmıyor, yarı hızla azalıyor (`RECOVER_RATE`, `down_time`). Kısa bir sıçrama yatması birkaç yüz ms içinde unutuluyor.
+  - **Birlikte bulunan hata:** Oturma beyin çalışırken yapılıyor ve ~40 oturmada bir sinek yatık kalıyor (diklik ~0,38). Bu durumda o duruş "dik duruş" diye kaydediliyor ve deneyci sineği hep ona geri koyuyordu. Artık oturma sonunda sinek dik değilse oturma baştan yapılıyor (`SETTLE_TRIES`).
+    - Gövdeli kalibrasyon, doğrulama ve oturumdaki 21 sinek tohumunun hepsi dik oturmuştu; bu ölçümler etkilenmedi.
+    - `escape.py` ve `scene.py` sineği denemeler arasında yeniden sıfırlıyor. Oradaki denemelerin ~%2,5'i yatık başlamış olabilir (K-029, K-030 sayıları).
+  - **Sonuç (09-govde.md 17.8–17.9):**
+    - Kalibrasyonda dik olmayan pencere %9,2'den %7,1'e indi; eşikler yeniden çıkarıldı.
+    - Doğrulamada tımar %15,8'den %7,5'e indi.
+    - Homeostaz oturumunun son bloğunda tımar %41 yerine %7.
+    - Aynı sinek eski kuralda ~60. saniyede yatıp kalıyor, yeni kuralda dik (video).
+
+## K-032 · Gövde onayı: hareket yoksa eylem yok
+
+- **Durum:** kabul edildi (2026-09-17), kullanıcı kararı. K-020'nin güvencesini somutlaştırıyor.
+- **Bağlam:**
+  - K-020'ye göre Instagram eylemleri nöral okumadan seçiliyor, gövde aynı nöronlarla hareket ediyor. Tutarsızlıklar ölçülüp kullanıcıyla çözülecekti.
+  - **Ölçüm:** Gövdeli sinekte 480 referans post, eşikler yeniden çıkarıldı. Kararların bir kısmında ilgili gövde bölgesi hiç görünür hareket etmedi (≥ 1° ya da ≥ 0,1 mm; sıçramalı pencerede yalnızca çıkış sayılıyor):
+
+    | Karar | Karar sayısı | Görünür hareketli karar |
+    |---|---|---|
+    | sonraki post (bacaklar) | 166 | %92 |
+    | beğen / kaydet (hortum) | 77 | %96 |
+    | yorum (kanatlar) | 10 | %100 |
+    | tımar (ön bacaklar) | 24 | %88 |
+    | takip et (karın, medyan 0,99°) | 8 | %38 |
+    | çıkış (sıçrama) | 9 | %44 |
+    | sekme değiştir (baş, medyan 0,24°) | 25 | %0 |
+    | önceki post (geri hareket) | 7 | %0 |
+
+  - İlk sayımda (sıçramalı pencerelerde her bölge görünür sayılırken) oranlar daha yüksek çıkmıştı: sonraki post %99, tımar %96, takip %50.
+
+- **Seçenekler:**
+  - **Gövde onayı şartı.** *Önerildi, kullanıcı bunu seçti.*
+  - **Yalnızca raporlamak.**
+  - **Görünmeyen kanalları kapatmak.**
+- **Karar:**
+  - **Onay şartı:** Bir kanal ancak ilgili gövde bölgesi o 500 ms'lik pencerede görünür biçimde hareket ettiyse karar verebilir. Eşikler: eklemlerde açı yolu ≥ 1°, göğüste ≥ 0,1 mm (VARSAYIM).
+  - **Eşikler:** Karar kuralı referans postlara bu şartla uygulanarak çıkarılıyor (`flybrain/motor/calibration_embodied.json`, `body_confirmation: true`).
+  - **Sıçrama:** Sinek o pencerede sıçradıysa yalnızca çıkış onaylanır. İlk doğrulamada sekme kararlarının hepsi sıçramalardaydı: baş, gövdeyle birlikte savruluyordu.
+  - **Hız şartı:** Hızı sıfır olan kanal karar veremez. Bu kural gövdesiz sinekte de geçerli; onun mevcut eşiklerinde bir şey değiştirmiyor.
+  - **Kod:** `flybrain/body/confirm.py`, `flybrain/body/viewer.py` (`FeedViewer.look`).
+- **Sonuçlar:**
+  - "Önceki post" pratikte hiç olmuyor. Sinek geri yürümüyor; geri kanalı da postların ~%2'sinde ateşliyor.
+  - "Sekme değiştir" çok seyrek.
+- **Sınırlar:**
+  - Onay, bölgenin hareket ettiğini gösterir; hareketin kararı veren nöronlardan geldiğini değil.
+  - "Sonraki post" bacak hareketiyle onaylanıyor ama sinek yürümüyor (K-026).
+  - İlgi kaybında akış hareket olmadan ilerliyor. Bu bir karar değil, kararın yokluğu; Z-27'de açık kalıyor.
+

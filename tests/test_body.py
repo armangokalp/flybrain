@@ -92,6 +92,80 @@ def test_giant_fiber_triggers_jump(fly):
     assert a["thorax"][:, 2].max() - z0 > 1.0
 
 
+def test_down_time_is_not_reset_by_brief_recovery():
+    """Sallanan sinek (çizginin iki yanına geçip duran) da zamanla yerleştirilir; kısa yatma unutulur."""
+    from flybrain.body.embodied import REPOSITION_MS, UPRIGHT_MIN, down_time
+
+    down, t = 0.0, 0
+    while down < REPOSITION_MS:
+        up = UPRIGHT_MIN - 0.1 if (t // 100) % 2 == 0 else UPRIGHT_MIN + 0.05  # 100 ms yatık, 100 ms dik
+        down = down_time(down, up, 1.0)
+        t += 1
+        assert t < 5000
+    assert t > REPOSITION_MS
+    down = 0.0
+    for _ in range(300):  # sıçramada kısa yatma
+        down = down_time(down, 0.0, 1.0)
+    for _ in range(600):
+        down = down_time(down, 1.0, 1.0)
+    assert down == 0.0
+
+
+def test_experimenter_places_fallen_fly_upright(fly):
+    """Sırtüstü kalan sinek REPOSITION_MS sonra dik konur, HOLD_MS tutulur ve dik kalır."""
+    from flybrain.body.embodied import HOLD_MS, REPOSITION_MS
+
+    fly.reposition = True
+    try:
+        fly.reset()
+        body = fly.body
+        start = body.state().thorax_pos[:2].copy()
+        pose = fly._standing.copy()
+        f = body._free_qpos()
+        pose[f + 3:f + 7] = [0.0, 1.0, 0.0, 0.0]  # x ekseni etrafında 180°: sırtüstü
+        pose[f + 2] += 0.5
+        body.hold(pose)
+        trace = fly.run(REPOSITION_MS + 300)
+        assert len(trace.repositions) == 1 and fly.held
+        assert body.upright() > 0.95
+        fly.run(HOLD_MS)
+        assert not fly.held
+        assert body.upright() > 0.95
+        assert np.linalg.norm(body.state().thorax_pos[:2] - start) < 1.0
+    finally:
+        fly.reposition = False
+
+
+def test_experimenter_places_tilted_fly(fly, monkeypatch):
+    """Yan yatıp kalan sinek (diklik 0,55–0,80) de yerleştirilir (17.7)."""
+    from flybrain.body.embodied import REPOSITION_MS
+
+    fly.reposition = True
+    try:
+        fly.reset()
+        monkeypatch.setattr(fly.body, "upright", lambda: 0.7)
+        trace = fly.run(REPOSITION_MS + 50)
+        assert len(trace.repositions) == 1 and fly.held
+    finally:
+        monkeypatch.undo()
+        fly.reposition = False
+
+
+def test_reset_repeats_settling_when_fly_ends_tilted(fly, monkeypatch):
+    real = fly.body.upright
+    calls = []
+
+    def upright():
+        calls.append(1)
+        return 0.3 if len(calls) == 1 else real()
+
+    monkeypatch.setattr(fly.body, "upright", upright)
+    fly.reset()
+    monkeypatch.undo()
+    assert len(calls) == 2
+    assert fly.body.upright() > 0.95 and fly._standing is not None
+
+
 @pytest.fixture(scope="module")
 def proprio(fly):
     return fly.proprio

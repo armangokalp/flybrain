@@ -115,6 +115,30 @@ def test_disabled_channel_never_wins(cal):
     assert sel.step(0, rates, 0.0) is None
 
 
+def test_channel_without_spikes_cannot_act(cal):
+    sel = ActionSelector(cal)
+    j = CHANNELS.index("takip")
+    rates = _rates_for_z(sel, 0, np.full(len(CHANNELS), -1.0))
+    rates[j] = 0.0
+    sel.theta[j] = -50.0  # eşik, spike'sız düzeyin altında
+    assert sel.step(0, rates, 0.0) is None
+    rates[j] = 1e-3
+    assert sel.step(0, rates, 0.0).action == "takip"
+
+
+def test_rule_ignores_channels_without_spikes():
+    from flybrain.motor.selector import _simulate
+
+    g = CHANNELS.index("geri")
+    Z = np.full((1, MAX_WINDOWS, len(CHANNELS)), -5.0)
+    Z[..., g] = -0.02  # spike yokken bile eşiğin üstünde kalan z (neredeyse hiç ateşlemeyen kanal)
+    theta = np.full(len(CHANNELS), 10.0)
+    theta[g] = -0.03
+    enabled = np.ones(len(CHANNELS), dtype=bool)
+    assert _simulate(Z, theta, enabled)[1][0] == g
+    assert _simulate(Z, theta, enabled, np.zeros_like(Z, dtype=bool))[1][0] == -1
+
+
 @pytest.mark.skipif(not WEIGHTS.exists(), reason="ham veri yok")
 def test_readout_groups_are_anatomical():
     from flybrain.connectome.connectome import load_connectome
@@ -124,7 +148,8 @@ def test_readout_groups_are_anatomical():
     ro = MotorReadout(conn)
     sizes = ro.sizes()
     assert sizes["ileri"] == 381 and sizes["hortum"] == 67 and sizes["takip"] == 214
-    assert sizes["yorum"] == 43 and sizes["cikis"] == 31
+    assert sizes["yorum"] == 37 and sizes["cikis"] == 31  # sıçrama kasları (TTMn, STTMm) yorumda değil
+    assert not conn.neurons["type"].iloc[ro.groups["yorum"]].fillna("").str.match("TTMn|STTMm").any()
     counts = np.zeros(conn.n, dtype=np.int32)
     counts[ro.neck_left] = 2
     rates, turn = ro.rates(counts, 500)

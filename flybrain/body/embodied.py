@@ -10,6 +10,15 @@ Her COUPLE_MS milisaniyede:
 Görme açıksa her VISION_EVERY_MS milisaniyede sineğin göz kameraları sahneyi çizer ve
 göz kolonlarının uyarımı güncellenir (body/sight.py).
 
+Yeniden yerleştirme (kullanıcı kararı, docs/09-govde.md 17): sinek REPOSITION_MS'den uzun
+süre dik değilse (sıçramadan sonra sırtüstü ya da yan yatıp kaldığında, Z-26), deneyci onu
+oturma sonundaki dik duruşuna geri koyar: olduğu yerde, telefona dönük. Deneyci sineği
+HOLD_MS boyunca bu duruşta tutar, sonra bırakır. Tutma sırasında beyin, görme ve
+propriyosepsiyon çalışır; gözler yeni görüntüye uyum sağlar, ama gövde hareket etmez.
+Tutma olmadan görüntünün ani değişimi hemen yeni bir kaçış tetikliyordu. Bu bir dünya
+müdahalesidir; her olay `repositions` ve Trace'e kaydedilir. Sahne kurulmuşsa varsayılan
+olarak açıktır.
+
 Sahne açıksa (body/scene.py) telefon ekranı her adımda sineği gecikmeyle izler. Ekrandaki
 akış (body/phone.py) `show_post` ile doğrudan, `scroll_to_post` ile kaydırılarak,
 `fade_to_post` ile solarak değişir; ekran görüntüsü görmeyle aynı aralıkla yenilenir.
@@ -35,6 +44,9 @@ from flybrain.sim.hybrid import HybridCNS
 COUPLE_MS = 1.0
 # Nötr pozdan pasif duruşa oturma süresi (ölçüm: 500 ms'den sonra eklemler < 0,002 rad/100 ms).
 SETTLE_MS = 500.0
+# Oturma beyin çalışırken yapılıyor; rastgele arka plan etkinliği sineği ~40 oturmada bir
+# yatık bırakıyor (diklik ~0,38). Bu durumda oturma yeniden yapılır (docs/09-govde.md 17.7).
+SETTLE_TRIES = 5
 # Oturmadan sonra görme açılmadan önce propriyosepsiyonun ısınma süresi. Propriyosepsiyonun
 # açıldığı ilk 300 ms'de bacak motor nöronları sonrakinin ~2 katı ateşliyor (ölçüm: 14-21'e
 # karşı 0-14 spike); bu geçici hareket görmeyle birleşince kaçışı tetikleyebiliyordu.
@@ -45,9 +57,29 @@ PROPRIO_WARMUP_MS = 300.0
 # denemede bir saniye içinde kendiliğinden kaçıyordu. 125 Hz'de yaklaşan diske kaçış %91,
 # durağan ekranda kendiliğinden dev lif ateşlemesi ~17 sn'de bir (docs/09-govde.md 12).
 EMBODIED_VISION = VisionConfig(mode="onoff", r_max_hz=125.0)
+# Yeniden yerleştirme (K-031): göğüs dikeyinin kosinüsü bunun altındaysa sinek "dik değil"
+# sayılır (~25° yatma). Dik duran sinekte bu değer 0,98'in altına pek inmiyor; yan yatıp
+# kalan sinekte 0,55–0,80 (docs/09-govde.md 17.7). İlk sürümde eşik 0,5'ti ve yatık sinek
+# dakikalarca yerleştirilmiyordu.
+UPRIGHT_MIN = 0.9
+# Dik olmayan süre REPOSITION_MS'ye ulaşınca deneyci sineği yeniden yerleştirir (VARSAYIM).
+# Sayaç dik anlarda sıfırlanmaz, RECOVER_RATE hızıyla azalır: sallanan sinek çizginin iki
+# yanına geçip dursa da zamanla yerleştirilir.
+REPOSITION_MS = 1000.0
+RECOVER_RATE = 0.5
+# Deneycinin sineği yerleştirdikten sonra tuttuğu süre (VARSAYIM; görme uyumunun zaman
+# sabitiyle aynı, ADAPT_MS).
+HOLD_MS = 1000.0
 # Göz görüntüsünün yenilenme aralığı (VARSAYIM; 100 kare/sn, sineğin titreşim birleşme
 # frekansının altında; çizim maliyeti nedeniyle).
 VISION_EVERY_MS = 10.0
+
+
+def down_time(down_ms: float, upright: float, dt_ms: float) -> float:
+    """Dik olmayan süre sayacı: sinek dik değilken artar, dikken RECOVER_RATE hızıyla azalır."""
+    if upright < UPRIGHT_MIN:
+        return down_ms + dt_ms
+    return max(0.0, down_ms - RECOVER_RATE * dt_ms)
 
 
 @dataclass
@@ -62,6 +94,7 @@ class Trace:
     mn_spikes: list[np.ndarray] = field(default_factory=list)  # önceki kayıttan bu yana, muscles.mn sırası
     proprio_spikes: list[np.ndarray] = field(default_factory=list)  # önceki kayıttan bu yana, proprio.idx sırası
     vision_hz: list[float] = field(default_factory=list)  # kayıt anında görme uyarımının toplam hızı
+    repositions: list[float] = field(default_factory=list)  # deneycinin sineği yeniden yerleştirdiği anlar (ms)
     frames: dict[str, list[np.ndarray]] = field(default_factory=dict)
 
     def arrays(self) -> dict[str, np.ndarray]:
@@ -90,10 +123,12 @@ class EmbodiedFly:
         vnc: str = "lif",
         vision: VisionConfig | None = None,
         scene: SceneConfig | None = None,
+        reposition: bool | None = None,
     ):
         """vnc: "lif" — tüm sinir sistemi LIF; "rate" — bacak motor ağı hız modeliyle (K-025, deneysel).
         vision: verilirse sinek sahneyi kendi gözleriyle görür (body/sight.py).
         scene: verilirse gri arena ve sineği izleyen telefon ekranı (body/scene.py).
+        reposition: düşen sineği deneyci yeniden yerleştirsin mi; None ise sahne varsa evet.
         """
         self.conn = conn or load_connectome()
         self.gap_junctions = []
@@ -130,6 +165,14 @@ class EmbodiedFly:
         else:
             raise ValueError(f"bilinmeyen sinir kordonu modeli: {vnc}")
         self._steps = int(round(COUPLE_MS / 1000 / TIMESTEP_S))
+        self.reposition = scene is not None if reposition is None else reposition
+        self.repositions: list[float] = []
+        self._standing: np.ndarray | None = None
+        self._down_ms = 0.0
+        self._hold: np.ndarray | None = None
+        self._hold_ms = 0.0
+        # Verilirse her adımda bütün nöronların spike sayıları buna eklenir (karar okuması için).
+        self.spike_counter: np.ndarray | None = None
         self._joint_index = {n: i for i, n in enumerate(self.body.joint_names)}
 
     def joint(self, name: str) -> int:
@@ -141,17 +184,12 @@ class EmbodiedFly:
         Oturma sırasında propriyosepsiyon ve görme kapalıdır: model sineği havada nötr pozda
         başlatır ve zemine iniş gerçek bir durum değildir. Beyin bu sürede girdi almaz.
         Ardından PROPRIO_WARMUP_MS boyunca yalnızca propriyosepsiyon açıktır; görme en son açılır.
+        Oturma sonunda sinek dik değilse (UPRIGHT_MIN) oturma baştan yapılır.
         """
-        if self.cns is not None:
-            self.cns.reset()
-        else:
-            self.brain.reset()
-        self.body.reset()
-        self.muscles.reset()
-        self._vision_stim = Stimulus.empty()
-        if self.eyes is not None:
-            self.eyes.reset()
-        if settle:
+        for _ in range(SETTLE_TRIES if settle else 1):
+            self._clear()
+            if not settle:
+                return
             proprio, self.proprio = self.proprio, None
             eyes, self.eyes = self.eyes, None
             try:
@@ -161,10 +199,49 @@ class EmbodiedFly:
                     self.run(PROPRIO_WARMUP_MS)
             finally:
                 self.proprio, self.eyes = proprio, eyes
-            if self.scene is not None:
-                self.scene.snap()
-            if self.eyes is not None:
-                self.eyes.reset()
+            if self.body.upright() >= UPRIGHT_MIN:
+                break
+        else:
+            raise RuntimeError(f"sinek {SETTLE_TRIES} denemede dik oturmadı")
+        self._standing = self.body.snapshot()
+        if self.scene is not None:
+            self.scene.snap()
+        if self.eyes is not None:
+            self.eyes.reset()
+
+    def _clear(self) -> None:
+        if self.cns is not None:
+            self.cns.reset()
+        else:
+            self.brain.reset()
+        self.body.reset()
+        self.muscles.reset()
+        self._vision_stim = Stimulus.empty()
+        self._standing = None
+        self._down_ms = 0.0
+        self._hold = None
+        self._hold_ms = 0.0
+        self.repositions = []
+        if self.eyes is not None:
+            self.eyes.reset()
+
+    def place_upright(self) -> None:
+        """Deneyci sineği oturma sonundaki dik duruşuna koyar: olduğu yerde, telefona dönük."""
+        if self._standing is None:
+            raise RuntimeError("dik duruş yok: önce reset() ile oturtulmalı")
+        yaw = self.scene.pose[1] if self.scene is not None else 0.0
+        self.body.place(self._standing, yaw)
+        if self.scene is not None:
+            self.scene.snap()
+        self._down_ms = 0.0
+        self._hold = self.body.snapshot()
+        self._hold_ms = HOLD_MS
+        self.repositions.append(self.brain.time_ms)
+
+    @property
+    def held(self) -> bool:
+        """Deneyci sineği şu anda tutuyor mu."""
+        return self._hold_ms > 0
 
     def _need_feed(self) -> PhoneFeed:
         if self.feed is None:
@@ -236,6 +313,8 @@ class EmbodiedFly:
                 if hz is not None:
                     drive = Stimulus(pr, hz) if drive is None or len(drive) == 0 else Stimulus.of(np.r_[pr, drive.idx], np.r_[hz, drive.hz])
                 result = self.brain.run(COUPLE_MS, drive).counts
+            if self.spike_counter is not None:
+                self.spike_counter += result
             counts = result[mn]
             acc += counts
             pr_acc += result[pr]
@@ -245,6 +324,14 @@ class EmbodiedFly:
             if self.scene is not None:
                 self.scene.follow(COUPLE_MS)
             self.body.step(torques, self._steps)
+            if self._hold_ms > 0:
+                self.body.hold(self._hold)
+                self._hold_ms -= COUPLE_MS
+            elif self.reposition and self._standing is not None:
+                self._down_ms = down_time(self._down_ms, self.body.upright(), COUPLE_MS)
+                if self._down_ms >= REPOSITION_MS:
+                    self.place_upright()
+                    trace.repositions.append(self.brain.time_ms)
             if cameras and k % frame_every == 0:
                 for c in cameras:
                     trace.frames[c].append(self.body.render(c))

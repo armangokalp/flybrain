@@ -130,6 +130,50 @@ class Body:
         if self.scene is not None:
             self.scene.snap()
 
+    def upright(self) -> float:
+        """Göğsün dikey ekseninin dünya dikeyiyle kosinüsü: 1 dik, < 0 sırtüstü."""
+        d = self.sim.mj_data
+        if not hasattr(self, "_thorax_id"):
+            self._thorax_id = mj.mj_name2id(self.sim.mj_model, mj.mjtObj.mjOBJ_BODY, f"{self.fly.name}/c_thorax")
+        return float(d.xmat[self._thorax_id][8])
+
+    def _free_qpos(self) -> int:
+        m = self.sim.mj_model
+        return int(m.jnt_qposadr[list(m.jnt_type).index(mj.mjtJoint.mjJNT_FREE)])
+
+    def snapshot(self) -> np.ndarray:
+        """Gövde duruşunun kopyası (qpos)."""
+        return self.sim.mj_data.qpos.copy()
+
+    def hold(self, pose: np.ndarray) -> None:
+        """Gövdeyi `pose` duruşunda sabit tutar (hızlar sıfır); her fizik adımından sonra çağrılır."""
+        m, d = self.sim.mj_model, self.sim.mj_data
+        d.qpos[:] = pose
+        d.qvel[:] = 0.0
+        d.qacc_warmstart[:] = 0.0
+        mj.mj_forward(m, d)
+
+    def place(self, pose: np.ndarray, yaw: float) -> None:
+        """Deneyci müdahalesi: gövdeyi `pose` duruşuna koyar (hızlar sıfır).
+
+        Göğsün yatay konumu olduğu yerde kalır; yüksekliği ve eğimi `pose`'tan gelir,
+        yönü (düşey eksen etrafında) `yaw` olur.
+        """
+        m, d = self.sim.mj_model, self.sim.mj_data
+        f = self._free_qpos()
+        q = pose.copy()
+        q[f:f + 2] = d.qpos[f:f + 2]
+        w, x, y, z = pose[f + 3:f + 7]
+        pose_yaw = np.arctan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z))
+        turn = np.array([np.cos((yaw - pose_yaw) / 2), 0.0, 0.0, np.sin((yaw - pose_yaw) / 2)])
+        quat = np.zeros(4)
+        mj.mju_mulQuat(quat, turn, pose[f + 3:f + 7])
+        q[f + 3:f + 7] = quat
+        d.qpos[:] = q
+        d.qvel[:] = 0.0
+        d.qacc_warmstart[:] = 0.0
+        mj.mj_forward(m, d)
+
     @property
     def time_s(self) -> float:
         return float(self.sim.time)

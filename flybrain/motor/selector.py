@@ -13,6 +13,10 @@ BUDGET[kanal] olana kadar ayarlanır (kanallar arası yarış hesaba katılır).
 Böylece genel sıklıkları insan belirler, hangi postta ne yapılacağını sinek seçer.
 
 Karar kuralı:
+  0. Hızı sıfır ya da negatif olan kanal karar veremez (spike yoksa eylem yok). Neredeyse hiç
+     ateşlemeyen kanallarda z-skoru eşiği spike olmadan da aşabiliyordu (gövdeli sinekte
+     geri kanalı, docs/09-govde.md 17). Gövdeli sinekte ayrıca ilgili gövde bölgesi o
+     pencerede görünür biçimde hareket etmiş olmalı (gövde onayı, K-032, body/confirm.py).
   1. Eşiğini aşan kanallar arasından, eşiği en büyük farkla aşan seçilir.
   2. Hiçbiri aşmıyorsa sinek bakmaya devam eder (bir pencere daha).
   3. MAX_WINDOWS sonunda hâlâ karar yoksa sinek "ilgisini kaybeder" ve kaydırır.
@@ -68,6 +72,8 @@ SAVE_HOMEOSTASIS_RATE = 0.15  # hortum kararı başına kaydetme eşiği adımı
 SAVE_SHARE = SAVE_BUDGET / BUDGET["hortum"]  # hortum kararları içinde kaydetme payı hedefi (~%13)
 
 CALIBRATION_PATH = Path(__file__).with_name("calibration.json")
+# Gövdeli sineğin kalibrasyonu (experiments/embodied_calibrate.py, K-032).
+CALIBRATION_EMBODIED_PATH = Path(__file__).with_name("calibration_embodied.json")
 
 
 @dataclass
@@ -83,6 +89,7 @@ class Calibration:
     disabled: list[str] = field(default_factory=list)  # referansta hiç değişmeyen kanallar
     raw_std: list[list[float]] = field(default_factory=list)  # tabansız standart sapma (rapor için)
     realized: dict[str, float] = field(default_factory=dict)  # referansta gerçekleşen eylem oranları
+    body_confirmation: bool = False  # eşikler gövde onayıyla mı çıkarıldı (K-032)
 
     def save(self, path: Path = CALIBRATION_PATH) -> None:
         path.write_text(json.dumps(asdict(self), indent=2, ensure_ascii=False) + "\n")
@@ -92,15 +99,19 @@ class Calibration:
         return Calibration(**json.loads(path.read_text()))
 
     @staticmethod
-    def fit(cum_rates: np.ndarray, floor: np.ndarray) -> "Calibration":
+    def fit(cum_rates: np.ndarray, floor: np.ndarray, visible: np.ndarray | None = None) -> "Calibration":
         """cum_rates: [post, pencere, kanal] birikimli referans hızları.
         floor: [pencere, kanal] tek spike'ın o birikim süresinde yarattığı hız.
+        visible: [post, pencere, kanal] gövde onayı (K-032); verilirse karar kuralı bununla uygulanır.
         """
         mean = cum_rates.mean(axis=0)
         raw_std = cum_rates.std(axis=0)
         disabled = [c for j, c in enumerate(CHANNELS) if (raw_std[:, j] == 0).all()]
         std = np.maximum(raw_std, floor)
         Z = (cum_rates - mean) / std
+        active = cum_rates > 0
+        if visible is not None:
+            active &= visible
         enabled = np.array([c not in disabled for c in CHANNELS])
         target = np.array([BUDGET[c] for c in CHANNELS])
 
@@ -111,11 +122,11 @@ class Calibration:
                 lo, hi = -10.0, 50.0
                 for _ in range(40):
                     theta[j] = (lo + hi) / 2
-                    rate = (_simulate(Z, theta, enabled)[1] == j).mean()
+                    rate = (_simulate(Z, theta, enabled, active)[1] == j).mean()
                     lo, hi = (theta[j], hi) if rate > target[j] else (lo, theta[j])
                 theta[j] = (lo + hi) / 2
 
-        first, winner, z_at = _simulate(Z, theta, enabled)
+        first, winner, z_at = _simulate(Z, theta, enabled, active)
         h = CHANNELS.index("hortum")
         z_h = z_at[winner == h]
         share = SAVE_BUDGET / BUDGET["hortum"]
@@ -140,15 +151,18 @@ class Calibration:
             disabled=disabled,
             raw_std=raw_std.tolist(),
             realized=realized,
+            body_confirmation=visible is not None,
         )
 
 
-def _simulate(Z: np.ndarray, theta: np.ndarray, enabled: np.ndarray):
+def _simulate(Z: np.ndarray, theta: np.ndarray, enabled: np.ndarray, active: np.ndarray | None = None):
     """Karar kuralını [post, pencere, kanal] z-skorlarına uygular.
 
+    active: [post, pencere, kanal] kanal hızı > 0 (verilmezse hepsi etkin sayılır).
     Döndürür: (karar penceresi, kazanan kanal, kazananın z-skoru); karar yoksa −1.
     """
-    over = np.where(enabled, Z - theta, -np.inf)
+    allowed = enabled if active is None else enabled & active
+    over = np.where(allowed, Z - theta, -np.inf)
     best = over.max(axis=2)
     hit = best > 0
     decided = hit.any(axis=1)
@@ -169,6 +183,7 @@ class Decision:
     dwell_ms: int        # posta bakma süresi
     z: dict[str, float]  # karar penceresindeki z-skorları
     reason: str
+    body: dict[str, float] | None = None  # gövdeli sinekte karar penceresinin gövde ölçüleri
 
 
 ACTION_OF_CHANNEL = {
@@ -212,9 +227,14 @@ class ActionSelector:
         w = min(window, len(self.mean) - 1)
         return (rates - self.mean[w]) / self.std[w]
 
-    def step(self, window: int, rates: np.ndarray, turn_sign: float) -> Decision | None:
+    def step(self, window: int, rates: np.ndarray, turn_sign: float,
+             visible: np.ndarray | None = None) -> Decision | None:
+        """visible: kanal başına gövde onayı (K-032); verilmezse onay aranmaz (gövdesiz sinek)."""
         z = self.zscores(window, rates)
-        over = np.where(self.enabled, z - self.theta, -np.inf)
+        allowed = self.enabled & (rates > 0)
+        if visible is not None:
+            allowed &= visible
+        over = np.where(allowed, z - self.theta, -np.inf)
         zdict = {c: round(float(v), 3) for c, v in zip(CHANNELS, z)}
         dwell = (window + 1) * WINDOW_MS
         if over.max() <= 0:

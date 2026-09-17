@@ -56,6 +56,8 @@ MaleCNS, motor nöronları ve inen nöronları **hedefledikleri vücut bölgesin
 | inen nöron: üst tectulum (ut) | 276 | %100 | 0,20 | 0,94 | 5,36 |
 | inen nöron: alt tectulum (lt, kaçış) | 31 | %100 | 1,48 | 0,98 | 8,70 |
 
+"Kanat yönlendirme kasları" satırındaki 43 nöronun 6'sı sıçrama kaslarının motor nöronları (TTMn, STTMm). Gövdeli sinekte bunların kanadı değil sıçramayı sürdüğü görüldü; 2026-09-17'den beri yorum kanalında sayılmıyorlar (6.7, Z-27).
+
 "Postlar arası / deneme içi std", yanıtın içeriğe ne kadar duyarlı olduğunu gösterir: 1'den büyük değerler, posttan posta değişimin aynı postun tekrarındaki değişimden büyük olduğu anlamına gelir.
 
 - **Neredeyse her kas grubu her postta aktif ve yanıtlar içeriğe duyarlı** (oran 1,45–8,70).
@@ -69,7 +71,7 @@ MaleCNS, motor nöronları ve inen nöronları **hedefledikleri vücut bölgesin
 | ileri | sonraki posta geç | bacak MN'leri (fl + ml + hl), 381 |
 | geri | önceki posta dön | MDN, 4 |
 | hortum | beğen / kaydet | beyin hortum MN'leri (pm), 67 |
-| yorum | yorum yap | kanat yönlendirme MN'leri, 43 |
+| yorum | yorum yap | kanat yönlendirme MN'leri, 37 (sıçrama kasları TTMn/STTMm hariç, 2026-09-17) |
 | takip | takip et | karın MN'leri, 214 |
 | cikis | takipten çık / oturumu bitir | alt tectulum inen nöronları, 31 |
 | sekme | sekme değiştir (sol/sağ) | boyun MN'lerinde sol − sağ farkı, 44 |
@@ -135,7 +137,7 @@ Kalibrasyon için 480 referans post kullanıldı. Doğrulama için kalibrasyonda
 
 Ham referans hızları `runs/calibration-rates-*.npz` dosyasına kaydediliyor. Eşikler yeniden simülasyon yapmadan `--fit-from` ile yeniden hesaplanabiliyor.
 
-Eşikler ([`flybrain/motor/calibration.json`](../flybrain/motor/calibration.json)):
+Eşikler ([`flybrain/motor/calibration.json`](../flybrain/motor/calibration.json); yorum kanalı 2026-09-17'de yenilendi, 6.7):
 
 | kanal | bütçe | eşik (z) | birikimli ort. Hz (0,5 / 1 / 1,5 sn) | referansta gerçekleşen |
 |---|---|---|---|---|
@@ -234,6 +236,46 @@ python -m flybrain.experiments.calibrate --skip-calibration --homeostasis-test -
 - **Kaydetme:** eşik 2,63'ten 2,03–2,14'e indi (7 spike kademesi); kaydetmeler son blokta başladı. Oturum boyunca hortum eylemlerinin %2'si kaydetme; hedef %13'e doğru yaklaşıyor ama 300 post yetmedi.
 - **Diğer eylemler:** bütçelerine yakın. Bu nadir eylemlerde blok başına yalnızca 300 bakış olduğu için ±1 puanlık oynamalar örnekleme gürültüsü.
 - **Başlangıç tercihi:** Kaydetme bilinçli olarak muhafazakâr bir noktadan başlıyor; azdan çoğa doğru ayarlanıyor. Eşik durumu (`ActionSelector.state()`) Faz 10'da oturumlar arasında saklanacak, böylece bu geçiş yalnızca ilk kullanımda yaşanacak.
+
+### 6.7 Yorum kanalı düzeltmesinden sonra yeniden kalibrasyon (2026-09-17)
+
+Sıçrama kaslarının motor nöronları (TTMn, STTMm; 6 nöron) yorum kanalından çıkarıldı (Z-27, 09-govde.md 17.3). Aynı 480 referans postla kalibrasyon ve aynı 160 × 2 doğrulama yeniden koşuldu:
+
+```bash
+python -m flybrain.experiments.calibrate --workers 6
+```
+
+**Eşikler:** Yalnızca yorum eşiği değişti. Simülasyon değişmedi, yalnızca okuma değişti; öteki kanalların ortalama ve standart sapmaları aynı. Tek istisna sekme kanalının 1 ve 1,5 sn'deki ortalaması (0,064 → 0,063 Hz). Eski eşikler pencere başına kaydedilmiş hızlardan birikimliye çevrilerek çıkarılmıştı; sekme yönü o kayıtta olmadığı için değer bir üst sınırdı. Yeni kayıt birikimli hızı doğrudan ölçüyor.
+
+| | önce (43 nöron) | şimdi (37 nöron) |
+|---|---|---|
+| yorum, birikimli ort. Hz (0,5 / 1 / 1,5 sn) | 1,470 / 0,736 / 0,492 | 1,684 / 0,843 / 0,564 |
+| yorum eşiği (z) | 1,20 | 1,24 |
+| referansta yorum | %1,9 | %2,1 |
+| referansta ilgi kaybı | %31,5 | %31,2 |
+
+Çıkarılan sıçrama nöronları kanalın geri kalanından seyrek ateşliyordu; nöron başına ortalama bu yüzden yükseldi.
+
+**Doğrulama (160 ayrı post × 2 tekrar):**
+
+| eylem | bütçe | önce (6.4) | şimdi |
+|---|---|---|---|
+| ileri | %35 | %26,6 | %26,2 |
+| beğen | | %7,2 | %7,2 |
+| kaydet | %2 | %0,6 | %0,6 |
+| yorum | %2 | %3,8 | %3,4 |
+| sekme (sol + sağ) | %5 | %5,6 | %6,0 |
+| tımar | %5 | %4,1 | %4,4 |
+| geri | %3 | %2,5 | %3,1 |
+| çıkış | %2 | %1,2 | %1,2 |
+| takip | %2 | %0,9 | %0,9 |
+| ilgi kaybı | – | %47,5 | %46,9 |
+
+- **Karar tutarlılığı:** iki tekrarda aynı karar %46 (önce %49).
+- **Bakma süresi:** kararların %52'si 0,5 sn'de, %48'i 1,5 sn'de.
+- **Kaydetme payı:** hortum eylemlerinin %8'i (değişmedi).
+- **Homeostaz testi (6.5)** eski okumayla yapılmıştı ve yeniden koşulmadı. Yalnızca yorum eşiği 0,04 z değiştiği için sonuçların anlamlı ölçüde değişmesi beklenmiyor.
+- Kayıtlar: `runs/calibration-rates-20260917-171225.npz`, `runs/calibrate-20260917-172036.json`.
 
 ### 6.6 Nötr uyaran
 

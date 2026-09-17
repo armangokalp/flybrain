@@ -842,7 +842,7 @@ Her tema dört geçişle ölçüldü (125 Hz, 12'şer geçiş; dev lifin ateşle
 
 **Sıradakiler:**
 1. ~~**Hız (Z-21)**~~ ✅ Döngü gerçek zamanın 2,95–3,25 katı yavaş; önce ~4,5 ([bölüm 16](#16-döngü-hızı-2026-09-17)).
-2. **Nöral karar ile gövdenin örtüşmesi (K-020, Z-27):** Gövdeli sinekte zamansal görme, 125 Hz ve solarak geçişle kararlar yeniden kalibre edilmeli.
+2. ~~**Nöral karar ile gövdenin örtüşmesi (K-020, Z-27)**~~ ✅ Gövdeli kalibrasyon, deneycinin yeniden yerleştirmesi ve gövde onayı ([bölüm 17](#17-gövdeli-sinekte-kararlar-2026-09-17)).
 3. **Faz 6: görselleştirme.** Videolardaki üst/alt düzen (dışarıdan görünüm, sineğin gözleri) ilk adım. Eksikler: 3D beyin, ekran ve karar günlüğü.
 4. **Faz 7'den önce:** Kaçışın yaklaşmaya özgüllüğü (Z-25). Korkutucu içeriğe tepkinin anlam taşıması için gerekli.
 5. **Sonraya bırakılanlar:**
@@ -885,3 +885,241 @@ Tek iş parçacığında (deneylerin süreç havuzlarındaki gibi) 3,9–4,1 kat
 - **Çizim:** Göz kamerası çözünürlüğünü (512 × 450) düşürmek görme girdisini değiştirir.
 - **Poisson:** Çekilişleri seyreltmek ~0,2 sn/sn kazandırır ama rastgele sayı akışını değiştirir.
 
+
+## 17. Gövdeli sinekte kararlar (2026-09-17)
+
+Kararlar: K-020, K-031, K-032. Zorluklar: Z-26, Z-27. Kod:
+- `flybrain/body/viewer.py` (`FeedViewer`: posta bakma ve karar)
+- `flybrain/body/confirm.py` (gövde onayı)
+- `flybrain/experiments/embodied_calibrate.py`
+
+Deney:
+
+```
+python -m flybrain.experiments.embodied_calibrate --posts 480 --save --test-posts 120
+python -m flybrain.experiments.embodied_calibrate --fit-from runs/embodied-cal-<zaman>.npz --session 150 --flies 3
+```
+
+### 17.1 Keşif: eski eşikler gövdeli sineğe uymuyor
+
+Gövdesiz sineğin kalibrasyonu (08-motor.md 6) durağan görme kodlaması ve 250 Hz içindi. Gövdeli sinekte (48 post) ilk 500 ms'deki kanal düzeyleri çok farklı:
+
+| Kanal | Gövdeli | Gövdesiz |
+|---|---|---|
+| ileri (bacak MN) | 0,21 Hz, her postta > 0 (propriyosepsiyon) | 0,07 Hz |
+| çıkış | 0,06 Hz | 2,32 Hz |
+| yorum | 0,35 Hz | 1,47 Hz |
+| geri | postların %2'sinde ateşliyor | 0,56 Hz |
+
+### 17.2 Sırtüstü kalan sinek ve yeniden yerleştirme (K-031)
+
+- **İlk kayıt (6 sinek × 80 post):** Pencerelerin %60'ında sinek dik değildi.
+  - Nedeni kaçış sıçramaları: bir kısmı kendiliğinden (Z-34), bir kısmı post geçişinde. Sinek sırtüstü iniyor ve doğrulamıyor.
+  - 6 sinekten biri hiç düşmedi; üçü ilk postta ya da ondan önce düştü.
+- **Karar (kullanıcı, K-031):** Deneyci sineği 1 sn sonra dik duruşuna geri koyuyor (olduğu yerde, telefona dönük) ve 1 sn tutuyor.
+- **Tutmanın gerekçesi:** Tutma olmadan görüntünün ani değişimi (~195 kHz) 40 ms içinde yeni bir kaçış tetikledi ve sinek yine devrildi.
+- **Sonuç:** Dik olmayan pencere oranı %60'tan %7,4'e indi. 480 postta 27 yerleştirme oldu (postların %5,6'sı). Bu oran 0,5 eşiğine göre; yan yatıp kalan sinek sayılmıyordu (17.7).
+
+### 17.3 Kalibrasyonda iki düzeltme
+
+- **Spike'sız karar:** Neredeyse hiç ateşlemeyen "geri" kanalı, spike olmayan postlarda da eşiği aşıyordu. Referansta kararların %32,7'sini alıyordu (bütçe %3). Artık hızı sıfır olan kanal karar veremiyor; bu kanalın payı %1,5'e indi.
+- **Sıçrama kasları yorum kanalındaydı:** TTMn ve STTMm (6 nöron) MaleCNS'te kanat alt sınıfında oldukları için yorum kanalında sayılıyordu. Yorum kanalından çıkarıldılar (Z-27); gövdesiz sineğin kalibrasyonu da yenilendi.
+
+### 17.4 Karar–gövde örtüşmesi ve gövde onayı (K-032)
+
+Onaysız kuralla referans kararlarında ilgili bölge görünür hareket etti mi? Eşik: eklemlerde ≥ 1°, göğüste ≥ 0,1 mm; sıçramalı pencerelerde yalnızca çıkış sayılıyor.
+
+| Karar | Karar sayısı | Görünür hareketli |
+|---|---|---|
+| sonraki post (bacaklar) | 166 | %92 |
+| beğen / kaydet (hortum) | 77 | %96 |
+| yorum (kanatlar) | 10 | %100 |
+| tımar (ön bacaklar) | 24 | %88 |
+| takip et (karın) | 8 | %38 |
+| çıkış (sıçrama) | 9 | %44 |
+| sekme değiştir (baş) | 25 | %0 |
+| önceki post | 7 | %0 |
+
+**Karar (kullanıcı):** Gövde onayı şartı. Eşikler bu şartla yeniden çıkarıldı. Referansta gerçekleşen oranlar:
+
+| Eylem | Bütçe | Onaylı | Onaysız |
+|---|---|---|---|
+| sonraki post | %35 | %34,4 | %34,6 |
+| beğen + kaydet | %15 | %17,3 | %16,0 |
+| kaydet | %2 | %1,5 | %1,9 |
+| yorum | %2 | %1,9 | %2,1 |
+| takip | %2 | %1,9 | %1,7 |
+| çıkış | %2 | %2,3 | %1,9 |
+| sekme | %5 | %0,8 | %5,2 |
+| tımar | %5 | %5,0 | %5,0 |
+| önceki post | %3 | %0 | %1,5 |
+| ilgi kaybı | – | %36,5 | %32,1 |
+
+**İlk doğrulamada bulunan:** Sıçramalı pencereler ilk sürümde her bölge için "görünür" sayılıyordu. Bu yüzden sekme kararlarının hepsi sıçramalarda çıktı (baş gövdeyle savruluyordu). Artık sıçramalı pencerede yalnızca çıkış onaylanıyor.
+
+### 17.5 Doğrulama (120 ayrı post × 2 tekrar, sabit eşikler)
+
+| Eylem | Bütçe | Gerçekleşen |
+|---|---|---|
+| sonraki post | %35 | %42,9 |
+| beğen | | %6,7 |
+| kaydet | %2 | %0,4 |
+| (beğen + kaydet) | %15 | %7,1 |
+| tımar | %5 | %15,8 |
+| çıkış | %2 | %2,5 |
+| yorum | %2 | %1,7 |
+| takip | %2 | %1,2 |
+| sekme (sol + sağ) | %5 | %1,2 |
+| önceki post | %3 | %0 |
+| ilgi kaybı | – | %27,5 |
+
+- **Gövdeyle örtüşme:** Bütün kararlar gövdede görünür; sıçramalı pencerelerde yalnızca çıkış kararı var.
+- **Sapma:** Sonraki post ve tımar bütçenin üstünde, beğeni altında. Gövdesiz sinekte de benzer bir sapma görülmüştü: kalibrasyonda sinek her posta 1,5 sn bakıyor, kullanımda çoğunlukla 0,5 sn'de karar veriyor.
+- **Tekrar tutarlılığı:** İki tekrarda aynı karar %35 (gövdesizde %49).
+- **Bakma süresi:** Kararların %58'i 0,5 sn'de, %34'ü 1,5 sn'de (ilgi kaybı).
+- **Yeniden yerleştirme:** 240 bakışta 9 kez.
+
+### 17.6 Homeostaz oturumu (3 sinek × 150 post)
+
+Homeostaz açık (08-motor.md 6.5). Her sinek kendine ait 150 postu art arda izliyor, eşikler sabit başlangıçtan (17.5) her kararla ayarlanıyor.
+
+| Eylem | Bütçe | Post 1–50 | 51–100 | 101–150 |
+|---|---|---|---|---|
+| sonraki post | %35 | %39,3 | %30,7 | %36,0 |
+| beğen + kaydet | %15 | %11,3 | %12,0 | %3,3 |
+| kaydet | %2 | %0,7 | %0,7 | %0 |
+| önceki post | %3 | %0 | %0 | %0 |
+| yorum | %2 | %3,3 | %3,3 | %1,3 |
+| takip | %2 | %0,7 | %3,3 | %0 |
+| çıkış | %2 | %0,7 | %1,3 | %0,7 |
+| sekme | %5 | %0,7 | %2,7 | %0 |
+| tımar | %5 | %3,3 | %0,7 | **%41,3** |
+| ilgi kaybı | – | %40,7 | %46,0 | %17,3 |
+
+- **Sonuç:** Homeostaz oranları bütçeye çekmedi. Son üçte birde üç sinekte de tımar baskın çıktı; son 25 postta sineklere göre 9, 20 ve 18 tımar kararı var.
+- **Uzun diziler:** Kararlar postlar arasında bağımsız değil. Sinekler 10–20 post boyunca üst üste "sonraki post" ya da "ilgi kaybı" seçiyor. 0,05 z'lik adımla 20 postluk bir dizi eşiği ~0,65 z kaydırıyor.
+- **Gövde değişiyor:** Son 25 postta ön bacakların pencere başına açı yolu medyanı 5–19°. Öncesinde çoğunlukla ~1°. Sineklerden biri hemen öncesinde 25 post boyunca neredeyse hiç kıpırdamadı (0,02°).
+- **Yeniden yerleştirme:** Oturumda 9 kez; son 50 postta hiç yok.
+- **Kalibrasyon kaydında da iz var:** 6 sinekten ikisinde son 10 postta ön bacaklar diğer bacaklardan çok ateşliyor (tımar kanalı postların %40'ında pozitif; başta %0–10).
+
+### 17.7 Neden: yan yatıp kalan sinek (K-031 güncellemesi)
+
+**Teşhis koşusu:** 3 sinek (oturum tohumları), oturumdaki postlara karar vermeden 1,5'er sn bakıyor; 200 post, 300 sn. Her 500 ms'lik pencerede duruş, spike'lar ve görme kaydedildi.
+
+- **Zamanla kayma yok.** Ön bacak hareketi dönemler hâlinde geliyor ve sinek dik duruşa dönünce kayboluyor.
+- **Dönemler sineğin duruşuyla örtüşüyor** (1800 pencere):
+
+  | Duruş (penceredeki en düşük diklik) | Pencere | Ön bacak yolu (medyan) | Ön bacak > 5° | Göğüs yüksekliği |
+  |---|---|---|---|---|
+  | dik (≥ 0,9) | 1366 | 0,8° | %5 | 0,65 mm |
+  | yatık (0,5–0,9) | 272 | 11,2° | %63 | 0,45 mm |
+  | devrik (< 0,5) | 162 | 16,5° | %82 | 0,44 mm |
+
+  Yatık pencerelerin 165'i sinek 0'dan, 106'sı sinek 2'den. Şiddet sineğe göre değişiyor: yatık sinek 0'da ön bacak yolu medyanı 13°, sinek 2'de 2,3°. Sinek 2'de de pencerelerin %62'sinde ön bacaklar gövde onayı eşiğini (1°) geçiyor.
+
+- **Yatık duruş kararlı.**
+  - Diklik 0,55–0,60'ta kümeleniyor; bu ~55° yatma demek.
+  - Göğüs alçakta, orta bacaklar dik duruşa göre 30–70° oynamış.
+  - Sinek 0'da 82 sn, sinek 2'de 55 sn sürdü; her birinde yalnızca bir yerleştirme var.
+  - Görüntüde sinek öne ve yana yatık; baş zemine yakın.
+- **Yerleştirme kuralı bu durumu kaçırıyordu.**
+  - Eşik 0,5'ti, yatık duruş bunun üstünde kalıyor.
+  - Sayaç her anlık düzelmede sıfırlanıyordu. Sinek 0'ın ilk 15 saniyesinde her pencerede diklik 0,5'in altına indi, ama sinek yalnızca bir kez yerleştirildi.
+- **Dağılım iki kümeli.** Dik pencerelerde en düşük diklik ≥ 0,98, yatıklarda ≤ 0,80; 0,80–0,98 arasında 1800 pencereden yalnızca biri var. Pencerelerin %24'ünde sinek dik değildi; 17.2'deki %7,4, 0,5 eşiğine göre sayılmıştı.
+- **Oturumdaki etkisi:** Yatık sinekte bacaklar sık oynadığı için ileri ve tımar kanalları gövde onayını çoğunlukla geçiyor. Uzun "sonraki post" dizisi ileri eşiğini yükseltiyor, ardından tımar kazanıyor.
+
+**Karar (kullanıcı):** Yerleştirme kuralı sıkılaştırıldı (K-031 güncellemesi):
+- `UPRIGHT_MIN` = 0,9.
+- Sayaç dik anlarda sıfırlanmıyor, yarı hızla azalıyor (`down_time`).
+
+**Birlikte bulunan hata: yatık oturma.**
+- Oturma beyin çalışırken yapılıyor ve rastgele arka plan etkinliği sineği ~40 oturmada bir yatık bırakıyor (diklik 0,38).
+- Deneyci sineği o zaman hep bu yatık "dik duruşa" koyuyordu.
+- Artık oturma sonunda sinek dik değilse oturma baştan yapılıyor.
+- Kalibrasyon, doğrulama ve oturumdaki 21 tohum dik oturmuştu. Sineği denemeler arasında yeniden sıfırlayan sahne ve kaçış deneylerinde (bölüm 11, 12 ve 14) denemelerin ~%2,5'i yatık başlamış olabilir.
+
+**Yöntem notu:** Teşhis koşusu ve görüntüler repoya eklenmeyen geçici betiklerle alındı. Görüntüde ekran yalnızca çizim için saydam yapıldı; ekranın çarpışması yok, fizik değişmedi. Yeniden üretilen koşu teşhis koşusuyla birebir aynı çıktı.
+
+### 17.8 Yeni kuralla kalibrasyon ve doğrulama
+
+Aynı 480 referans post, aynı sinek tohumları (`runs/embodied-cal-20260917-190106.npz`).
+
+**Kayıt:**
+
+| | Eski kural | Yeni kural |
+|---|---|---|
+| dik olmayan pencere (< 0,9) | %9,2 | %7,1 |
+| yeniden yerleştirme | 27 | 32 |
+
+Kalibrasyon sinekleri 80'er posta (~144 sn) baktı; yatık takılmalar uzun oturumlarda daha belirgindi (17.7). Kalan dik olmayan pencerelerin çoğu, düşme ile 1 sn sonraki yerleştirme arasındaki süre.
+
+**Eşikler** (`flybrain/motor/calibration_embodied.json`):
+
+| Kanal | Bütçe | Eşik (z), eski → yeni | Referansta gerçekleşen (yeni) |
+|---|---|---|---|
+| ileri | %35 | −0,09 → −0,08 | %35,0 |
+| geri | %3 | −10 → −10 | %0 |
+| hortum | %15 | 0,31 → 0,30 | %12,7 |
+| yorum | %2 | 0,94 → 0,84 | %1,9 |
+| takip | %2 | −0,51 → −0,58 | %1,9 |
+| çıkış | %2 | 1,36 → 1,97 | %2,1 |
+| sekme | %5 | −10 → −10 | %1,0 |
+| tımar | %5 | −0,64 → **−10** | %4,2 |
+| kaydet | %2 | 2,83 → 3,25 | %0,4 |
+| ilgi kaybı | – | | %41,2 |
+
+- **Tımar:** Eşik alt sınıra indi. Tımarı artık eşik değil iki şart sınırlıyor: ön bacakların diğer bacaklardan çok ateşlemesi ve ön bacakların görünür hareket etmesi.
+- **Beğeni:** Onaylı kuralla %15'e ulaşılamıyor (%12,7). Hortum kanalı postların yalnızca %49'unda ateşliyor.
+
+**Onaysız kuralın kararlarında görünür hareket** (17.4'ün yeni kuralla tekrarı): sonraki post %91, beğeni %96, yorum %89, tımar %71 (önce %88), takip %22 (önce %38), çıkış %27 (önce %44), sekme %0, önceki post %0. Farkın bir kısmı büyük olasılıkla eski kayıtta yatık sineğin oynayan bacaklarından geliyor (doğrudan ölçülmedi).
+
+**Doğrulama (120 ayrı post × 2 tekrar, sabit eşikler):**
+
+| Eylem | Bütçe | Eski kural (17.5) | Yeni kural |
+|---|---|---|---|
+| sonraki post | %35 | %42,9 | %45,4 |
+| ilgi kaybı | – | %27,5 | %34,2 |
+| tımar | %5 | %15,8 | %7,5 |
+| beğen | | %6,7 | %3,8 |
+| kaydet | %2 | %0,4 | %0,4 |
+| çıkış | %2 | %2,5 | %3,3 |
+| yorum | %2 | %1,7 | %2,1 |
+| sekme (sol + sağ) | %5 | %1,2 | %2,1 |
+| takip | %2 | %1,2 | %1,2 |
+| önceki post | %3 | %0 | %0 |
+
+- **Tekrar tutarlılığı:** %40 (önce %35).
+- **Bakma süresi:** 0,5 sn'de %45, 1 sn'de %13, 1,5 sn'de %42.
+- **Yeniden yerleştirme:** 240 bakışta 14.
+
+**Önce/sonra videosu:** Aynı sinek (tohum 8002) ve postlar, 50–80. saniyeler. Eski kuralda sinek ~60. saniyede öne-yana yatıp başı yerde kalıyor (diklik 0,74–0,75). Yeni kuralda sinek bu aralıkta dik. Yerleştirme anları farklı olduğundan iki gidişat daha önce ayrışıyor.
+
+### 17.9 Yeni kuralla homeostaz oturumu (3 sinek × 150 post)
+
+| Eylem | Bütçe | Post 1–50 | 51–100 | 101–150 | Eski kural, 101–150 |
+|---|---|---|---|---|---|
+| sonraki post | %35 | %48,7 | %21,3 | %36,0 | %36,0 |
+| beğen + kaydet | %15 | %8,0 | %13,3 | %10,0 | %3,3 |
+| kaydet | %2 | %0 | %0 | %0 | %0 |
+| önceki post | %3 | %0 | %0 | %0 | %0 |
+| yorum | %2 | %6,7 | %2,0 | %3,3 | %1,3 |
+| takip | %2 | %0,7 | %2,7 | %2,7 | %0 |
+| çıkış | %2 | %1,3 | %0 | %4,0 | %0,7 |
+| sekme | %5 | %1,3 | %0,7 | %0,7 | %0 |
+| tımar | %5 | %3,3 | %8,0 | %7,3 | **%41,3** |
+| ilgi kaybı | – | %30,0 | %52,0 | %36,0 | %17,3 |
+
+- **Tımar patlaması kayboldu.** Oturumda 17 yeniden yerleştirme var (eski kuralda 9).
+- **Sonraki post ile ilgi kaybı salınıyor.** Salınım sineğin etkinlik dönemlerini izliyor:
+  - Sinek 0'da 51–100. postlar arasında bacak yolu medyanı 0,8°'ye iniyor (görünürlük eşiği 1°). Bu bloklarda sonraki post %0.
+  - Gövde onayı olmadan sonraki post seçilemiyor; o dönemlerde tımar ve ilgi kaybı öne çıkıyor.
+  - Homeostaz bunu düzeltemez. Eşik düşse de gövde hareket etmedikçe karar onaylanmıyor (K-032'nin amacı bu).
+- **Kararlar postlar arasında bağımsız değil.** "Sonraki post" dizilerinin ortalama uzunluğu 1,9–2,6. Kararlar bağımsız olsaydı 1,4–1,7 olurdu; en uzun dizi 14.
+- **Kaydetme hiç olmadı** (450 karar). Eşik 3,25'ten başlıyor. Kaydetme denetleyicisi yalnızca hortum kararlarında adım atıyor; gövdesiz sinekte de kaydetmenin başlaması 200 postu aşmıştı (08-motor.md 6.5).
+- **Beğeni** bütçenin altında ama son iki blokta %10–13.
+- **Karar videosu:** Tohum 8003, 25 sn, 31 post. 19 sonraki post, 7 ilgi kaybı, 3 beğeni, 1 takip ve 1 sekme kararı verildi. 17–24. postlarda 8 sonraki post üst üste geldi.
+
+**Açık konular:**
+- Etkinlik dönemleri gerçek sinekte de var. Oranların uzun ölçekte bütçeye yaklaşıp yaklaşmadığı daha uzun oturumlarla ölçülmeli.
+- Kaydetmenin başlangıç eşiği yüksek.
+- Sekme ve önceki post neredeyse hiç seçilmiyor (Z-27).

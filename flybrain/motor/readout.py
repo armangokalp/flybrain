@@ -10,7 +10,7 @@ gruplanmış kas kanallarından yapılır:
 | ileri  | yürüme                       | ön, orta, arka bacak motor nöronları (fl, ml, hl)  |
 | geri   | geri yürüme                  | MDN komut nöronları                                |
 | hortum | hortum hareketleri (besleme) | beyin hortum motor nöronları (pm)                  |
-| yorum  | kanat titreşimi (kur şarkısı)| kanat yönlendirme motor nöronları (wm, DLM/DVM hariç) |
+| yorum  | kanat titreşimi (kur şarkısı)| kanat yönlendirme motor nöronları (wm; DLM/DVM ve sıçrama kasları TTMn/STTMm hariç) |
 | takip  | karın bükme (çiftleşme girişimi) | karın motor nöronları (ad)                     |
 | cikis  | kaçış / havalanma            | alt tectulum'a inen nöronlar (lt; Giant Fiber dahil) |
 | sekme  | baş çevirme                  | boyun motor nöronlarında sol−sağ farkı (nm)        |
@@ -19,6 +19,11 @@ gruplanmış kas kanallarından yapılır:
 Her kanal nöron başına ortalama hız (Hz) olarak hesaplanır. Sekme kanalı, sol ve
 sağ boyun nöronlarının toplam spike farkının mutlak değeridir; birikimli spike
 sayılarıyla çağrıldığında birikimli farkı verir.
+
+Sıçrama kaslarının motor nöronları (TTMn, STTMm) MaleCNS'te kanat alt sınıfında; ama
+kanadı değil orta bacağı çalıştırıp sıçrama üretiyorlar (docs/09-govde.md). Bu yüzden
+yorum kanalından çıkarıldılar (2026-09-17, Z-27); sıçramayı çıkış kanalı dev lif
+üzerinden zaten okuyor.
 """
 
 import re
@@ -35,7 +40,7 @@ class MotorReadout:
     def __init__(self, conn: Connectome):
         sel = conn.select
         wing = sel(superclass="vnc_motor", subclass="wm")
-        power = sel(superclass="vnc_motor", subclass="wm", type=re.compile(r"^(?:DLMn|DVMn)"))
+        power = sel(superclass="vnc_motor", subclass="wm", type=re.compile(r"^(?:DLMn|DVMn|TTMn|STTMm)"))
         self.groups = {
             "ileri": sel(superclass="vnc_motor", subclass=["fl", "ml", "hl"]),
             "geri": pools(conn, MOTOR)["geri_yuru"],

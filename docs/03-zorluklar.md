@@ -273,7 +273,12 @@ Uçabilen hazır gövde modelinin (flybody) uçuş kontrolcüsü eğitilmiş bir
 - **Sıçrama çalışıyor:** 1,2 mm yükselme, 3,3 mm sıçrama.
 - **Denge riski:** Sinek yere oturmamışken tetiklenirse havada takla atıp sırtüstü düşüyor. Gerçek sinek bu durumda kanatlarıyla toparlanır. Bizim sineğimiz toparlanamıyor, sırtüstü de doğrulamıyor (Z-29).
 
-### Z-27 · Nöral karar ile görünen hareketin tutarlılığı 🔴
+**Durum (2026-09-17, uzun oturum):**
+- **Sonuç:** Oturmuş sinek de kaçış sıçramasından sonra çoğu zaman sırtüstü iniyor ve öyle kalıyor. 80 postluk oturumlarda 6 sinekten 5'i düştü; pencerelerin %60'ında sinek dik değildi.
+- **Karar (kullanıcı, K-031):** Deneyci sineği 1 sn sonra yeniden yerleştiriyor ve 1 sn tutuyor. Doğrulma davranışı açık bir iş olarak kalıyor.
+- **Yan yatma (K-031 güncellemesi):** Sinek tam devrilmeden ~55° yatık, kararlı bir duruşa da takılıyor (göğüs alçakta, bacaklar dağınık, bir dakikaya kadar). Bu sırada bacaklar dik duruştakinden çok hareket ediyor. Yerleştirme eşiği 0,5'ten 0,9'a çıkarıldı (09-govde.md 17.7).
+
+### Z-27 · Nöral karar ile görünen hareketin tutarlılığı 🟡
 
 Instagram eylemleri nöral okumadan seçiliyor, gövde aynı nöronlarla hareket ediyor (K-020). Yine de iki tutarsızlık olasılığı var:
 - **İlgi kaybı:** Hiçbir kanal eşiği aşmadığında feed kayıyor, ama gövdede buna karşılık gelen bir hareket yok.
@@ -286,6 +291,16 @@ Instagram eylemleri nöral okumadan seçiliyor, gövde aynı nöronlarla hareket
 - **Propriyosepsiyonla yeni bir gözlem (2026-09-17):** Bir DNg100 koşusunda TTMn 3 kez ateşledi ve sinek yürüme komutu altında sıçramaya benzer bir hareket yaptı.
   - **Yol:** Propriyoseptörler, uyarıcı ara nöronlar (IN20A.22A001, GFC2) üzerinden TTMn'ye ulaşıyor.
   - **Tekrarlanma:** Aynı koşulun başka koşularında görülmedi.
+
+**Durum (2026-09-17, gövdeli kararlar, K-032):**
+- **Ölçüm:** Gövdeli sinekte onaysız kuralla verilen referans kararlarında ilgili bölge çoğunlukla görünür hareket etti (sonraki post %92, beğeni %96, yorum %100, tımar %88). Takip (%38), çıkış (%44), sekme (%0) ve önceki post (%0) örtüşmedi (tablo: 09-govde.md 17.4).
+- **Karar (kullanıcı, K-032):** Gövde onayı şartı. Bir kanal ancak o pencerede kendi bölgesi görünür hareket ettiyse karar verebiliyor. Sıçramalı pencerede yalnızca çıkış onaylanıyor.
+- **Yapıldı:** TTMn ve STTMm yorum kanalından çıkarıldı. Gövdesiz sineğin kalibrasyonu yenilendi.
+- **Açık:**
+  - İlgi kaybında akış yine hareketsiz kayıyor.
+  - Onay, bölgenin hareket ettiğini gösteriyor; hareketin kararı veren nöronlardan geldiğini göstermiyor.
+  - Onaylı kuralda sekme ve önceki post neredeyse hiç seçilmiyor: baş eklemleri ve geri yürüme nadiren görünür hareket ediyor.
+  - Uzun oturumda sonraki post ile ilgi kaybı sineğin etkinlik dönemleriyle salınıyor. Durgun sinek bacağını oynatmayınca sonraki post onaylanmıyor; homeostaz bunu düzeltemez (09-govde.md 17.9).
 
 ### Z-28 · Görselleştirme verisinin boyutu ve canlı izleme 🔴
 

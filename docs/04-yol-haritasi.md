@@ -55,7 +55,7 @@ Her faz, bitiş kriterleri sağlanmadan kapanmaz. Gerçek Instagram hesabına il
 
 ## Faz 5 — Gövde (bedenlenme)
 
-Ayrıntı: [09-govde.md](09-govde.md). Kararlar: K-019–K-029.
+Ayrıntı: [09-govde.md](09-govde.md). Kararlar: K-019–K-032.
 
 - [x] Gövde kütüphanesi (FlyGym 2.1, NeuroMechFly): 126 eklem serbestlik derecesi, fizik gerçek zamandan hızlı
 - [x] Yürüme ritmi yoklaması: DNg100 → ritim çekirdeği → bacak motor nöronları (Z-22)
@@ -71,7 +71,10 @@ Ayrıntı: [09-govde.md](09-govde.md). Kararlar: K-019–K-029.
 - [x] Post geçişinde kaçış: kaydırma her seferinde kaçış tetikliyordu; geçiş solma ve koyu temayla çözüldü (Z-35, K-030)
 - [x] Kapalı döngü (beyin + gövde + görme + ekran) ve hız iyileştirmesi (Z-21): gerçek zamanın 2,95–3,25 katı yavaş (4 iş parçacığı; önce ~4,5)
 - [x] Neden–sonuç testleri: MN9 → hortum ✅, dev lif → sıçrama ✅ (K-023), DNg100 → bacaklar kıpırdıyor ama yürüme yok, şeker → kısmi (Z-30)
-- [ ] Nöral karar ile gövde hareketinin örtüşme ölçümü (K-020, Z-27)
+- [x] Gövdeli sinekte kararlar: ayrı kalibrasyon, düşen sineği deneyci yeniden yerleştiriyor (K-031)
+- [x] Nöral karar ile gövde hareketinin örtüşme ölçümü ve gövde onayı şartı (K-020, K-032, Z-27)
+- [ ] İlgi kaybında görünür bir hareket yok; sekme ve önceki post onaylı kuralda neredeyse hiç seçilmiyor; uzun oturumda oranlar etkinlik dönemleriyle salınıyor (Z-27)
+- [ ] Düşen sineğin kendi kendine doğrulması (Z-26)
 
 **Bitiş:**
 - Beyin sessizken gövde hareketsiz.
