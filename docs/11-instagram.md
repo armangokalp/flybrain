@@ -140,7 +140,21 @@ azaltıldı (ölçüm tablosu K-037'de). Uçup giden sineği deneyci geri getiri
 Süre 131 sn (simülasyon ~2,2 dakika). Beğeni kararlarının üçü de uygulanmadı; kuru çalıştırmada
 yalnızca kaydedildi.
 
-## 8. Açık konular
+## 8. Beşinci hata — sinek postu görüyordu ama yarısını göremiyordu
+
+Dördüncü düzeltmeden sonra da bir şey tutmuyordu. Bu kez ekran görüntüsü kaydına değil
+**göz kaydına** (`runs/*/gozler.mp4`) bakıldı: sineğin ne gördüğü, kodun ne gösterdiğini
+sandığından farklıydı. Dört ayrı hata çıktı; ayrıntısı [Z-38](03-zorluklar.md#z-38).
+
+En sinsi olanı ikincisiydi: Instagram'ın web sürümü sayfanın altına "Use the app" bandı koyuyor
+(y 759–794). Band tam olarak postun hizalandığı yeri, yani **sineğin baktığı şeridi** örtüyordu;
+sinek fotoğrafın alt kenarı yerine parlak mavi bir çizgi görüyordu. Gerçek uygulamada böyle bir
+band yok — yani sineğin dünyasında da olmamalı. Kapatılıyor.
+
+Ölçüm (gerçek akış, 8 post): görselin alt kenarının hedeften sapması ≤ 0,5 piksel, tekrar eden
+post yok, band yok.
+
+## 9. Açık konular
 
 - **Z-36 · Arayüz etiketleri:** Düğme etiketleri gerçek oturumda doğrulanmadı; Instagram arayüzü
   değişirse eylem "başarısız" olarak kaydedilir (sessizce yanlış bir düğmeye basılmaz).

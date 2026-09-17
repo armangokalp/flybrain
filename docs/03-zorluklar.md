@@ -509,3 +509,25 @@ Instagram'daki videolar gerçek zamanda oynuyor; simülasyon gerçek zamanın ~3
 **Çözüm:** Videolar duraklatılıyor, karesi simülasyon zamanından sürülüyor (`InstaFeed.video_time`). Bedeli: ses yok ve videonun kendi kare hızındaki ince zamanlama tam korunmuyor.
 
 **Kalan:** Video içeriğinin kaçış tetikleme oranı ölçülmedi; sert sahne kesmeleri "anında geçiş"e benziyor (K-030 tablosunda 12 denemede 1–2 kaçış).
+
+### Z-38 · Sinek ekranda posta bakmıyordu 🟢
+
+Kullanıcı canlı yayında fark etti: sinek posta değil, açıklamaya bakıyor gibiydi. Oturumun
+**göz kaydına** (`runs/*/gozler.mp4`) bakınca dört ayrı hata çıktı — üçü, kodun doğru çalıştığını
+sandığı yerlerde.
+
+| # | Hata | Ölçülen | Çözüm |
+|---|---|---|---|
+| 1 | Instagram sineği akıştan çıkardı | İlk hizalı oturumun ~3 saniyesi bildirim sayfasıydı (girişin tetiklediği güvenlik uyarısı); olay kaydı o sırada post işlediğini sanıyordu | `on_feed()` / `ensure_feed()`; dönüş `akisa_donuldu` olarak kayda geçiyor |
+| 2 | "Use the app" reklam bandı | y 759–794, tam genişlik; hizalanan postun alt kenarını örtüyor, sineğin gözünde parlak mavi şerit | `dismiss_app_banner()` — yalnızca web'de var, gerçek uygulamada yok |
+| 3 | Hizalama okuma sırasında bozuluyor | Görsel yüklenince büyüyor, karusel yeniden boyutlanıyor; kalan sapma 672 piksele kadar | Sapma `_align`'dan dönüyor, ekran görüntüsünden hemen önce yakınsayana dek yineleniyor (≤ 8 px) |
+| 4 | Aynı post oturumda üç kez | Instagram akışın **başından** `article` siliyor; indeksler iş yaparken kayıyor, okunan post bağlantısını aldığımız post olmuyor | Post indeksle değil **bağlantısıyla** adresleniyor (`_article_of`) |
+
+**Kalan (kabul edilen):** Akışın ilk postu hizalanamıyor — görseli sayfanın üstünde kalıyor ve
+sayfa zaten en üstte olduğu için aşağı itilemiyor (ölçülen sapma −348 px). Sinek onu göremeyeceği
+için atlanıyor (`ALIGN_SKIP_PX = 40`, atlananlar `InstaFeed.atlanan` listesinde).
+
+**Ders:** Ekran görüntüsü kaydı ("ekranda ne vardı") hata bulmaya yetmedi; hatayı gösteren
+**göz kaydıydı** ("sinek ne gördü"). Sineğin gördüğü, kodun gösterdiğini sandığı şey değildi.
+
+**Doğrulama:** Gerçek akışta 8 post — hepsi farklı, sapma ≤ 0,5 piksel, bant yok.

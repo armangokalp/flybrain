@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from urllib.parse import urlparse
 
 import numpy as np
 
@@ -41,6 +42,9 @@ COMMENT_PLACEHOLDERS = ("Add a comment", "Yorum ekle")
 POST_TEXTS = ("Post", "Paylaş")
 # Girişten sonra çıkan kutular. Yalnızca **reddeden** seçeneğe basılır; hiçbir şey kabul edilmez.
 DISMISS_TEXTS = ("Not now", "Not Now", "Şimdi değil", "Şu an değil")
+# Web'e özel "Use the app" reklam bandı ve kapatma düğmesinin metni (Z-38).
+APP_BANNER_TEXTS = ("Use the app", "Uygulamayı kullan")
+CLOSE_TEXTS = ("Close", "Kapat")
 # Açıklama okunurken atlanacak satırlar (gerçek sayfadan: beğeni sayısı, "more", zaman damgası).
 SKIP_LINES = ("more", "less", "daha fazla", "daha az", "Verified", "Onaylanmış", "Translate", "Çevir")
 SKIP_PREFIX = ("Liked by", "Beğenen", "View all", "Tüm yorum", "Add a comment", "Yorum ekle",
@@ -52,6 +56,8 @@ _COUNT_LINE = re.compile(r"^\d[\d.,\s]*[KMBkmb]?$")
 # Gezinme çubuğunun yüksekliği (CSS piksel). Sanal telefonda NAV oranı 0,13 × genişlik;
 # 390 piksellik görüntü alanında ~51 piksel (body/phone.py).
 NAV_PX = 51
+ALIGN_TOL_PX = 8    # hizalamada kabul edilen sapma
+ALIGN_SKIP_PX = 40  # bundan büyük sapmada post atlanır: sinek fotoğrafı göremezdi
 _OTHERS_LINE = re.compile(r"^(and|ve)\s+[\d.,]+\s*(others|diğer)", re.I)
 
 
@@ -65,6 +71,8 @@ class FeedItem:
     url: str = ""
     video: bool = False
     shot: np.ndarray | None = field(default=None, repr=False)
+    akisa_donuldu: bool = False  # bu postu bulmadan önce akıştan düşmüştük (Z-38)
+    sapma: float = 0.0  # görselin alt kenarının hedeften kalan uzaklığı (piksel)
 
 
 class InstaFeed:
@@ -74,7 +82,9 @@ class InstaFeed:
         self.gov = governor
         self.require_login = require_login
         self.index = -1
+        self.home: str | None = None  # akışın adresi; ilk açılışta yakalanır
         self.seen: set[str] = set()  # gösterilmiş postların bağlantıları
+        self.atlanan: list[tuple[str, float]] = []  # hizalanamadığı için atlananlar
 
     # ---- akış ----
 
@@ -83,11 +93,57 @@ class InstaFeed:
 
     def open_url(self, url: str, wait_ms: float = 500.0) -> None:
         """Akışı açar. Gerçek Instagram için `open`; yerel sahte akış testlerde bu yolla açılır."""
+        self.home = url  # akıştan düşersek buraya dönülür
         self.b.goto(url, wait_ms=wait_ms)
         self.guard()
         self.dismiss_dialogs()
         self.b.page.wait_for_selector("article", timeout=30_000)
+        self.dismiss_app_banner()
         self.freeze_videos()
+
+    def on_feed(self) -> bool:
+        """Tarayıcı hâlâ akışta mı?
+
+        Instagram sineği akıştan çıkarabiliyor: ilk hizalı oturumda, girişimizin tetiklediği
+        güvenlik uyarısı yüzünden ~3 saniye bildirim sayfası açık kaldı (Z-38). Kod bunu fark
+        etmeyince sinek post sandığı şeyin yerine o sayfayı gördü.
+        """
+        if self.home is None:  # akış bu yolla açılmadıysa (testlerdeki sahte akış) buradayız
+            self.home = self.b.page.url
+        return (urlparse(self.b.page.url).path == urlparse(self.home).path
+                and self.articles.count() > 0)
+
+    def ensure_feed(self) -> bool:
+        """Akıştan düşmüşsek geri döner; geri dönmek gerektiyse True."""
+        if self.on_feed():
+            return False
+        self.open_url(self.home)
+        return True
+
+    def dismiss_app_banner(self) -> bool:
+        """Sayfanın altındaki "Use the app" reklam bandını kapatır.
+
+        Band gezinme çubuğunun hemen üstünde duruyor (ölçülen: y 759-794, yükseklik 35) ve
+        hizalanan postun alt kenarını örtüyor; sinek fotoğrafın alt şeridi yerine parlak bir
+        çizgi görüyor. Yalnızca web'de var, gerçek uygulamada yok (Z-38).
+        """
+        return bool(self.b.page.evaluate(
+            """(texts) => {
+                const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
+                let n;
+                while ((n = it.nextNode())) {
+                    if (!texts.includes((n.nodeValue || '').trim())) continue;
+                    let el = n.parentElement;
+                    for (let k = 0; k < 5 && el; k++, el = el.parentElement) {
+                        const btn = [...el.querySelectorAll('[role=button], button')].find(
+                            x => CLOSE.includes((x.textContent || '').trim()));
+                        if (btn) { btn.click(); return true; }
+                    }
+                }
+                return false;
+            }""".replace("CLOSE", repr(list(CLOSE_TEXTS)).replace("'", '"')),
+            list(APP_BANNER_TEXTS),
+        ))
 
     def dismiss_dialogs(self) -> list[str]:
         """Akışın önünü kapatan kutuları kapatır ("Giriş bilgilerini kaydet?" gibi).
@@ -126,7 +182,20 @@ class InstaFeed:
             max(0.0, t_ms / 1000.0),
         )
 
-    def goto_post(self, i: int) -> None:
+    def _article_of(self, i: int, url: str = ""):
+        """Postun `article`'ı. Bağlantı verilirse indeks yerine ona göre bulunur.
+
+        Instagram akışın başından `article` siliyor, yani indeksler iş yaparken kayıyor: aynı
+        `i` bir an sonra başka bir posta bakıyor. Ölçülen sonuç, aynı postun bir oturumda üç
+        kez çıkmasıydı (Z-38).
+        """
+        if url:
+            loc = self.articles.filter(has=self.b.page.locator(f'a[href="{url}"]'))
+            if loc.count():
+                return loc.first
+        return self._article(i)
+
+    def goto_post(self, i: int, url: str = "") -> None:
         """Postun **görselini** sineğin baktığı bölgeye getirir (tarayıcı tarafında).
 
         Sinek ekranın alt bölümünü görüyor (telefon zemine gömülü, body/scene.py). Yerel akışta
@@ -134,15 +203,20 @@ class InstaFeed:
         gerçek sayfada da aynı hizaya getiriliyor. Yoksa sinek fotoğrafı değil, altındaki beğeni
         ve açıklama satırlarını görüyor.
         """
-        for _ in range(2):  # hizaladıktan sonra sayfa yeni içerik yükleyip kayabiliyor
-            self._align(i)
+        # Hizaladıktan sonra sayfa kayabiliyor: görsel yüklenip büyüyor, karusel yeniden
+        # boyutlanıyor. Sapma kapanana kadar yineleniyor (ölçülen: karusellerde 48 piksel).
+        self.dismiss_app_banner()  # band hizaya değil ama sineğin gördüğüne karışıyor (Z-38)
+        for _ in range(4):
+            hiza = self._align(i, url)
             self.b.page.wait_for_timeout(400)
+            if hiza is not None and abs(hiza["sapma"]) <= ALIGN_TOL_PX:
+                break
         self.freeze_videos()
         self.index = i
 
-    def _align(self, i: int) -> dict | None:
+    def _align(self, i: int, url: str = "") -> dict | None:
         """Postun en büyük görselinin alt kenarını gezinme çubuğunun üstüne hizalar."""
-        return self._article(i).evaluate(
+        return self._article_of(i, url).evaluate(
             """(el, nav) => {
                 const media = [...el.querySelectorAll('img, video')];
                 let best = null, area = 0;
@@ -152,8 +226,9 @@ class InstaFeed:
                 }
                 if (!best) { el.scrollIntoView({block: 'start', behavior: 'instant'}); return null; }
                 const r = best.getBoundingClientRect();
-                window.scrollBy(0, r.bottom - (window.innerHeight - nav));
-                return {ust: r.top, alt: r.bottom, yukseklik: r.height};
+                const sapma = r.bottom - (window.innerHeight - nav);
+                window.scrollBy(0, sapma);
+                return {ust: r.top, alt: r.bottom, yukseklik: r.height, sapma};
             }""",
             NAV_PX,
         )
@@ -171,28 +246,51 @@ class InstaFeed:
         İndeksle ilerlemek yetmiyor: Instagram postları kaydırdıkça yüklüyor ve listeyi yeniden
         düzenleyebiliyor. Bu yüzden post bağlantısı ölçüt alınıyor.
         """
+        donuldu = self.ensure_feed()
         for _ in range(8):
             for i in range(self.articles.count()):
                 url = self._post_url(self._article(i))
                 if url and url not in self.seen:
                     self.seen.add(url)
-                    self.goto_post(i)
-                    return self.read(i)
+                    self.goto_post(i, url)
+                    item = self.read(i, url)
+                    if abs(item.sapma) > ALIGN_SKIP_PX:
+                        # Hizalanamayan post: sinek fotoğrafı değil üstündeki satırları görürdü.
+                        # Akışın ilk postunda oluyor — görseli sayfanın üstünde kalıyor ve sayfa
+                        # zaten en üstte olduğu için aşağı itilemiyor (ölçülen: -348 px, Z-38).
+                        self.atlanan.append((url, item.sapma))
+                        continue
+                    item.akisa_donuldu = donuldu
+                    return item
             self._load_more()
         raise RuntimeError("akışta yeni post bulunamadı")
 
-    def read(self, i: int | None = None) -> FeedItem:
-        """Postu okur: kullanıcı adı, açıklama, bağlantı ve ekran görüntüsü."""
+    def read(self, i: int | None = None, url: str = "") -> FeedItem:
+        """Postu okur: kullanıcı adı, açıklama, bağlantı ve ekran görüntüsü.
+
+        `url` verilirse post indeksle değil bağlantısıyla bulunur; akış iş yaparken kaysa bile
+        okunan, hizalanan ve ekran görüntüsü alınan hep aynı post olur (Z-38).
+        """
         i = self.index if i is None else i
-        if i != self.index:
+        if i != self.index and not url:
             self.goto_post(i)
         self.guard()
-        art = self._article(i)
+        art = self._article_of(i, url)
         item = FeedItem(index=i)
         item.username = self._username(art)
         item.caption = self._caption(art, item.username)
-        item.url = self._post_url(art)
+        item.url = url or self._post_url(art)
         item.video = art.locator("video").count() > 0
+        # Okurken sayfa kayabiliyor (görsel yüklenir, karusel boyutlanır); ekran görüntüsünden
+        # hemen önce hiza son bir kez denetleniyor (ölçülen sapma: 672 piksele kadar).
+        for _ in range(3):
+            hiza = self._align(i, item.url)
+            if hiza is None:
+                break
+            item.sapma = float(hiza["sapma"])
+            if abs(item.sapma) <= ALIGN_TOL_PX:
+                break
+            self.b.page.wait_for_timeout(300)
         item.shot = self.b.shot()
         return item
 

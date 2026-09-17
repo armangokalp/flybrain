@@ -107,6 +107,9 @@ def run_session(n_posts: int = 5, dry_run: bool = True, seed: int = 8003, out: s
                     stream.say(f"post {k + 1}/{n_posts} @{item.username}: {item.caption[:50]}")
                 rec.event("instagram_post", sira=k + 1, kullanici=item.username, baglanti=item.url,
                           video=item.video)
+                if item.akisa_donuldu:  # Instagram sineği akıştan çıkarmıştı (Z-38)
+                    rec.event("akisa_donuldu", sira=k + 1)
+                    print(f"  [{k + 1}] akıştan düşülmüştü, geri dönüldü", flush=True)
                 decision = viewer.look(Post(image=item.shot, caption=item.caption))
                 action = INSTA_ACTION.get(decision.action)
                 applied = None

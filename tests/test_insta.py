@@ -153,3 +153,36 @@ def test_dry_run_and_veto_do_not_touch_the_page(sahte_akis):
     assert not kayit["uygulandi"] and "yasaklı kelime" in kayit["not"]
     assert b.page.locator("li.yorum").count() == 0
     assert [e["eylem"] for e in gov.history] == ["begen", "yorum"]  # engellenenler de kayıtta
+
+
+def test_feed_returns_when_instagram_leaves_the_feed(sahte_akis):
+    """Instagram sineği akıştan çıkarırsa geri dönülür ve bu kayda geçer (Z-38).
+
+    İlk hizalı oturumda güvenlik uyarısı yüzünden ~3 saniye bildirim sayfası açık kaldı; kod
+    fark etmediği için sinek post sandığı şeyin yerine o sayfayı gördü.
+    """
+    feed, _gov, b = sahte_akis
+    ilk = feed.next_post()
+    assert ilk.akisa_donuldu is False and feed.on_feed() is True
+
+    b.goto("data:text/html,<h1>Notifications</h1>", wait_ms=100)
+    assert feed.on_feed() is False
+
+    ikinci = feed.next_post()
+    assert ikinci.akisa_donuldu is True
+    assert ikinci.username == "gecekelebegi"  # görülmüş post yeniden gösterilmez
+
+
+def test_app_banner_is_closed(sahte_akis):
+    """Web'e özel "Use the app" bandı kapatılır: sineğin baktığı şeridin altını örtüyordu."""
+    feed, _gov, b = sahte_akis
+    b.page.evaluate("""() => {
+        const d = document.createElement('div');
+        d.id = 'bant';
+        d.innerHTML = '<div role="button">Close</div><span>Use the app</span>';
+        d.querySelector('[role=button]').onclick = () => d.remove();
+        document.body.appendChild(d);
+    }""")
+    assert feed.dismiss_app_banner() is True
+    assert b.page.locator("#bant").count() == 0
+    assert feed.dismiss_app_banner() is False  # yoksa dokunmaz
