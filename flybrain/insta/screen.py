@@ -32,6 +32,7 @@ class ScreenshotFeed:
         self._frame = np.zeros((*shape, 3), np.uint8)
         self._fade: tuple[np.ndarray, float, float] | None = None  # eski kare, t0, süre
         self._fade_alpha = 1.0
+        self._video: tuple | None = None  # (kare fonksiyonu, t0)
         self._changed = True
 
     def _fitted(self, shot: Shot | np.ndarray) -> np.ndarray:
@@ -49,6 +50,7 @@ class ScreenshotFeed:
         self._frame = self._fitted(shot)
         self._fade = None
         self._fade_alpha = 1.0
+        self._video = None  # önceki postun videosu burada biter
         self._changed = True
 
     def fade_to(self, shot: Shot | np.ndarray, now_ms: float, duration_ms: float = FADE_MS) -> None:
@@ -61,8 +63,25 @@ class ScreenshotFeed:
     def scroll_to(self, shot: Shot | np.ndarray, now_ms: float, duration_ms: float = FADE_MS) -> None:
         raise NotImplementedError("gerçek ekranda kaydırma yok: tarayıcı perde arkasında kaydırır (K-030)")
 
+    def play(self, video, now_ms: float) -> None:
+        """Ekranda video oynatır (reels). `video(t_ms)` kareyi ya da bittiyse None döndürür.
+
+        Kareler tarayıcıdan önceden toplanıyor ve burada **simülasyon zamanıyla** oynatılıyor:
+        tarayıcı gerçek zamanda oynarken simülasyon ~3 kat yavaş ilerlediği için sinek videoyu
+        hızlanmış görürdü (Z-37). Video bitince son karesi ekranda kalır.
+        """
+        self._video = (video, now_ms)
+
     def update(self, now_ms: float) -> bool:
         """Geçişi ilerletir; ekran değiştiyse True."""
+        if self._video is not None:
+            video, t0 = self._video
+            kare = video(now_ms - t0)
+            if kare is None:
+                self._video = None
+            else:
+                self._frame = self._fitted(kare)
+                self._changed = True
         if self._fade is not None:
             _, t0, dur = self._fade
             self._fade_alpha = min(1.0, max(0.0, (now_ms - t0) / dur))

@@ -586,13 +586,16 @@ Kararlar: K-021, K-028. Kod: `flybrain/body/scene.py` (ekran ve arena), `flybrai
 
 ### 11.1 Geometri
 
-Kullanıcı ekranın önde geniş ama akıllı telefon oranında (9:19,5, dikey) olmasını istedi. Dar ve dikey bir telefonun geniş bir görme alanını kaplaması için ekran başın etrafında kıvrılıyor:
+Kullanıcı ekranın önde geniş ama akıllı telefon oranında (9:19,5, dikey) olmasını istedi. Dar ve dikey bir telefonun geniş bir görme alanını kaplaması için ekran başın etrafında kıvrılıyor.
+
+> **Güncelleme (K-038, 2026-09-18):** Aşağıdaki ölçümler ekranın sineğin başını izlediği ve 2 mm'de durduğu düzende yapıldı. Ekran artık dünyada sabit bir nesne ve sinek 2,5 mm uzakta başlıyor; telefonun fiziksel boyu değişmedi. Sebebi: izleyen ekranda postun üst üçte biri sineğin gözünün yalnızca %11'ini kaplıyordu (Z-38, Z-39).
 
 | Özellik | Değer |
 |---|---|
-| Biçim | Başın düşey ekseni etrafında silindir parçası, 180° |
-| Uzaklık | 2 mm |
-| Boyut | 6,3 mm (yay boyunca) × 13,6 mm |
+| Biçim | Silindir parçası, 144° (önceden 180°) |
+| Uzaklık | 2,5 mm başlangıçta (önceden 2 mm, sabit) |
+| Konum | **Dünyada sabit** (K-038). Önceden sineğin başını izliyordu; artık mesafeyi sineğin kendi yürüyüşü belirliyor. |
+| Boyut | 6,3 mm (yay boyunca) × 13,6 mm — değişmedi |
 | Doku | 540 × 1170 piksel |
 | Malzeme | Işık yayıyor (aydınlatmadan etkilenmiyor); arkası koyu gri |
 | Fizik | Çarpışma yok; sinek içinden geçebilir |

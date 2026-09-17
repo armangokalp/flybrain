@@ -19,7 +19,7 @@ Kararları insan, dil modeli ya da eğitilmiş bir yorumlayıcı ağ vermez. Sin
 - ✅ **Faz 4:** motor kod çözücü (kas grupları → Instagram eylemleri, eylem bütçesi, eşik homeostazı)
 - ✅ **Faz 5:** 3D gövde (motor nöron → kas → eklem, NeuroMechFly), propriyosepsiyon, sineğin kendi gözleriyle görmesi, telefon ekranlı sahne, yaklaşan nesneye kaçış, gövdeli kararlar ve gövde onayı; yürüme ve doğrulma henüz yok
 - ✅ **Faz 6:** görselleştirme ve kayıt: oturum kaydı, tarayıcı paneli (3D sinek, 3D sinir sistemi, sineğin gördüğü, kararlar, geriye izleme) ve video; canlı mod henüz yok
-- ⏭️ **Faz 8:** Instagram bağlantısı: tarayıcı, akış okuma, eylemler (beğen, kaydet, takip, yorum) ve güvenlik valisi — yerel sahte akışta çalışıyor; gerçek hesaba henüz dokunulmadı
+- ⏭️ **Faz 8:** Instagram bağlantısı: tarayıcı, akış okuma, eylemler (beğen, kaydet, takip, yorum) ve güvenlik valisi. Gerçek hesapta çalışıyor; ilk gerçek beğeni uygulandı ve doğrulandı. Eylemler kullanıcının açıkça izin verdikleriyle sınırlı.
 - **Faz 7:** yerel kum havuzu ve korku tepkisi (Faz 8'den sonra)
 - **Faz 9–10:** içerik üretimi (post ve story), öğrenme
 

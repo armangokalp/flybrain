@@ -159,8 +159,13 @@ post yok, band yok.
 - **Z-36 · Arayüz etiketleri:** Düğme etiketleri gerçek oturumda doğrulanmadı; Instagram arayüzü
   değişirse eylem "başarısız" olarak kaydedilir (sessizce yanlış bir düğmeye basılmaz).
 - **Z-37 · Video zamanı:** Tarayıcıdaki video gerçek zamanda oynar, simülasyon ~3 kat yavaştır.
-  Videolar duraklatılıyor ve karesi simülasyon zamanından sürülüyor.
+  Reels'in kareleri tarayıcıdan toplanıp sineğe simülasyon zamanıyla oynatılıyor (`grab_video`).
+- **Z-39 · Görmek ve kaçmak çelişiyor:** Postun kadraja sığması ile kaçışın çalışması aynı açıya
+  ters yönde bağlı. Ekran dünyada sabit bir nesneye çevrildi; mesafeyi sinek seçiyor (K-038).
+  Çelişki çözülmedi, kök neden Z-25.
 - **Bildirimler:** Sineğin kendi postlarına gelen beğeni ve yeni takipçiler ödül nöronlarına
   bağlanacak (`senses/reward.py`); Instagram'dan okunması henüz yazılmadı.
 - **Yorum metni:** K-036 (duygu + koklama) uygulanacak.
+- **Geçiş süresi:** K-037'deki 1200 ms eski sahne düzeninde (ekran sineğin başında, 2,0 mm)
+  ölçüldü. Sahne değiştiği için (K-038) yeniden ölçülmeli.
 - **Paylaşım:** Post Faz 9'da (K-004, K-005), story oturum videosundan (K-035).

@@ -3,12 +3,17 @@
 Döngü, yerel oturumla (viz/session.py) aynı; yalnızca ekranın kaynağı ve eylemin gittiği yer
 değişiyor:
 
-  1. Tarayıcı postu açar, ekran görüntüsünü alır. Videolar duraklatılır.
+  1. Tarayıcı postu açar, ekran görüntüsünü alır. Post videoysa (reels) kareleri toplanır ve
+     sineğe simülasyon zamanıyla oynatılır (Z-37); tarayıcı kendi başına oynatmaz.
   2. Ekran görüntüsü sineğin telefonuna **solarak** gelir (K-030); postun açıklaması koku olur.
   3. Sinek 500 ms'lik pencerelerle bakar, kanallardan biri eşiği aşınca karar verir (K-016, K-032).
   4. Karar Instagram eylemiyse güvenlik valisine sorulur (K-007), sonra tarayıcı düğmeye basar ve
      sonuç doğrulanır. Kuru çalıştırmada yalnızca kaydedilir.
-  5. Eylemden sonraki ekran görüntüsü de sineğe gösterilir: sinek kalbin kırmızıya döndüğünü görür.
+  5. Eylemin animasyonu sineğe oynatılır: beğeni fotoğrafa çift dokunarak yapılıyor ve sinek
+     kalbin görselin üstünde büyümesini görüyor.
+
+Sahne: telefon dünyada duran bir nesne, sinek 2,5 mm uzakta başlıyor (K-038). Mesafeyi sineğin
+kendi yürüyüşü belirliyor; kaçtığında geri çekiliyor ve postu daha geniş görüyor.
 
 **Giriş kullanıcıya ait.** Oturum açık değilse program durur ve kullanıcıdan tarayıcıda elle giriş
 yapmasını ister; şifre ne istenir ne de saklanır.
@@ -25,7 +30,7 @@ import time
 
 from flybrain.fly import Post
 from flybrain.insta.browser import Browser
-from flybrain.insta.feed import InstaFeed
+from flybrain.insta.feed import ACTION_FPS, VIDEO_FPS, InstaFeed
 from flybrain.insta.governor import LOG, Governor, Limits, Stopped, report
 from flybrain.insta.screen import ScreenshotFeed, Shot
 from flybrain.motor.selector import CALIBRATION_EMBODIED_PATH, Calibration
@@ -43,14 +48,37 @@ SETTLE_MS = 2000.0
 REAL_FADE_MS = 1200.0
 
 
+def _video_fn(frames: list, fps: float):
+    """Kare listesini `ScreenshotFeed.play`'in beklediği `video(t_ms)` biçimine çevirir.
+
+    Video bitince None döner; son kare ekranda kalır (donmuş kare değil, videonun sonu).
+    """
+    def video(t_ms: float):
+        k = int(t_ms / 1000.0 * fps)
+        return frames[k] if 0 <= k < len(frames) else None
+
+    return video
+
+
 def _make_viewer(seed: int, homeostasis: bool = True):
     from flybrain.body.embodied import EMBODIED_VISION, EmbodiedFly
     from flybrain.body.scene import SceneConfig
     from flybrain.body.viewer import FeedViewer
 
     class _Viewer(FeedViewer):
+        pending_video = None  # reels: geçiş başladıktan sonra oynatılacak kareler
+
         def _screen_item(self, post: Post):
             return Shot(post.image, caption=post.caption)
+
+        def _begin(self, post: Post):
+            stim = super()._begin(post)
+            if self.pending_video is not None:
+                # Geçiş ekranı sıfırladığı için video ondan **sonra** başlatılıyor;
+                # böylece reels solma sürerken oynamaya başlar.
+                self.fly.play_video(self.pending_video)
+                self.pending_video = None
+            return stim
 
     fly = EmbodiedFly(vision=EMBODIED_VISION, scene=SceneConfig(), seed=seed)
     fly.feed = ScreenshotFeed(fly.scene.texture_shape)
@@ -94,6 +122,7 @@ def run_session(n_posts: int = 5, dry_run: bool = True, seed: int = 8003, out: s
             from flybrain.viz.live import LiveStream
 
             stream = LiveStream(fly)
+            feed.on_frame = stream.show_browser  # kaydırma ve animasyon izleyiciye aksın
             print(f"canlı izleme: {stream.url}", flush=True)
         info = {"sinek_tohumu": seed, "post_sayisi": n_posts, "kuru_calistirma": dry_run,
                 "kalibrasyon": CALIBRATION_EMBODIED_PATH.name, "kaynak": url or "instagram"}
@@ -110,6 +139,13 @@ def run_session(n_posts: int = 5, dry_run: bool = True, seed: int = 8003, out: s
                 if item.akisa_donuldu:  # Instagram sineği akıştan çıkarmıştı (Z-38)
                     rec.event("akisa_donuldu", sira=k + 1)
                     print(f"  [{k + 1}] akıştan düşülmüştü, geri dönüldü", flush=True)
+                if item.video:
+                    # Reels: kareler tarayıcıdan toplanıp sineğe simülasyon zamanıyla oynatılır
+                    # (Z-37). Yoksa sinek videonun tek donmuş karesini görüyordu.
+                    kareler = feed.grab_video()
+                    if kareler:
+                        rec.event("video", sira=k + 1, kare=len(kareler), fps=VIDEO_FPS)
+                        viewer.pending_video = _video_fn(kareler, VIDEO_FPS)
                 decision = viewer.look(Post(image=item.shot, caption=item.caption))
                 action = INSTA_ACTION.get(decision.action)
                 applied = None
@@ -122,7 +158,14 @@ def run_session(n_posts: int = 5, dry_run: bool = True, seed: int = 8003, out: s
                     applied = feed.act(action)
                     rec.event("instagram_eylem", sira=k + 1, eylem=action,
                               uygulandi=applied["uygulandi"], aciklama=applied["not"])
-                    fly.feed.show(browser.screen(fly.scene.texture_shape))  # eylem sonrası ekran
+                    if feed.last_frames:
+                        # Sinek kendi eyleminin sonucunu görsün: beğeninin kalbi fotoğrafın
+                        # üstünde büyürken ekran sineğe simülasyon zamanıyla oynatılıyor.
+                        fly.play_video(_video_fn(feed.last_frames, ACTION_FPS))
+                        fly.run(len(feed.last_frames) / ACTION_FPS * 1000.0)
+                        feed.last_frames = []
+                    else:
+                        fly.feed.show(browser.screen(fly.scene.texture_shape))
                 results.append((item, decision, applied))
                 if stream is not None:
                     stream.say(f"post {k + 1} @{item.username} → {decision.action}"

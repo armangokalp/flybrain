@@ -531,3 +531,24 @@ için atlanıyor (`ALIGN_SKIP_PX = 40`, atlananlar `InstaFeed.atlanan` listesind
 **göz kaydıydı** ("sinek ne gördü"). Sineğin gördüğü, kodun gösterdiğini sandığı şey değildi.
 
 **Doğrulama:** Gerçek akışta 8 post — hepsi farklı, sapma ≤ 0,5 piksel, bant yok.
+
+### Z-39 · Postu görmek ile kaçmak aynı büyüklüğe ters yönde bağlı 🟡
+
+Bir uyaranın sineği kaçırması da, postun kadraja sığması da **uyaranın gözde kapladığı açıya**
+bağlı — ama ters yönde. Ekran büyüdükçe kaçış güçleniyor, post kadrajdan taşıyor; küçüldükçe post
+sığıyor, kaçış sönüyor.
+
+| Ekran açısı | postun üstü gözde | LC4 | sıçrama |
+|---|---|---|---|
+| 180° | %11,6 | 154 | 3,24 mm |
+| 90° | %25,6 | 13 | 0,04 mm |
+| 70° | %37,0 | 3 | 0,04 mm |
+
+**Nasıl ele alınıyor (K-038):** Ekran artık dünyada sabit bir nesne; mesafeyi sinek seçiyor.
+Başlangıç 2,5 mm — kaçışın korunduğu en uzak nokta. Çelişki **çözülmedi**, sineğin kararına
+devredildi.
+
+**Kök neden (Z-25):** Kaçışın bu kadar büyük bir uyaran istemesi doğal değil. Gerçek sinek çok
+daha küçük yaklaşmalara kaçıyor. Bizim modelde yön seçiciliği oluşmuyor (T4/T5 için gereken farklı
+zaman sabitleri yok) ve görme yalnızca L2, L3, Mi1, Tm3'e veriliyor. Bu düzelirse dar ekranda da
+kaçış çalışır ve sinek postu rahatça görebileceği bir mesafede durabilir.

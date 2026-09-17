@@ -118,7 +118,7 @@ Ayrıntı: [10-gorsellestirme.md](10-gorsellestirme.md). Karar: K-033.
 
 ## Faz 8 — Instagram bağlantısı
 
-- [x] Playwright ile tarayıcı bağlantısı: telefon görünümü, karanlık mod, azaltılmış hareket (K-006)
+- [x] Playwright ile tarayıcı bağlantısı: telefon görünümü, karanlık mod (K-006). Animasyonlar açık: sinek kendi beğenisinin kalbini görüyor (2026-09-18, kullanıcı kararı)
 - [x] Kalıcı oturum (giriş kullanıcı tarafından elle yapılır; kod şifre görmez)
 - [x] Ekran görüntüsü → sineğin telefonu, solarak geçiş; kaydırma perde arkasında (K-034)
 - [x] Eylemler: beğen, kaydet, takip, yorum — her biri tıklama sonrası doğrulanıyor
@@ -127,8 +127,12 @@ Ayrıntı: [10-gorsellestirme.md](10-gorsellestirme.md). Karar: K-033.
 - [x] Yerel sahte akışta uçtan uca deneme (`tests/sahte_akis.html`)
 - [ ] Yorum metni: duygu okuması + koklayarak kelime seçimi (K-036)
 - [ ] Bildirimler (gelen beğeni, yeni takipçi) → ödül nöronları (`senses/reward.py`)
-- [ ] Gerçek hesapta kuru çalıştırma; arayüz etiketlerinin doğrulanması (Z-36)
-- [ ] Gerçek hesapta düşük limitli ilk oturum (kullanıcı onayıyla)
+- [x] Gerçek hesapta kuru çalıştırma; arayüz etiketleri doğrulandı (Z-36)
+- [x] Gerçek hesapta düşük limitli ilk oturum: 1 beğeni uygulandı ve doğrulandı (2026-09-17)
+- [x] Akış hataları: bildirim sayfası, "Use the app" bandı, hiza, tekrar eden post (Z-38)
+- [x] Reels oynuyor: kareler tarayıcıdan toplanıp simülasyon zamanıyla gösteriliyor (Z-37)
+- [x] Telefon dünyada sabit nesne; mesafe sineğin kararı (K-038) — kalibrasyonlar yenilendi
+- [ ] Postlar arası geçiş süresinin yeni sahnede yeniden ölçülmesi (K-037 eski düzende ölçüldü)
 
 **Bitiş:** Sinek gerçek feed'de bir oturumu sorunsuz tamamlıyor.
 

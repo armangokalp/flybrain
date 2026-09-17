@@ -73,6 +73,20 @@ def scene_body():
     body.close()
 
 
+@pytest.fixture(scope="module")
+def scene_body_follow():
+    """Ekranın sineği izlediği eski düzen (SceneConfig.follow=True)."""
+    from dataclasses import replace
+
+    from flybrain.body.body import Body
+
+    body = Body(scene=replace(CFG, follow=True))
+    body.step(np.zeros(len(body.dofs)), 2000)
+    body.scene.snap()
+    yield body, None, None
+    body.close()
+
+
 def _lum(eyes) -> dict[str, np.ndarray]:
     values = eyes.column_values()
     return {g[0]: values[g[0]]["lum"] for g in eyes.groups}
@@ -101,13 +115,33 @@ def test_post_covers_most_columns(scene_body):
     lum = _lum(eyes)
     seen = sum(int(np.nansum(v > 0.75)) for v in lum.values())
     total = sum(len(v) for v in lum.values())
-    assert seen / total > 0.55
+    # Ekran artık dünyada sabit ve sinek 2,5 mm uzakta: post görüş alanının tamamını değil,
+    # ölçülen payını kaplıyor (K-038). Yakınken bu oran daha yüksekti.
+    assert 0.25 < seen / total < 0.55
 
 
-def test_screen_follows_fly_with_lag(scene_body):
+def test_screen_stays_put_when_fly_walks(scene_body):
+    """Ekran dünyada sabit: sinek yürüyünce ekran yerinde kalır, mesafe değişir (K-038)."""
     import mujoco as mj
 
     body, _, _ = scene_body
+    scene = body.scene
+    pos0, _ = scene.pose
+    mesafe0 = scene.distance_mm
+    m, d = body.sim.mj_model, body.sim.mj_data
+    free = m.jnt_qposadr[list(m.jnt_type).index(mj.mjtJoint.mjJNT_FREE)]
+    d.qpos[free] += 1.0  # sineği 1 mm ileri taşı
+    mj.mj_kinematics(m, d)
+    for _ in range(20):
+        scene.follow(CFG.follow_ms)
+    assert scene.pose[0] == pytest.approx(pos0, abs=1e-9)   # ekran kıpırdamadı
+    assert scene.distance_mm == pytest.approx(mesafe0 - 1.0, abs=0.02)  # sinek yaklaştı
+
+
+def test_screen_follows_fly_with_lag(scene_body_follow):
+    import mujoco as mj
+
+    body, _, _ = scene_body_follow
     scene = body.scene
     pos0, _ = scene.pose
     m, d = body.sim.mj_model, body.sim.mj_data
@@ -115,11 +149,11 @@ def test_screen_follows_fly_with_lag(scene_body):
     free = m.jnt_qposadr[list(m.jnt_type).index(mj.mjtJoint.mjJNT_FREE)]
     d.qpos[free] += 1.0  # sineği 1 mm ileri taşı
     mj.mj_kinematics(m, d)
-    scene.follow(CFG.follow_ms)
+    scene.follow(scene.cfg.follow_ms)
     pos1, _ = scene.pose
     assert pos1[0] - pos0[0] == pytest.approx(1.0 - np.exp(-1.0), abs=0.02)
     for _ in range(20):
-        scene.follow(CFG.follow_ms)
+        scene.follow(scene.cfg.follow_ms)
     assert scene.pose[0][0] - pos0[0] == pytest.approx(1.0, abs=0.01)
     d.qpos[:] = qpos
     mj.mj_kinematics(m, d)
@@ -183,3 +217,51 @@ def test_looming_disc_triggers_giant_fiber():
     assert np.linalg.norm(thorax[-1] - thorax[0]) > JUMP_MM
     fly.eyes.close()
     fly.body.close()
+
+
+def test_fixed_screen_is_placed_once(scene_body):
+    """Sabit ekran bir kez yerleşir: deneyci sineği doğrultunca ekran taşınmaz (K-038).
+
+    `Body.place` sineği düştüğü yerde doğrultuyor; snap her seferinde yeniden yerleştirseydi
+    ekran sineği takip etmeye devam ederdi, yalnızca daha seyrek.
+    """
+    import mujoco as mj
+
+    body, _, _ = scene_body
+    scene = body.scene
+    pos0, yaw0 = scene.pose
+    m, d = body.sim.mj_model, body.sim.mj_data
+    free = m.jnt_qposadr[list(m.jnt_type).index(mj.mjtJoint.mjJNT_FREE)]
+    d.qpos[free] += 1.5
+    mj.mj_kinematics(m, d)
+
+    scene.snap()
+    assert scene.pose[0] == pytest.approx(pos0, abs=1e-9)  # yerinde kaldı
+
+    bas = d.xpos[mj.mj_name2id(m, mj.mjtObj.mjOBJ_BODY, f"{body.fly.name}/c_head")][:2]
+    scene.snap(force=True)  # istenirse yeniden yerleştirilebilir
+    assert scene.pose[0] == pytest.approx(bas, abs=1e-6)
+
+
+def test_repositioning_the_fly_does_not_move_the_screen():
+    """Deneyci sineği doğrultunca ekran yerinde kalır; tam sıfırlamada yeniden yerleşir (K-038).
+
+    `Body.place` sineği düştüğü yerde doğrultuyor. Ekran onunla taşınsaydı sinek her kaçıştan
+    sonra yine telefonun tam önünde bulur, mesafe hiç değişmezdi.
+    """
+    from flybrain.body.body import Body
+
+    body = Body(scene=CFG)
+    try:
+        body.step(np.zeros(len(body.dofs)), 2000)
+        duruş = body.snapshot()
+        pos0, _ = body.scene.pose
+        body.sim.mj_data.qpos[body._free_qpos()] += 1.2  # sinek ekrana doğru yürüdü
+        body.place(duruş, body.scene.pose[1])            # deneyci doğrultuyor
+        body.scene.snap()
+        assert body.scene.pose[0] == pytest.approx(pos0, abs=1e-9)
+
+        body.reset()  # tam sıfırlama: sinek başa döner, ekran da yeniden yerleşir
+        assert body.scene.pose[0] == pytest.approx(pos0, abs=0.05)
+    finally:
+        body.close()

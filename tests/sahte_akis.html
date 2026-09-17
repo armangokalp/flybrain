@@ -19,7 +19,9 @@
   article { border-bottom: 1px solid #262626; padding-bottom: 12px; }
   header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; }
   header a { color: #f5f5f5; text-decoration: none; font-weight: 600; }
-  .gorsel { height: 420px; background: linear-gradient(160deg, #3a3a3a, #111); }
+  .gorsel { display: block; width: 100%; height: 420px; object-fit: cover; background: #222; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; }
+  .ust { height: 640px; background: #0a0a0a; }
   .ikonlar { display: flex; gap: 14px; padding: 10px 12px; align-items: center; }
   button { background: none; border: none; color: inherit; font: inherit; cursor: pointer; padding: 0; }
   .takip { color: #4a9cff; font-weight: 600; margin-left: auto; }
@@ -30,6 +32,9 @@
 </style>
 </head>
 <body>
+<!-- Gerçek akışta başlık + hikâyeler şeridi var; ilk postun görseli ancak
+     üstünde kaydırılacak içerik olunca hizaya gelebiliyor (feed.py `_align`). -->
+<div class="ust"></div>
 <main></main>
 <script>
 const POSTLAR = [
@@ -38,15 +43,19 @@ const POSTLAR = [
   { kullanici: "sulakcayir", aciklama: "çürük meyve nem toprak", kod: "CCC333", video: true },
 ];
 
+// 1x1 saydam piksel: dosyaya ihtiyaç duymadan gerçek bir <img> öğesi olsun diye.
+const GORSEL = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+
 const svg = (etiket) => `<svg aria-label="${etiket}" width="24" height="24" viewBox="0 0 24 24">
   <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
 
 document.querySelector("main").innerHTML = POSTLAR.map((p, i) => `
 <article data-sira="${i}">
-  <header><a href="/${p.kullanici}/">${p.kullanici}</a></header>
-  <a href="/p/${p.kod}/">${p.video
+  <header><a href="/${p.kullanici}/"><img class="avatar" alt="avatar" src="${GORSEL}"></a>
+    <a href="/${p.kullanici}/">${p.kullanici}</a></header>
+  <a href="/p/${p.kod}/" onclick="return false">${p.video
     ? '<video muted playsinline style="width:100%;height:420px;background:#111"></video>'
-    : '<div class="gorsel"></div>'}</a>
+    : `<img class="gorsel" alt="post" ondblclick="cifttap(this)" src="${GORSEL}">`}</a>
   <div class="ikonlar">
     <button class="begen" onclick="cevir(this, 'Like', 'Unlike')">${svg("Like")}</button>
     <button class="yorum">${svg("Comment")}</button>
@@ -63,6 +72,11 @@ document.querySelector("main").innerHTML = POSTLAR.map((p, i) => `
 function cevir(btn, once, sonra) {
   const s = btn.querySelector("svg");
   s.setAttribute("aria-label", s.getAttribute("aria-label") === once ? sonra : once);
+}
+function cifttap(img) {
+  // Instagram'da fotoğrafa çift dokunmak yalnızca beğenir, beğeniyi geri almaz.
+  const s = img.closest("article").querySelector(".begen svg");
+  if (s.getAttribute("aria-label") === "Like") s.setAttribute("aria-label", "Unlike");
 }
 function takip(btn) { btn.textContent = btn.textContent === "Follow" ? "Following" : "Follow"; }
 function yorumla(btn) {

@@ -570,3 +570,32 @@ Durumlar: **önerildi** · **kabul edildi** · **yerine geçti**
 - **Gerekçe:** Dünya tarafında bir ayar; sineğin devresine dokunulmuyor. Gerçek fotoğraflar sentetik postlardan çok daha kontrastlı ve K-030'un 300 ms'i bunlara yetmiyor.
 - **Bedel:** Instagram'da böyle bir geçiş yok; gerçekçilik azalıyor. Kök neden (gözün yaklaşmayı kontrast değişiminden ayıramaması, Z-25) duruyor ve Faz 7'ye kalıyor.
 - **Ek karar (deneyci):** "Çıkış" kararı oturumu bitirmiyor; sinek uçup gidince deneyci onu geri getiriyor ve akış sürüyor (K-031'deki yeniden yerleştirmenin aynısı). Her geri getirme kayda geçiyor.
+
+## K-038 · Telefon dünyada duran bir nesne; mesafeyi sinek seçiyor
+
+- **Durum:** kabul edildi (2026-09-18), kullanıcı kararı. K-030'un sahne düzenini değiştirir.
+- **Bağlam:** Kullanıcı canlı yayında gördü: "postun tamamı görüş açısının içinde kalmıyor, büyük oranda sadece alt kısmını görüyor". Ölçüldü — postun üst üçte biri sineğin gözünün yalnızca **%11'ini**, alt üçte biri **%57'sini** kaplıyordu. Sebebi ekranın sineğin **başını izleyen** 180°'lik bir yüzey olmasıydı: bir kask gibi, tepesi 81° yukarıda.
+- **İlk deneme ve neden yetmediği:** Ekranı daraltmak kadrajı düzeltiyor (70°'te %37/%37/%26) ama **kaçışı söndürüyor**: yaklaşan disk de küçüldüğü için dev lif ateşlemiyor.
+
+  | Ekran açısı | LC4 | dev lif | Sıçrama | Kaçtı mı |
+  |---|---|---|---|---|
+  | 180° | 154 | 16 | 3,24 mm | evet |
+  | 120° | 15 | 0 | 0,01 mm | hayır |
+  | 90° | 13 | 0 | 0,04 mm | hayır |
+  | 70° | 3 | 0 | 0,04 mm | hayır |
+
+  "Postun tamamı görünsün" ile "kaçış çalışsın" doğrudan çelişiyor: ikisi de uyaranın gözde kapladığı açıya bağlı, ters yönde.
+- **Karar:** Ekran sineği izlemeyi bıraktı; dünyada sabit duran bir nesne (`SceneConfig.follow=False`). Telefonun fiziksel boyu değişmedi (6,3 × 13,6 mm), yalnızca sinek 2,0 mm yerine **2,5 mm** uzakta başlıyor. Mesafeyi bundan sonra sineğin kendi yürüyüşü belirliyor.
+- **Ölçüm** (telefonun fiziksel boyu sabit, 3 tohum):
+
+  | Mesafe | ekran gözün | postun üstü/ortası/altı | LC4 | sıçrama | kaçış |
+  |---|---|---|---|---|---|
+  | 2,0 mm (eski) | %33 | %11,6 / %29,1 / %59,3 | 35 | 2,40 mm | 2/3 |
+  | **2,5 mm** | %27 | %12,3 / %38,2 / %49,5 | 48 | 1,32 mm | **2/3** |
+  | 3,0 mm | %25 | %14,8 / %42,8 / %42,3 | 64 | 1,49 mm | 1/3 |
+  | 4,0 mm | %23 | %21,8 / %45,0 / %33,2 | 22 | 0,10 mm | 0/3 |
+  | 5,0 mm | %21 | %29,7 / %42,5 / %27,9 | 16 | 0,10 mm | 0/3 |
+
+- **Gerekçe:** 2,5 mm kaçışı eskisi kadar koruyor (2/3, LC4 daha yüksek) ama postun alt kısmının baskınlığını %59'dan %49'a indiriyor. Asıl kazanç sayıda değil, **mesafenin artık sineğin kararı olmasında**: korktuğunda geri çekiliyor (ölçülen kaçış yer değiştirmesi 1,7–1,9 mm) ve postu daha geniş görüyor; yaklaşırsa bir şeyin üstüne gelmesi onu yeniden kaçırabiliyor. Önceden ekran başına yapışık olduğu için bunların hiçbiri olamıyordu.
+- **Bedel:** Bütün kalibrasyonlar (K-016/K-031 motor eşikleri, K-036 duygu ölçeği) 180°'de ölçülmüştü; yeniden ölçüldü. Önceki oturumlarla sayısal karşılaştırma koptu.
+- **Bilinen sınır:** Sinek gezinirken pratikte yürümüyor (ölçüm: pencere başına 0,001–0,05 mm), yani mesafeyi asıl değiştiren şey kaçışlar. "Sinek postu incelemek için geri çekiliyor" henüz gözlenmedi; başlangıç mesafesi hâlâ bizim seçtiğimiz bir sayı.

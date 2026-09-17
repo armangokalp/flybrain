@@ -57,6 +57,13 @@ _COUNT_LINE = re.compile(r"^\d[\d.,\s]*[KMBkmb]?$")
 # 390 piksellik görüntü alanında ~51 piksel (body/phone.py).
 NAV_PX = 51
 ALIGN_TOL_PX = 8    # hizalamada kabul edilen sapma
+# Reels: tarayıcıdan toplanan video penceresi. 2 sn, sineğin bir posta baktığı süreye yakın.
+VIDEO_MS = 2000.0
+VIDEO_FPS = 15.0
+VIDEO_SEEK_MS = 60.0  # currentTime değişince karenin çizilmesi için beklenen süre
+# Eylem animasyonu (beğeni kalbi, yorumun belirmesi): tarayıcıdan gerçek zamanda çekilir.
+ACTION_MS = 900.0
+ACTION_FPS = 12.0
 ALIGN_SKIP_PX = 40  # bundan büyük sapmada post atlanır: sinek fotoğrafı göremezdi
 _OTHERS_LINE = re.compile(r"^(and|ve)\s+[\d.,]+\s*(others|diğer)", re.I)
 
@@ -85,6 +92,10 @@ class InstaFeed:
         self.home: str | None = None  # akışın adresi; ilk açılışta yakalanır
         self.seen: set[str] = set()  # gösterilmiş postların bağlantıları
         self.atlanan: list[tuple[str, float]] = []  # hizalanamadığı için atlananlar
+        # Tarayıcının karesini dışarı veren kanca (canlı izleme). Sinek bu kareleri görmüyor:
+        # asıl kaydırma perde arkasında oluyor, sineğin ekranı solarak geçiyor (Z-35).
+        self.on_frame = None
+        self.last_frames: list = []  # son eylemin animasyon kareleri
 
     # ---- akış ----
 
@@ -176,11 +187,57 @@ class InstaFeed:
         self.b.page.evaluate("document.querySelectorAll('video').forEach(v => { v.pause(); v.muted = true; })")
 
     def video_time(self, t_ms: float) -> None:
-        """Bakılan postun videosunu simülasyon zamanına göre ilerletir."""
+        """Videoları simülasyon zamanına göre ilerletir.
+
+        Sayfadaki **bütün** videolara uygulanıyor: görünür olan yalnızca bakılan post ama
+        ötekilerin de kendi başlarına oynamaması gerekiyor.
+        """
         self.b.page.evaluate(
             "t => document.querySelectorAll('video').forEach(v => { v.pause(); v.currentTime = t; })",
             max(0.0, t_ms / 1000.0),
         )
+
+    def grab_video(self, duration_ms: float = VIDEO_MS, fps: float = VIDEO_FPS) -> list[np.ndarray]:
+        """Bakılan postun videosunu tarayıcıdan **kare kare** toplar (reels).
+
+        Video tarayıcıda kendi başına oynarsa sinek onu ~3 kat hızlanmış görür (Z-37): simülasyon
+        gerçek zamandan o kadar yavaş. Bunun yerine kareler burada toplanıp sineğe simülasyon
+        zamanıyla oynatılıyor (`ScreenshotFeed.play`). Videonun süresi yetmiyorsa başa dönülür;
+        Instagram'da reels zaten döngüde oynuyor.
+        """
+        # Bakılan postun videosu: sayfadaki ilk video başka bir posta ait olabilir.
+        art = self._article_of(self.index)
+        sure = art.evaluate(
+            "(el) => { const v = el.querySelector('video'); return v ? v.duration : 0; }") or 0.0
+        if not sure or not np.isfinite(sure):
+            return []
+        kareler = []
+        n = max(1, int(round(duration_ms / 1000.0 * fps)))
+        for k in range(n):
+            self.video_time((k / fps % sure) * 1000.0)
+            self.b.page.wait_for_timeout(VIDEO_SEEK_MS)  # karenin çizilmesini bekle
+            kareler.append(self.b.shot())
+        self.video_time(0.0)
+        return kareler
+
+    def grab_frames(self, duration_ms: float = ACTION_MS, fps: float = ACTION_FPS) -> list:
+        """Tarayıcıyı gerçek zamanda kare kare çeker: eylemin animasyonu (beğeni kalbi).
+
+        Kareler sonra sineğe simülasyon zamanıyla oynatılıyor; sinek kendi eyleminin sonucunu
+        görüyor (kullanıcı kararı). Yakalama süresi animasyonun uzunluğu kadar.
+        """
+        kareler = []
+        araliq = 1000.0 / fps
+        for _ in range(max(1, int(round(duration_ms / araliq)))):
+            kareler.append(self.b.shot())
+            if self.on_frame is not None:
+                self.on_frame(kareler[-1])
+            self.b.page.wait_for_timeout(araliq)
+        return kareler
+
+    def _emit(self) -> None:
+        if self.on_frame is not None:
+            self.on_frame(self.b.shot())
 
     def _article_of(self, i: int, url: str = ""):
         """Postun `article`'ı. Bağlantı verilirse indeks yerine ona göre bulunur.
@@ -209,6 +266,7 @@ class InstaFeed:
         for _ in range(4):
             hiza = self._align(i, url)
             self.b.page.wait_for_timeout(400)
+            self._emit()  # kaydırmayı izleyiciye göster
             if hiza is not None and abs(hiza["sapma"]) <= ALIGN_TOL_PX:
                 break
         self.freeze_videos()
@@ -363,6 +421,7 @@ class InstaFeed:
 
     def act(self, action: str, text: str = "") -> dict:
         """Kararı uygular. Dönen kayıt: eylem, uygulandı mı, gerekçe."""
+        self.last_frames = []  # erken dönülürse eski eylemin animasyonu gösterilmesin
         self.guard()
         try:
             self.gov.check(action, text)
@@ -376,7 +435,7 @@ class InstaFeed:
             self._click(action, text)
         except Exception as e:  # tıklama ya da doğrulama başarısız
             return self.gov.record(action, False, f"başarısız: {type(e).__name__}: {e}")
-        self.b.page.wait_for_timeout(800)
+        self.last_frames = self.grab_frames()  # eylemin animasyonu (sinek kendi kalbini görsün)
         ok = self._state(action)
         if action == "yorum":
             ok = True  # yorumun doğrulaması gönderimden sonra metnin listede görünmesi
@@ -396,10 +455,37 @@ class InstaFeed:
         if action == "yorum":
             self._comment(text)
             return
+        if action == "begen" and self._double_tap():
+            return
         icon = self._icon(action, 0)
         if icon is None:
             raise RuntimeError(f"{action} düğmesi bulunamadı")
         icon.click(timeout=5000)
+
+    def _double_tap(self) -> bool:
+        """Postun fotoğrafına çift dokunur (Instagram'ın beğeni jesti). Başardıysa True.
+
+        Kalp düğmesine basmak yalnızca simgeyi dolduruyor; fotoğrafın üstündeki büyük kalp
+        animasyonunu çift dokunma çıkarıyor ve sinek kendi beğenisini böyle görüyor (K-038'in
+        yanındaki kullanıcı kararı). Çift dokunma yalnızca beğenir, beğeniyi geri almaz.
+
+        **En büyük** görsel seçiliyor: `img` listesinin ilki post fotoğrafı değil profil
+        avatarı olabiliyor ve ona dokunmak profile gider.
+        """
+        kutu = self._article_of(self.index).evaluate(
+            """(el) => {
+                let best = null, area = 0;
+                for (const m of el.querySelectorAll('img, video')) {
+                    const r = m.getBoundingClientRect();
+                    if (r.width * r.height > area) { area = r.width * r.height; best = r; }
+                }
+                return best && area > 10000 ? {x: best.x + best.width / 2,
+                                               y: best.y + best.height / 2} : null;
+            }""")
+        if kutu is None:
+            return False
+        self.b.page.mouse.dblclick(kutu["x"], kutu["y"])
+        return True
 
     def _comment(self, text: str) -> None:
         """Yorumu yazar ve gönderir; metin boşsa hiçbir şey yapılmaz."""

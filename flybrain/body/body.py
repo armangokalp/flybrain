@@ -128,7 +128,9 @@ class Body:
         self.sim.mj_data.qfrc_applied[:] = 0.0
         self._zero = np.zeros(len(self.dofs))
         if self.scene is not None:
-            self.scene.snap()
+            # Tam sıfırlama: sinek başlangıç noktasına döndüğü için ekran da yeniden yerleşir
+            # (hep aynı yere). Deneycinin yeniden yerleştirmesi bunu yapmaz (K-038).
+            self.scene.snap(force=True)
 
     def upright(self) -> float:
         """Göğsün dikey ekseninin dünya dikeyiyle kosinüsü: 1 dik, < 0 sırtüstü."""

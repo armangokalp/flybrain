@@ -212,7 +212,7 @@ class EmbodiedFly:
             raise RuntimeError(f"sinek {SETTLE_TRIES} denemede dik oturmadı")
         self._standing = self.body.snapshot()
         if self.scene is not None:
-            self.scene.snap()
+            self.scene.snap(force=True)  # oturmuş duruşa göre yerleşsin
         if self.eyes is not None:
             self.eyes.reset()
 

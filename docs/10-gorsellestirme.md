@@ -110,8 +110,15 @@ python -m flybrain.insta.session --posts 14 --izle    # http://127.0.0.1:8766/
 
 - **Ağır çekim, etiketli:** Karenin üstünde süre ve ölçülen anlık hız var ("ağır çekim 0,21×").
   Hiçbir şey hızlandırılmıyor (Z-28).
-- **Ne görünüyor:** Sinek, önündeki telefonda o an gösterilen gerçek ekran, altta hangi postta
-  olduğu ve son karar; deneyci sineği tutuyorsa o da yazıyor.
+- **Üç panel:**
+  1. **3B sahne** — sinek ve önündeki telefon.
+  2. **Sineğin gözleri** — iki gözün ham görüntüsü. "Sinek ne gördü" sorusunu ekran kaydının
+     üç tur gizlediği hataları bunun gösterdiği ortaya çıktı (Z-38); panele o yüzden eklendi.
+  3. **Tarayıcı** — gerçek Instagram. Sinek **bunu görmüyor**: asıl kaydırma perde arkasında
+     olur, sineğin ekranı solarak geçer (Z-35). Beğeninin kalp animasyonu da burada oynar.
+- **Duraklatma:** Sayfadaki düğme simülasyonu olduğu yerde durdurur; bekleme ölçülen hıza
+  katılmaz. İzleyici akarken durdurup bakabilsin diye (kullanıcı isteği).
+- Altta hangi postta olduğu ve son karar yazıyor; deneyci sineği tutuyorsa o da.
 - **Yük:** Çizim ~50 ms'de bir; ölçülen hız 0,2–0,3× (yayınsız döngüyle aynı büyüklükte).
 - **Sunucu** yalnızca 127.0.0.1'de dinliyor.
 

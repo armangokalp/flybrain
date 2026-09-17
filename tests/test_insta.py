@@ -92,7 +92,8 @@ def test_browser_opens_in_phone_size_and_dark_mode(tmp_path):
         assert shot.shape[1] == VIEWPORT["width"] * SCALE
         assert abs(shot.shape[0] - VIEWPORT["height"] * SCALE) <= 2
         assert shot.mean() < 10  # karanlık mod
-        assert b.page.evaluate("matchMedia('(prefers-reduced-motion: reduce)').matches")
+        # Animasyonlar açık (kullanıcı kararı): sinek kendi beğenisinin kalbini görsün.
+        assert not b.page.evaluate("matchMedia('(prefers-reduced-motion: reduce)').matches")
         assert b.page.evaluate("navigator.userAgent").find("iPhone") > 0
         shape = SceneConfig().texture_shape
         assert b.screen(shape).shape == (*shape, 3)
@@ -186,3 +187,65 @@ def test_app_banner_is_closed(sahte_akis):
     assert feed.dismiss_app_banner() is True
     assert b.page.locator("#bant").count() == 0
     assert feed.dismiss_app_banner() is False  # yoksa dokunmaz
+
+
+def test_like_uses_double_tap_on_the_photo_not_the_avatar(sahte_akis):
+    """Beğeni fotoğrafa çift dokunarak yapılır (Instagram'ın kalp animasyonu böyle çıkar).
+
+    En büyük görsel seçilmeli: `img` listesinin ilki header'daki profil avatarı ve ona çift
+    dokunmak profile götürür.
+    """
+    feed, _gov, b = sahte_akis
+    feed.next_post()
+    assert feed._state("begen") is False
+    assert feed._double_tap() is True
+    assert feed._state("begen") is True          # fotoğraf beğenildi
+    assert b.page.url.endswith("sahte_akis.html")  # avatara basılıp profile gidilmedi
+
+    assert feed._double_tap() is True
+    assert feed._state("begen") is True  # çift dokunma beğeniyi geri almaz
+
+
+def test_grab_video_collects_frames_and_seeks(sahte_akis):
+    """Reels'in kareleri tarayıcıdan toplanır; sinek sonra onları simülasyon zamanıyla görür.
+
+    Gerçek kodek gerekmesin diye videonun süresi ve `currentTime`'ı sahteleniyor; sınanan şey
+    döngünün kaç kare topladığı ve videoyu gerçekten sardığı.
+    """
+    feed, _gov, b = sahte_akis
+    feed.next_post()
+    feed.read(2)  # sahte akıştaki video postu
+    b.page.evaluate("""() => {
+        const v = document.querySelector('video');
+        Object.defineProperty(v, 'duration', {get: () => 3});
+        v._t = 0;
+        Object.defineProperty(v, 'currentTime', {
+            get() { return this._t; },
+            set(x) { this._t = x; window.__sardi = (window.__sardi || []).concat(x); },
+        });
+    }""")
+    kareler = feed.grab_video(duration_ms=400.0, fps=10.0)
+    assert len(kareler) == 4 and all(k.ndim == 3 for k in kareler)
+    sardi = b.page.evaluate("window.__sardi")
+    assert sardi[:4] == [0.0, 0.1, 0.2, 0.3]  # kareler video zamanında ilerledi
+    assert sardi[-1] == 0.0  # sonunda başa alındı
+
+
+def test_grab_video_is_empty_without_a_playable_video(sahte_akis):
+    """Video yoksa ya da süresi okunamıyorsa boş dönülür; donmuş kare gösterilir."""
+    feed, _gov, _b = sahte_akis
+    feed.next_post()  # fotoğraf postu
+    assert feed.grab_video() == []
+
+
+def test_action_frames_are_cleared_when_nothing_was_clicked(sahte_akis):
+    """Eylem uygulanmadıysa animasyon karesi kalmaz: sinek eski eylemin sonucunu görmemeli."""
+    feed, gov, _b = sahte_akis
+    feed.next_post()
+    assert feed.act("begen")["uygulandi"]
+    assert feed.last_frames  # beğeninin animasyonu toplandı
+    assert feed.act("begen")["not"] == "zaten uygulanmış"
+    assert feed.last_frames == []
+    gov.dry_run = True
+    assert feed.act("kaydet")["not"] == "kuru çalıştırma"
+    assert feed.last_frames == []

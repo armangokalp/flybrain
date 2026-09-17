@@ -28,9 +28,16 @@ PAGE = """<!doctype html><html lang="tr"><head><meta charset="utf-8">
 <title>flybrain — canlı</title>
 <style>html,body{margin:0;background:#0f1012;color:#e8e8ea;font:14px system-ui,sans-serif;
 height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px}
-img{max-width:96vw;max-height:88vh;border-radius:10px}</style></head>
-<body><img src="/akis" alt="canlı"><div>sinek gerçek zamandan yavaş yaşıyor; hız karenin üstünde</div>
-</body></html>"""
+img{max-width:96vw;max-height:84vh;border-radius:10px}
+button{background:#23252a;color:#e8e8ea;border:1px solid #3a3d44;border-radius:8px;
+padding:7px 16px;font:inherit;cursor:pointer}button:hover{background:#2c2f35}
+.alt{color:#9a9aa4}</style></head>
+<body><img src="/akis" alt="canlı">
+<div><button id="d" onclick="duraklat()">duraklat</button>
+<span class="alt">&nbsp; sinek gerçek zamandan yavaş yaşıyor; hız karenin üstünde</span></div>
+<script>async function duraklat(){const r=await fetch('/duraklat',{method:'POST'});
+const j=await r.json();document.getElementById('d').textContent=j.duraklatildi?'devam et':'duraklat';}
+</script></body></html>"""
 
 
 class LiveStream:
@@ -43,6 +50,8 @@ class LiveStream:
         self.quality = quality
         self.jpeg: bytes | None = None
         self.note = ""
+        self.browser: np.ndarray | None = None  # tarayıcının son karesi (kaydırma, animasyon)
+        self.paused = False  # izleyici sayfadan duraklatabilir
         self._next_ms = 0.0
         self._lock = threading.Lock()
         self._wall0 = time.perf_counter()
@@ -73,8 +82,36 @@ class LiveStream:
         self.renderer.update_scene(d, self.camera)
         return self.renderer.render()
 
+    def _panels(self, sahne: np.ndarray) -> Image.Image:
+        """3B sahne + sineğin gözleri + gerçek tarayıcı, tek karede.
+
+        Tarayıcı paneli, sineğin **görmediği** şeyi gösterir: asıl kaydırma perde arkasında
+        olur (sineğin ekranı solarak geçer, Z-35), beğeni animasyonu da orada oynar.
+        """
+        sol = Image.fromarray(sahne)
+        sag_w = 300
+        tuval = Image.new("RGB", (sol.width + sag_w + 18, sol.height), (15, 16, 18))
+        tuval.paste(sol, (0, 0))
+        x, y = sol.width + 12, 0
+        eyes = self.fly.eyes.last_frames if self.fly.eyes is not None else {}
+        if eyes:
+            goz = np.concatenate([eyes["L"], eyes["R"]], axis=1)
+            g = Image.fromarray(goz)
+            g = g.resize((sag_w, max(1, round(g.height * sag_w / g.width))), Image.BILINEAR)
+            tuval.paste(g, (x, y + 16))
+            ImageDraw.Draw(tuval).text((x, y), "sineğin gözleri", fill=(150, 150, 160), font=self.small)
+            y += g.height + 26
+        if self.browser is not None:
+            b = Image.fromarray(self.browser)
+            kalan = sol.height - y - 20
+            b = b.resize((max(1, round(b.width * kalan / b.height)), kalan), Image.BILINEAR)
+            tuval.paste(b, (x, y + 16))
+            ImageDraw.Draw(tuval).text((x, y), "tarayıcı (sinek bunu görmüyor)",
+                                       fill=(150, 150, 160), font=self.small)
+        return tuval
+
     def _draw(self, img: np.ndarray) -> bytes:
-        pil = Image.fromarray(img)
+        pil = self._panels(img)
         d = ImageDraw.Draw(pil)
         t_s = self.fly.brain.time_ms / 1000.0
         label = f"{t_s:6.2f} sn  ·  " + (f"ağır çekim {self._speed:.2f}×" if self._speed < 0.95
@@ -93,6 +130,9 @@ class LiveStream:
     # ---- besleme ----
 
     def step(self, fly) -> None:
+        while self.paused:  # izleyici sayfadan duraklattı: simülasyon burada bekler
+            time.sleep(0.05)
+            self._wall0 += 0.05  # bekleme ölçülen hıza girmesin
         t = fly.brain.time_ms
         if t < self._next_ms:
             return
@@ -107,6 +147,10 @@ class LiveStream:
     def say(self, note: str) -> None:
         """Karenin altındaki satır (post, karar, eylem)."""
         self.note = note
+
+    def show_browser(self, shot: np.ndarray) -> None:
+        """Tarayıcının son karesi (kaydırma sırasında ve eylemden sonra beslenir)."""
+        self.browser = shot
 
     def latest(self) -> bytes | None:
         with self._lock:
@@ -131,6 +175,18 @@ def _handler(stream: LiveStream):
                 super().handle_one_request()
             except (ConnectionResetError, BrokenPipeError):  # izleyici sekmeyi kapattı
                 self.close_connection = True
+
+        def do_POST(self):
+            if self.path != "/duraklat":
+                self.send_error(404)
+                return
+            stream.paused = not stream.paused
+            body = f'{{"duraklatildi": {str(stream.paused).lower()}}}'.encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
 
         def do_GET(self):
             if self.path in ("/", "/index.html"):

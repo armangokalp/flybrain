@@ -62,7 +62,9 @@ class Browser:
             is_mobile=True,
             has_touch=True,
             color_scheme="dark",
-            reduced_motion="reduce",
+            # Animasyonlar açık: sinek kendi beğenisinin kalbini ve yorumunun yazılışını
+            # görsün (kullanıcı kararı). Kapalıyken eylemin tek izi düğmenin renk değişimiydi.
+            reduced_motion="no-preference",
             args=["--disable-blink-features=AutomationControlled"],
         )
         self.page = self.context.pages[0] if self.context.pages else self.context.new_page()
