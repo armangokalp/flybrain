@@ -63,7 +63,7 @@ Ayrıntı: [09-govde.md](09-govde.md). Kararlar: K-019–K-024.
 - [x] Motor nöron → kas → eklem tablosu (bacaklar, baş, hortum, kanatlar, karın, sıçrama) ve kas modeli (Z-24, ilk sürüm)
 - [x] Gövdeden beyne his, ilk sürüm: uyluk kordotonal organı ve kıl plakaları, 389 nöron (K-024). Yük, zemin teması, baş konumu eksik (Z-32)
 - [x] Sinir kordonu hız modeli (K-025, deneysel): Pugliese ve ark. ön bacak ritmi yeniden üretildi, altı bacağa genişletildi, LIF beyinle melez
-- [ ] Yürüme: hız modelinde motor çıktı düşük, doyum ve duyu kazancı kalibre değil (Z-33) — yön kararı bekliyor
+- [ ] Yürüme: hız modelinde motor çıktı düşük, doyum ve duyu kazancı kalibre değil (Z-33) — ertelendi (K-026)
 - [ ] Sineğin gözleriyle görme: ommatidyumlar → konnektom göz kolonları
 - [ ] Sahne: serbest sinek ve onu izleyen Instagram ekranı (K-021)
 - [ ] Kapalı döngü (beyin + gövde + görme) ve hız iyileştirmesi (Z-21)

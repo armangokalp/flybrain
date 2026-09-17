@@ -295,3 +295,16 @@ Durumlar: **önerildi** · **kabul edildi** · **yerine geçti**
   - Güçlü girdide ağ doyuma kilitleniyor (motor nöronlar 200 Hz).
   - Propriyosepsiyonun hız modelindeki ölçeği kalibre edilmemiş: dinlenmede bile ağı doyuruyor.
   - Ayrıntılar: [09-govde.md](09-govde.md#8-sinir-kordonu-hız-modeli-2026-09-17), Z-33. Sonraki yön kullanıcıya soruldu.
+
+## K-026 · Yürüme ertelendi; önce görme, sahne ve görselleştirme
+
+- **Durum:** kabul edildi (2026-09-17)
+- **Bağlam:** Hız modeli ritmi yeniden üretiyor, ama gövdeyi yürütmesi için motor çıktı, doyum ve duyu kazancı sorunları var (Z-33). Bunların çözümü, çoğu için doğrudan ölçümü olmayan kalibrasyonlar gerektiriyor.
+- **Kullanıcı kararı:** "Yürümeyi ertele" (seçenekler: ertele / modeli ayarla / önce yorulma ekle).
+- **Sonuç:**
+  - Varsayılan model LIF kalıyor; hız modeli `vnc="rate"` ile deneysel olarak duruyor.
+  - Sıradaki işler:
+    1. sineğin kendi gözleriyle görmesi,
+    2. Instagram ekranlı sahne,
+    3. beyin aktivitesi ve kayıt paneli (Faz 6).
+  - Yürümeye sonra dönülecek.
