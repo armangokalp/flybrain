@@ -33,6 +33,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
+from typing import Protocol
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -77,6 +78,24 @@ class FeedPost:
     username: str = "flybrain"
     caption: str = ""
     likes: int = 0
+
+
+class ScreenSource(Protocol):
+    """Telefon ekranını besleyen kaynak: yerel akış (`PhoneFeed`) ya da gerçek ekran
+    görüntüleri (`insta/screen.py`, Faz 8). `EmbodiedFly` ikisiyle de çalışır."""
+
+    @property
+    def scrolling(self) -> bool: ...
+
+    def show(self, post) -> None: ...
+
+    def fade_to(self, post, now_ms: float, duration_ms: float) -> None: ...
+
+    def scroll_to(self, post, now_ms: float, duration_ms: float) -> None: ...
+
+    def update(self, now_ms: float) -> bool: ...
+
+    def frame(self) -> np.ndarray: ...
 
 
 @cache

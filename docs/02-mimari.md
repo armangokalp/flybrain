@@ -38,7 +38,7 @@ flowchart LR
 | `flybrain/body/` | 3D gövde: motor nöron → kas → eklem, propriyosepsiyon, sahne, kapalı döngü (Faz 5) |
 | `flybrain/viz/` | Oturum kaydı (`record`), kayıttan yeniden çizim (`replay`), panel verisi (`export`), yerel panel (`serve`, `web/`), video (`video`) (Faz 6) |
 | `flybrain/create/` | Post görseli ve caption üretimi |
-| `flybrain/instagram/` | Gerçek Instagram bağlantısı ve test için sahte (lokal) feed |
+| `flybrain/insta/` | Instagram bağlantısı: tarayıcı (`browser`), akış ve eylemler (`feed`), ekran kaynağı (`screen`), güvenlik valisi (`governor`), oturum (`session`) (Faz 8) |
 | `flybrain/governor.py` | Hız sınırları ve içerik vetosu |
 | `flybrain/journal/` | Her kararın gerekçesiyle birlikte kaydı |
 
@@ -101,7 +101,7 @@ Hazır yürüme programı, eğitilmiş kontrolcü ya da animasyon yoktur. Instag
 | Önceki posta dön | Geri yürüme | `geri`: MDN (4) |
 | Beğen | Hortum hareketi, orta şiddet | `hortum`: beyin hortum motor nöronları (67) |
 | Kaydet | Hortum hareketi, yüksek şiddet | `hortum`, ikinci ve daha yüksek eşik (K-018) |
-| Yorum yap | Kanat titreşimi (kur şarkısı) | `yorum`: kanat yönlendirme motor nöronları (43) |
+| Yorum yap | Kanat titreşimi (kur şarkısı) | `yorum`: kanat yönlendirme motor nöronları (37; sıçrama kasları hariç, 2026-09-17) |
 | Takip et | Karın bükme (kur yapmanın son aşaması) | `takip`: karın motor nöronları (214) (K-017) |
 | Takipten çık / oturumu bitir | Kaçış, havalanma | `cikis`: alt tectulum'a inen nöronlar (31, Giant Fiber dahil) |
 | Sekme değiştir (sol / sağ) | Baş çevirme | `sekme`: boyun motor nöronlarında sol − sağ farkı (44) |

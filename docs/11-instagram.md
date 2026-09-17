@@ -1,0 +1,113 @@
+# 11 — Instagram Bağlantısı (Faz 8)
+
+Kararlar: K-006, K-007, K-034. Zorluklar: Z-10, Z-11, Z-13, Z-36, Z-37. Kod: `flybrain/insta/`.
+
+## 1. Zincir
+
+```
+tarayıcı (telefon görünümü, karanlık mod)
+   │ ekran görüntüsü
+   ▼
+sineğin telefonu (solarak geçiş, K-030) ──► gözler ──► beyin ──► kas kanalları ──► karar
+                                                                                    │
+                                    güvenlik valisi (yalnızca veto, K-007) ◄─────────┘
+                                                   │ izin verilirse
+                                                   ▼
+                                    tarayıcı düğmeye basar → sonuç doğrulanır
+                                                   │
+                                    eylem sonrası ekran görüntüsü ──► sineğin telefonu
+```
+
+Sinek gerçek tarayıcıyı görmez; yalnızca sahnesindeki telefonu görür. Bu yüzden **kaydırma
+sineği korkutmaz**: tarayıcı kaydırmayı solma sürerken perde arkasında yapar (Z-35, K-030).
+Kalan risk videolarda ve çoklu görsellerde; oradaki sert değişimler "anında geçiş"e benziyor
+(12 denemede 1–2 kaçış, K-030 tablosu).
+
+## 2. Tarayıcı (`insta/browser.py`)
+
+| Ayar | Değer | Neden |
+|---|---|---|
+| Profil | `browser-profile/` (gitignore'da) | Giriş kullanıcıya ait; kod şifre görmez |
+| Görüntü alanı | 390 × 844 (19,5:9) | Sineğin telefonuyla aynı oran; story yükleme yalnızca mobil düzende |
+| Ölçek | 2× | Ekran görüntüsü 780 × 1688; ekrana 540 × 1170 olarak küçültülüyor |
+| Tema | karanlık | Solarak geçişin ölçüldüğü tema (K-030) |
+| Hareket | `prefers-reduced-motion` | Site kendi animasyonlarını kısarsa sinek daha az ani değişim görür |
+| Pencere | görünür | Otomasyon izlenebilsin, doğrulama çıkarsa kullanıcı çözebilsin (Z-11) |
+
+## 3. Akış ve eylemler (`insta/feed.py`)
+
+- **Okuma:** Her post bir `article`. Alınanlar: kullanıcı adı, açıklama (koku olur), bağlantı,
+  video mu, ekran görüntüsü.
+- **Eylem sırası:** valiye sor → düğmeyi bul → tıkla → **durumu yeniden oku** → kaydet.
+  Düğmenin etiketi değişmediyse eylem "başarısız" yazılır; sessiz başarısızlık yok.
+- **Etiketler:** Düğmeler erişilebilirlik etiketinden bulunuyor; arayüz dili hesaba göre
+  değiştiği için Türkçe ve İngilizce birlikte aranıyor (Z-36).
+
+| Sineğin kararı | Instagram'da karşılığı |
+|---|---|
+| beğen / kaydet | kalp / yer imi düğmesi |
+| takip | takip düğmesi |
+| yorum | yorum kutusu (metin K-036 ile yazılacak) |
+| ileri, geri, sekme, tımar, ilgi kaybı | yok; yalnızca gövde hareketi ve akışta ilerleme |
+| çıkış | oturumu bitirir ("uçup gider") |
+
+## 4. Güvenlik valisi (`insta/governor.py`)
+
+- **Hız sınırları (ısınma):** saatlik/günlük üst sınırlar ve eylemler arası en az bekleme.
+  Sayaçlar `runs/insta/eylemler.jsonl` dosyasında; oturumlar arasında korunuyor.
+
+  | | beğen | kaydet | takip | yorum | paylaş | story |
+  |---|---|---|---|---|---|---|
+  | saatlik | 20 | 10 | 3 | 2 | 1 | 2 |
+  | günlük | 100 | 50 | 10 | 8 | 2 | 4 |
+
+- **İçerik vetosu:** Yorumda yasaklı kelime varsa eylem uygulanmaz (`insta/yasakli.txt`, Z-13).
+- **Doğrulama algılama:** Adres `/challenge/`, `/accounts/suspended` gibi bir sayfaya düşerse ya
+  da oturum kapanırsa oturum durur. Sistem doğrulamayı atlatmaya **çalışmaz** (Z-11).
+- **Vali eylem seçmez.** Engellenen eylem de gerekçesiyle kaydedilir (K-007).
+
+## 5. Sıra: sahte akış → kuru çalıştırma → gerçek
+
+0. **Giriş (bir kez, kullanıcı yapar):** `python -m flybrain.insta.login` tarayıcıyı açar ve
+   oturum çerezi oluşana kadar bekler. Şifre koda girilmez, okunmaz, saklanmaz.
+1. **Yerel sahte akış** (`tests/sahte_akis.html`): Gerçek Instagram değil; yalnızca düğme bulma,
+   tıklama ve doğrulama mantığını sınayan yerel bir test sayfası. Bütün döngü burada çalışıyor:
+   ```bash
+   python -m flybrain.insta.session --posts 3 --sahte --gercek
+   ```
+2. **Kuru çalıştırma:** Gerçek hesapta; sinek karar verir, eylemler kaydedilir ama tıklanmaz.
+   ```bash
+   python -m flybrain.insta.session --posts 5
+   ```
+3. **Gerçek oturum:** `--gercek` ile, düşük limitlerle ve kullanıcı onayıyla.
+
+## 6. Ölçüm: oturum başlangıcında kaçış
+
+İlk oturumlarda sinek her seferinde ilk pencerede "çıkış" verip uçup gitti. Ekranın karanlık
+olmasından sanıldı; ölçüm başka şey gösterdi.
+
+**Ekranın içeriği değil:** Aynı protokolde sentetik post, karartılmış sürümleri (×0,6, ×0,35,
+×0,2) ve gerçek Instagram ekranı — hepsinde kaçış kanalı 0,00 Hz.
+
+**Yerleştirme sonrası bekleme:** Deneyci sineği yerleştirdikten sonra posta geçmeden önceki
+bekleme belirleyici.
+
+| Bekleme | Pencere 0 kaçış | Göğüs hareketi | Diklik |
+|---|---|---|---|
+| 500 ms | 6,97 Hz | 3,60 mm (sıçrama) | 0,10 (devrildi) |
+| 2000 ms | 0,00 Hz | 0,15 mm | 0,99 |
+
+Oturum yerleştirmeden sonra **2 sn** bekliyor (`insta/session.py`, `SETTLE_MS`). Sonrasında sahte
+akışta üç post sorunsuz geçti. Aynı kısa bekleme yerel oturumlarda da (Faz 6) kullanılıyordu;
+oradaki erken "çıkış" kararlarının bir kısmı bundan olabilir — ölçülmedi.
+
+## 7. Açık konular
+
+- **Z-36 · Arayüz etiketleri:** Düğme etiketleri gerçek oturumda doğrulanmadı; Instagram arayüzü
+  değişirse eylem "başarısız" olarak kaydedilir (sessizce yanlış bir düğmeye basılmaz).
+- **Z-37 · Video zamanı:** Tarayıcıdaki video gerçek zamanda oynar, simülasyon ~3 kat yavaştır.
+  Videolar duraklatılıyor ve karesi simülasyon zamanından sürülüyor.
+- **Bildirimler:** Sineğin kendi postlarına gelen beğeni ve yeni takipçiler ödül nöronlarına
+  bağlanacak (`senses/reward.py`); Instagram'dan okunması henüz yazılmadı.
+- **Yorum metni:** K-036 (duygu + koklama) uygulanacak.
+- **Paylaşım:** Post Faz 9'da (K-004, K-005), story oturum videosundan (K-035).

@@ -517,3 +517,38 @@ Durumlar: **önerildi** · **kabul edildi** · **yerine geçti**
   - **İndirme (kullanıcı izniyle):** three.js 0.186.0 (MIT), npm'den. Repoya yalnızca üç dosya ve lisansı girdi (`flybrain/viz/web/vendor/`); panel internetsiz çalışır.
 - **VARSAYIM:** Somasız nöronların (~%15, çoğu duyu nöronu) konumu, bağlantılı oldukları nöronların konumlarının sinaps sayısıyla ağırlıklı ortalaması. Panelde bu nöronlar ayrı bir seçenekle gizlenebilir.
 - **İlke notu:** Görselleştirme yalnızca kaydı gösterir; kayıtta olmayan hiçbir hareket ya da etkinlik çizilmez. Sinek parçalarının rengi MuJoCo dokularının ortalama rengidir.
+
+## K-034 · Faz 8: ekran görüntüsü sineğe, karar gerçek düğmeye
+
+- **Durum:** kabul edildi (2026-09-17), kullanıcı kararı (sıradaki adım Faz 8)
+- **Bağlam:** Kullanıcı iki şey sordu: gerçek Instagram'da kaydırma sineği yine korkutur mu, ve beğeni/yorum/kaydetme/takip gerçekten Instagram'da nasıl olacak?
+- **Karar:**
+  - **Sinek tarayıcıyı görmez.** Tarayıcının ekran görüntüsü (telefon görünümü, karanlık mod) sineğin sahnesindeki telefona **solarak** gelir (K-030). Tarayıcı asıl kaydırmayı solma sürerken perde arkasında yapar; sinek kaymayı hiç görmez (Z-35).
+  - **Eylemler gerçek düğmelere uygulanır:** beğen, kaydet, takip, yorum. Her eylemden sonra düğmenin durumu yeniden okunur; değişmediyse eylem "başarısız" diye kaydedilir.
+  - **Eylemin sonucu sineğe geri gösterilir:** eylem sonrası ekran görüntüsü telefona basılır, yani sinek kalbin kırmızıya döndüğünü görür.
+  - **Sıra:** (1) yerel sahte akışta uçtan uca deneme, (2) gerçek hesapta kuru çalıştırma (tıklama yok), (3) düşük limitli gerçek oturum. Her aşama kullanıcı onayıyla.
+  - **Giriş kullanıcıya ait:** kalıcı profil `browser-profile/`, kod şifre görmez.
+- **Gerekçe:** Sineğin gördüğü ekranla Instagram'ın gerçek durumu tek kaynaktan gelir (ekran görüntüsü), eylemler de aynı sayfada doğrulanır. Böylece "sinek şunu gördü, şunu yaptı" zinciri kayıtla kanıtlanabilir.
+- **Riskler:** Z-10 (otomasyon kullanım şartlarına aykırı), Z-36 (arayüz etiketleri değişebilir), Z-37 (video zamanı).
+- **Kod:** `flybrain/insta/` (browser, feed, screen, governor, session), `tests/sahte_akis.html`
+
+## K-035 · Story: sineğin kendi oturum videosundan kesit
+
+- **Durum:** kabul edildi (2026-09-17), kullanıcı kararı
+- **Bağlam:** Post paylaşımı Faz 9'da planlıydı (K-004, K-005); **story hiçbir belgede yoktu, atlanmıştı.**
+- **Seçenekler:** oturum videosundan kesit / postla aynı görseller (nöral portre, yürüyüş resmi) / ikisi, seçim sinekte
+- **Karar:** Oturum videosundan kesit. Faz 6'nın video dışa aktarımı (`viz/video.py`) zaten sineğin gövdesini, beyin aktivitesini ve gördüğü ekranı birlikte çiziyor; bu kayıt olduğu için ilke 6'ya uyuyor.
+- **Nasıl paylaşılacak:** Instagram'ın mobil düzeninde story yükleme yolu var; tarayıcı zaten telefon görünümünde çalışıyor (K-006). Resmi API story'ye izin veriyor ama işletme/üretici hesabı ve bağlı Facebook sayfası istiyor; tarayıcı yolu seçildiği için gerekmiyor.
+- **Açık:** Story'nin **ne zaman** paylaşılacağı ve videonun hangi anından kesileceği sineğin durumuna bağlanacak; kural Faz 9'da belirlenecek.
+
+## K-036 · Yorum metni: duygu sinekten, kelimeler koklanarak
+
+- **Durum:** kabul edildi (2026-09-17), kullanıcı kararı
+- **Bağlam:** K-005 yalnızca kendi postunun açıklamasını tanımlıyordu; yorumun metni kararlaştırılmamıştı. Kullanıcı yorumun "sineğin hissettiği şeye, beyninin neresinin yandığına" göre yazılmasını istedi (korku, libido, açlık gibi).
+- **Kısıt:** Sinek dil bilmiyor. Kelimeler ya feed'den gelir ya da insanın yazdığı bir tablodan. "Duygu → kelime tablosu" seçilseydi cümleyi insan kurmuş olurdu (ilke 3, K-003).
+- **Karar (hibrit):**
+  - **Duygu sinekten okunur:** korku (LC4/LPLC2 → dev lif), besleme (şeker yolu → hortum), kur (pC1, şarkı komutu), ödül/ceza (PAM/PPL1), rahatsızlık (tımar kanalı). Okuma, motor okumayla aynı biçimde nöron havuzlarının hızından yapılır; eğitilmiş yorumlayıcı yok.
+  - **Kelimeler koklanarak seçilir:** Adaylar sineğin feed'de karşılaştığı kelimeler (K-013 kelime → koku). Koklama, sineğin **o anki beyin durumunda** yapılır; korkmuşken yaklaştığı kelime ile açken yaklaştığı kelime farklı olabilir. Duygu kelimeyi doğrudan vermez, seçimi değiştirir.
+  - **Duygunun ayrıca belirledikleri:** yorumun uzunluğu ve sonundaki emoji (küçük, sabit tablo), karar günlüğüne yazılan "baskın duygu".
+- **Ön koşul (ölçülecek):** Aynı kelime farklı beyin durumlarında gerçekten farklı yanıt alıyor mu? Fark çıkmazsa duygu yalnızca emojiyi ve uzunluğu belirler; bu durum açıkça raporlanır.
+- **Bilinen sınır:** Modelde açlık gibi bir **dürtü** yok; yalnızca şekere verilen anlık yanıt var. Kur devresi (pC1) postlarda neredeyse hiç ateşlemedi (K-017); libido baskın duygu olarak nadiren çıkacak.

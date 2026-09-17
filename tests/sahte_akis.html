@@ -1,0 +1,79 @@
+<!doctype html>
+<!--
+  Yerel sahte akış: yalnızca testler için (Faz 8, tests/test_insta.py).
+
+  Gerçek Instagram değildir ve hiçbir yere yayımlanmaz. Yalnızca eylem uygulayıcının
+  (flybrain/insta/feed.py) düğme bulma, tıklama ve **sonucu doğrulama** mantığını gerçek hesaba
+  dokunmadan sınamak için var. Kullanılan yapı gerçek sayfadaki ile aynı yerlerden okunuyor:
+  article, header'daki kullanıcı bağlantısı, erişilebilirlik etiketli svg simgeler, takip düğmesi,
+  açıklama metni ve yorum kutusu. Etiketlerin gerçek sayfadaki karşılıkları ayrıca doğrulanmalı.
+-->
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>sahte akış (test)</title>
+<style>
+  :root { color-scheme: dark; }
+  body { background: #000; color: #f5f5f5; font: 15px system-ui, sans-serif; margin: 0; }
+  article { border-bottom: 1px solid #262626; padding-bottom: 12px; }
+  header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; }
+  header a { color: #f5f5f5; text-decoration: none; font-weight: 600; }
+  .gorsel { height: 420px; background: linear-gradient(160deg, #3a3a3a, #111); }
+  .ikonlar { display: flex; gap: 14px; padding: 10px 12px; align-items: center; }
+  button { background: none; border: none; color: inherit; font: inherit; cursor: pointer; padding: 0; }
+  .takip { color: #4a9cff; font-weight: 600; margin-left: auto; }
+  ul { list-style: none; margin: 0; padding: 0 12px; }
+  .yorum-kutusu { display: flex; gap: 8px; padding: 8px 12px; }
+  input { flex: 1; background: none; border: none; color: #f5f5f5; outline: none; }
+  .gonder { color: #4a9cff; font-weight: 600; }
+</style>
+</head>
+<body>
+<main></main>
+<script>
+const POSTLAR = [
+  { kullanici: "ariflibelula", aciklama: "ışık kanat şeker sabah", kod: "AAA111", video: false },
+  { kullanici: "gecekelebegi", aciklama: "karanlık gölge rüzgar", kod: "BBB222", video: false },
+  { kullanici: "sulakcayir", aciklama: "çürük meyve nem toprak", kod: "CCC333", video: true },
+];
+
+const svg = (etiket) => `<svg aria-label="${etiket}" width="24" height="24" viewBox="0 0 24 24">
+  <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
+
+document.querySelector("main").innerHTML = POSTLAR.map((p, i) => `
+<article data-sira="${i}">
+  <header><a href="/${p.kullanici}/">${p.kullanici}</a></header>
+  <a href="/p/${p.kod}/">${p.video
+    ? '<video muted playsinline style="width:100%;height:420px;background:#111"></video>'
+    : '<div class="gorsel"></div>'}</a>
+  <div class="ikonlar">
+    <button class="begen" onclick="cevir(this, 'Like', 'Unlike')">${svg("Like")}</button>
+    <button class="yorum">${svg("Comment")}</button>
+    <button class="kaydet" onclick="cevir(this, 'Save', 'Remove')">${svg("Save")}</button>
+    <button class="takip" onclick="takip(this)">Follow</button>
+  </div>
+  <ul><li><span dir="auto">${p.kullanici} ${p.aciklama}</span></li></ul>
+  <div class="yorum-kutusu">
+    <input placeholder="Add a comment…">
+    <button class="gonder" onclick="yorumla(this)">Post</button>
+  </div>
+</article>`).join("");
+
+function cevir(btn, once, sonra) {
+  const s = btn.querySelector("svg");
+  s.setAttribute("aria-label", s.getAttribute("aria-label") === once ? sonra : once);
+}
+function takip(btn) { btn.textContent = btn.textContent === "Follow" ? "Following" : "Follow"; }
+function yorumla(btn) {
+  const kutu = btn.parentElement.querySelector("input");
+  if (!kutu.value.trim()) return;
+  const li = document.createElement("li");
+  li.className = "yorum";
+  li.textContent = "flybrain " + kutu.value;
+  btn.closest("article").querySelector("ul").appendChild(li);
+  kutu.value = "";
+}
+</script>
+</body>
+</html>

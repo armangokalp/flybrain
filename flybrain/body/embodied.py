@@ -31,7 +31,7 @@ import numpy as np
 
 from flybrain.body.body import TIMESTEP_S, Body
 from flybrain.body.muscles import MuscleModel, build_table
-from flybrain.body.phone import FADE_MS, SCROLL_MS, FeedPost, PhoneFeed
+from flybrain.body.phone import FADE_MS, SCROLL_MS, FeedPost, PhoneFeed, ScreenSource
 from flybrain.body.proprio import build_proprioception
 from flybrain.body.scene import SceneConfig
 from flybrain.body.sight import FlyEyes
@@ -137,7 +137,7 @@ class EmbodiedFly:
             std_exempt = gap_exempt if std_exempt is None else np.union1d(std_exempt, gap_exempt)
         self.body = Body(camera_res=camera_res, scene=scene)
         self.scene = self.body.scene
-        self.feed = PhoneFeed(scene.texture_shape) if scene is not None else None
+        self.feed: ScreenSource | None = PhoneFeed(scene.texture_shape) if scene is not None else None
         self.eyes = None
         if vision is not None:
             if vision.mode == "foto":
@@ -246,7 +246,7 @@ class EmbodiedFly:
         """Deneyci sineği şu anda tutuyor mu."""
         return self._hold_ms > 0
 
-    def _need_feed(self) -> PhoneFeed:
+    def _need_feed(self) -> ScreenSource:
         if self.feed is None:
             raise RuntimeError("sahne yok: EmbodiedFly(scene=SceneConfig()) ile kurulmalı")
         return self.feed
@@ -271,7 +271,10 @@ class EmbodiedFly:
 
     def play_video(self, video) -> None:
         """Bakılan postun görselinde video oynatır (body/phone.py `PhoneFeed.play`)."""
-        self._need_feed().play(video, self.brain.time_ms)
+        feed = self._need_feed()
+        if not hasattr(feed, "play"):
+            raise RuntimeError("bu ekran kaynağında video oynatma yok")
+        feed.play(video, self.brain.time_ms)
 
     def _refresh_screen(self) -> None:
         if self.feed is not None and self.feed.update(self.brain.time_ms):

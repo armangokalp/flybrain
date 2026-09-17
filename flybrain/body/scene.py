@@ -169,6 +169,11 @@ class Scene:
         self._yaw = 0.0
         self.image: np.ndarray = self._pixels.copy()
 
+    @property
+    def texture_shape(self) -> tuple[int, int]:
+        """Ekran dokusunun piksel boyutu (yükseklik, genişlik)."""
+        return self._pixels.shape[:2]
+
     def register(self, renderer: mj.Renderer) -> None:
         """Bu sahneyi çizen bir çizici; ekran görüntüsü değişince ona yeniden yüklenir."""
         self._renderers.append(renderer)

@@ -17,6 +17,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+insta = ["playwright>=1.63"]  # Faz 8: Instagram'ı süren tarayıcı
 
 [build-system]
 requires = ["setuptools>=69"]

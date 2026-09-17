@@ -490,3 +490,22 @@ Başkalarının görsellerini yeniden paylaşmak telif sorunu yaratır.
 ### Z-15 · Veri lisansı 🟢
 
 MaleCNS verisi CC-BY 4.0 lisanslı; kaynak gösterildiği sürece serbestçe kullanılabilir. Kaynak bilgisi README'de ve [kaynaklar.md](kaynaklar.md) dosyasında yer alıyor. Hesabın biyografisine de kaynak eklenmesi önerilir.
+
+### Z-36 · Instagram arayüzü değişebilir 🟡
+
+Eylem düğmeleri erişilebilirlik etiketinden bulunuyor (`Like`/`Beğen`, `Save`/`Kaydet`, `Follow`/`Takip et`). Instagram bu etiketleri ya da düzeni değiştirirse düğme bulunamaz.
+
+**Şu anki durum:** Etiketler gerçek oturumda **doğrulanmadı**; yerel sahte akış sayfasında sınandı (`tests/sahte_akis.html`).
+
+**Nasıl ele alınıyor:**
+- Her eylemden sonra düğmenin durumu yeniden okunuyor. Değişmediyse eylem "başarısız" diye kaydediliyor; sessizce yanlış düğmeye basılmıyor.
+- Türkçe ve İngilizce etiketler birlikte aranıyor.
+- Etiket bulunamazsa eylem uygulanmıyor ve gerekçesi kayda geçiyor.
+
+### Z-37 · Video zamanı: tarayıcı gerçek zamanda, simülasyon 3 kat yavaş 🟡
+
+Instagram'daki videolar gerçek zamanda oynuyor; simülasyon gerçek zamanın ~3 katı yavaş ilerliyor (Z-21). Video kendi başına oynarsa sinek onu ~3 kat hızlanmış görür.
+
+**Çözüm:** Videolar duraklatılıyor, karesi simülasyon zamanından sürülüyor (`InstaFeed.video_time`). Bedeli: ses yok ve videonun kendi kare hızındaki ince zamanlama tam korunmuyor.
+
+**Kalan:** Video içeriğinin kaçış tetikleme oranı ölçülmedi; sert sahne kesmeleri "anında geçiş"e benziyor (K-030 tablosunda 12 denemede 1–2 kaçış).

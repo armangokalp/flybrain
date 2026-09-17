@@ -1,0 +1,54 @@
+# Yasaklı kelimeler (Z-13). Vali yalnızca veto eder: yorumda bu kelimelerden biri çıkarsa
+# eylem uygulanmaz ve gerekçesi karar günlüğüne yazılır. Sineğin kararı değişmez.
+#
+# Sinek kelimeleri feed'den topluyor; ne yazdığını anlamıyor. Bu liste, istemeden kurulabilecek
+# saldırgan ya da yanlış anlaşılacak dizileri engellemek için. Tam değildir; kullanıcı ekler.
+# Karşılaştırma küçük harfe çevrilip kelime kelime yapılır (ek almış hâller yakalanmaz).
+
+# küfür ve hakaret (Türkçe)
+amk
+aq
+orospu
+piç
+sik
+siktir
+göt
+yarrak
+salak
+aptal
+gerizekalı
+mal
+şerefsiz
+
+# küfür ve hakaret (İngilizce)
+fuck
+fucking
+shit
+bitch
+bastard
+asshole
+idiot
+stupid
+retard
+
+# şiddet
+öldür
+geber
+kill
+die
+
+# cinsel içerik
+porn
+porno
+sex
+seks
+nude
+çıplak
+
+# kişisel veri ve dolandırıcılık çağrışımı
+şifre
+password
+iban
+kredi
+bitcoin
+airdrop

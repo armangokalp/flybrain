@@ -70,9 +70,14 @@ class FeedViewer:
     def stimulus(self, post: Post) -> Stimulus:
         return self.smell.encode(post.caption) + self.reward.encode(post.rewards, post.punishments)
 
+    def _screen_item(self, post: Post):
+        """Ekrana basılacak nesne. Yerel akışta post bloğu; gerçek Instagram'da tam ekran
+        görüntüsü (insta/session.py bunu değiştirir)."""
+        return FeedPost(post.image, caption=post.caption)
+
     def _begin(self, post: Post) -> Stimulus:
         self.counts[:] = 0
-        self.fly.next_post(FeedPost(post.image, caption=post.caption))
+        self.fly.next_post(self._screen_item(post))
         self.posts += 1
         if self.fly.recorder is not None:
             self.fly.recorder.event("post", sira=self.posts, aciklama=post.caption,

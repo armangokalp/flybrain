@@ -118,11 +118,17 @@ Ayrıntı: [10-gorsellestirme.md](10-gorsellestirme.md). Karar: K-033.
 
 ## Faz 8 — Instagram bağlantısı
 
-- [ ] Playwright ile tarayıcı bağlantısı (K-006)
-- [ ] Kalıcı oturum (giriş kullanıcı tarafından elle yapılır)
-- [ ] Güvenlik valisi: hız sınırları, doğrulama algılama → durdur ve bildir
-- [ ] Kuru çalıştırma modu: eylemleri loglar ama uygulamaz
-- [ ] Gerçek hesapta düşük limitli ilk oturum
+- [x] Playwright ile tarayıcı bağlantısı: telefon görünümü, karanlık mod, azaltılmış hareket (K-006)
+- [x] Kalıcı oturum (giriş kullanıcı tarafından elle yapılır; kod şifre görmez)
+- [x] Ekran görüntüsü → sineğin telefonu, solarak geçiş; kaydırma perde arkasında (K-034)
+- [x] Eylemler: beğen, kaydet, takip, yorum — her biri tıklama sonrası doğrulanıyor
+- [x] Güvenlik valisi: hız sınırları, yasaklı kelime vetosu, doğrulama algılama → durdur ve bildir
+- [x] Kuru çalıştırma modu: eylemleri loglar ama uygulamaz
+- [x] Yerel sahte akışta uçtan uca deneme (`tests/sahte_akis.html`)
+- [ ] Yorum metni: duygu okuması + koklayarak kelime seçimi (K-036)
+- [ ] Bildirimler (gelen beğeni, yeni takipçi) → ödül nöronları (`senses/reward.py`)
+- [ ] Gerçek hesapta kuru çalıştırma; arayüz etiketlerinin doğrulanması (Z-36)
+- [ ] Gerçek hesapta düşük limitli ilk oturum (kullanıcı onayıyla)
 
 **Bitiş:** Sinek gerçek feed'de bir oturumu sorunsuz tamamlıyor.
 
@@ -130,10 +136,11 @@ Ayrıntı: [10-gorsellestirme.md](10-gorsellestirme.md). Karar: K-033.
 
 - [ ] Görsel üretimi (nöral portre ve gövdenin gerçek yürüyüş izinden yürüyüş resmi)
 - [ ] Caption üretimi (seçilen yöntem)
-- [ ] Paylaşım zamanlaması (P1 birikimi)
-- [ ] İçerik vetosu (yasaklı kelimeler)
+- [ ] Story: sineğin kendi oturum videosundan kesit (K-035)
+- [ ] Paylaşım zamanlaması (P1 birikimi); story için de kural
+- [x] İçerik vetosu (yasaklı kelimeler; `insta/yasakli.txt`, Faz 8'de yazıldı)
 
-**Bitiş:** Sinek ilk postunu kendi kararıyla paylaşıyor.
+**Bitiş:** Sinek ilk postunu ve ilk story'sini kendi kararıyla paylaşıyor.
 
 ## Faz 10 — Öğrenme ve uzun dönem çalışma
 
