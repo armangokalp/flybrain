@@ -27,8 +27,18 @@ Denklemler doğrusal olduğundan adım başına tam (analitik) çözüm kullanı
 
 Simülasyon olay güdümlüdür: her adımda yalnızca ateşleyen nöronların çıkış
 sütunları toplanır. Beyin durumu `run` çağrıları arasında korunur.
+
+Durum güncellemesi nöron parçaları üzerinde paralel çalışır (Z-21). Ateşleyen nöronlar
+parçaların sırasıyla birleştirilir; sonuç, iş parçacığı sayısından bağımsız olarak sıralı
+hesapla bit düzeyinde aynıdır. Adaptasyon ve tonik akım yoksa (projenin ayarı) güncelleme
+bu terimleri atlayan dallanmasız bir döngüyle yapılır; bu da aynı sonucu verir.
+
+İş parçacığı sayısı: FLYBRAIN_LIF_THREADS ortam değişkeni; yoksa ana süreçte en fazla
+LIF_THREADS, alt süreçlerde (deneylerin süreç havuzları) 1.
 """
 
+import multiprocessing
+import os
 from dataclasses import dataclass
 
 import numba as nb
@@ -36,6 +46,24 @@ import numpy as np
 
 from flybrain.connectome.connectome import Connectome
 from flybrain.sim.stimulus import Stimulus
+
+
+# Ana süreçte iş parçacığı sayısı. Ölçüm (M serisi, 4 performans + 6 verimlilik çekirdeği):
+# 4 iş parçacığı en hızlısı; daha fazlası bellek bant genişliğine takılıyor.
+LIF_THREADS = 4
+# Paralel güncellemenin nöron parçası sayısı (sonucu etkilemez).
+LIF_CHUNKS = 16
+
+
+def lif_threads() -> int:
+    env = os.environ.get("FLYBRAIN_LIF_THREADS")
+    if env:
+        n = int(env)
+    elif multiprocessing.parent_process() is not None:
+        n = 1
+    else:
+        n = LIF_THREADS
+    return max(1, min(n, nb.config.NUMBA_NUM_THREADS))
 
 
 @dataclass(frozen=True)
@@ -80,7 +108,7 @@ class RunResult:
         return self.counts / (self.duration_ms / 1000.0)
 
 
-@nb.njit(cache=True)
+@nb.njit(parallel=True, cache=True)
 def _run(
     n_steps, t0, seed,
     v, g, ref, ring_idx, ring_fac, ring_n, scratch,
@@ -90,29 +118,54 @@ def _run(
     stim_idx, stim_p, kick,
     em, es, cg, v_rest, v_reset, v_th, ref_steps,
     counts, rec_mask, rec_steps, rec_neurons,
+    bounds, found, lean,
 ):
     np.random.seed(seed)
-    n = v.shape[0]
     depth = ring_n.shape[0]
+    n_chunks = bounds.shape[0] - 1
     n_rec = 0
     overflow = False
     for s in range(n_steps):
         t = t0 + s
 
-        # Durum güncellemesi ve eşik aynı döngüde: eşik, güncellenmiş v'ye bakar.
-        n_new = 0
-        for i in range(n):
-            gi = g[i]
-            ai = a[i]
-            if ref[i] > 0:
-                ref[i] -= 1
+        # Durum güncellemesi, ardından eşik: eşik güncellenmiş v'ye bakar. Her parça kendi
+        # spike'larını scratch'in kendi bölgesine yazar.
+        for c in nb.prange(n_chunks):
+            lo = bounds[c]
+            hi = bounds[c + 1]
+            if lean:
+                # a = 0 ve tonik akım yok: v_inf = v_rest, a·ca = 0 (sonuç aynı).
+                for i in range(lo, hi):
+                    gi = g[i]
+                    r = ref[i]
+                    vi = v[i]
+                    vn = v_rest + (vi - v_rest) * em + gi * cg
+                    v[i] = vn if r == 0 else vi
+                    ref[i] = r - 1 if r > 0 else 0
+                    g[i] = gi * es
             else:
-                vinf = v_rest + bias[i]
-                v[i] = vinf + (v[i] - vinf) * em + gi * cg - ai * ca
-            g[i] = gi * es
-            a[i] = ai * ea
-            if ref[i] == 0 and v[i] > v_th:
-                scratch[n_new] = i
+                for i in range(lo, hi):
+                    gi = g[i]
+                    ai = a[i]
+                    if ref[i] > 0:
+                        ref[i] -= 1
+                    else:
+                        vinf = v_rest + bias[i]
+                        v[i] = vinf + (v[i] - vinf) * em + gi * cg - ai * ca
+                    g[i] = gi * es
+                    a[i] = ai * ea
+            m = 0
+            for i in range(lo, hi):
+                if v[i] > v_th and ref[i] == 0:
+                    scratch[lo + m] = i
+                    m += 1
+            found[c] = m
+        # Parçaların spike'ları sırayla birleştirilir (nöron sırası korunur).
+        n_new = 0
+        for c in range(n_chunks):
+            lo = bounds[c]
+            for k in range(found[c]):
+                scratch[n_new] = scratch[lo + k]
                 n_new += 1
 
         # `depth` adım önce ateşleyenlerin iletimi.
@@ -192,12 +245,27 @@ class Simulator:
         self._depth = int(round(params.delay_ms / dt))
         self._kick = params.poisson_kick_mv
 
-        self.bias_mv = np.zeros(self.n) if bias_mv is None else np.asarray(bias_mv, dtype=np.float64)
-        if self.bias_mv.shape != (self.n,):
-            raise ValueError("bias_mv her nöron için bir değer içermeli")
+        self.bias_mv = np.zeros(self.n) if bias_mv is None else bias_mv
+        self.threads = lif_threads()
+        self._bounds = np.linspace(0, self.n, min(LIF_CHUNKS, self.n) + 1).astype(np.int64)
+        self._found = np.zeros(len(self._bounds) - 1, dtype=np.int64)
 
         self._rng = np.random.default_rng(seed)
         self.reset()
+
+    @property
+    def bias_mv(self) -> np.ndarray:
+        """Nöron başına tonik akım (salt okunur; değiştirmek için yeni dizi atanır)."""
+        return self._bias
+
+    @bias_mv.setter
+    def bias_mv(self, value) -> None:
+        bias = np.array(value, dtype=np.float64)
+        if bias.shape != (self.n,):
+            raise ValueError("bias_mv her nöron için bir değer içermeli")
+        bias.setflags(write=False)
+        self._bias = bias
+        self._lean = self.p.adapt_mv == 0.0 and not bias.any()
 
     def reset(self) -> None:
         """Beyni dinlenim durumuna döndürür."""
@@ -251,6 +319,7 @@ class Simulator:
         counts = np.zeros(self.n, dtype=np.int32)
 
         seed = int(self._rng.integers(2**31))
+        nb.set_num_threads(self.threads)
         n_rec, overflow = _run(
             n_steps, self.step, seed,
             self.v, self.g, self.ref, self._ring_idx, self._ring_fac, self._ring_n, self._scratch,
@@ -261,6 +330,7 @@ class Simulator:
             self._em, self._es, self._cg,
             self.p.v_rest_mv, self.p.v_reset_mv, self.p.v_thresh_mv, self._ref_steps,
             counts, rec_mask, rec_steps, rec_neurons,
+            self._bounds, self._found, self._lean,
         )
         self.step += n_steps
         return RunResult(

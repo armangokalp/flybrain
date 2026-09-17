@@ -69,7 +69,7 @@ Ayrıntı: [09-govde.md](09-govde.md). Kararlar: K-019–K-029.
 - [x] Yaklaşan nesne → kaçış: ekranda büyüyen disk dev lifi açık temada %91–96, koyu temada %77 ateşletiyor; gövdeli görme kazancı 125 Hz (K-029, K-030, Z-25)
 - [ ] Dinlenen sineğin kendi hareketinden gelen kendiliğinden kaçışlar (~17 sn'de bir, Z-34)
 - [x] Post geçişinde kaçış: kaydırma her seferinde kaçış tetikliyordu; geçiş solma ve koyu temayla çözüldü (Z-35, K-030)
-- [ ] Kapalı döngü (beyin + gövde + görme + ekran) ve hız iyileştirmesi (Z-21) — döngü çalışıyor, gerçek zamanın ~4–5 katı yavaş
+- [x] Kapalı döngü (beyin + gövde + görme + ekran) ve hız iyileştirmesi (Z-21): gerçek zamanın 2,95–3,25 katı yavaş (4 iş parçacığı; önce ~4,5)
 - [x] Neden–sonuç testleri: MN9 → hortum ✅, dev lif → sıçrama ✅ (K-023), DNg100 → bacaklar kıpırdıyor ama yürüme yok, şeker → kısmi (Z-30)
 - [ ] Nöral karar ile gövde hareketinin örtüşme ölçümü (K-020, Z-27)
 

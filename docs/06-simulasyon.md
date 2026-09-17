@@ -17,6 +17,13 @@
 
 Apple Silicon, tek çekirdek: **simülasyonun 1 saniyesi yaklaşık 1,2 saniye sürüyor.** Bu, bir posta 500 ms "bakmanın" yaklaşık 0,6 saniyede hesaplanması demek; gerçek zamana çok yakın. Ağır aktivitede (her saniye 1 milyon spike) bile 1,3 saniyeyi geçmiyor.
 
+**Güncelleme (2026-09-17, Z-21):** Durum güncellemesi artık nöron parçaları üzerinde paralel çalışıyor.
+- **Dallanmasız hızlı yol:** Adaptasyon ve tonik akım yoksa (projenin ayarı) güncelleme bu terimleri atlıyor.
+- **Sonuç değişmiyor:** Ateşleyen nöronlar parçaların sırasıyla birleştiriliyor. Sonuç, iş parçacığı sayısından bağımsız olarak eski sıralı hesapla bit düzeyinde aynı; spike sayıları, spike zamanları ve bütün durum değişkenleri karşılaştırıldı.
+- **Ölçüm** (gövdeli görmenin girdisi: 7.378 görme nöronu, değişken hızlar, 1 sn): eski 2,4 sn, yeni 1,3 sn (4 iş parçacığı). Adaptasyonlu ayarda 1,5 kat.
+- **İş parçacığı sayısı:** Ana süreçte 4 (`LIF_THREADS`); bu makinede (4 performans + 6 verimlilik çekirdeği) daha fazlası bellek bant genişliğine takılıyor. Deneylerin süreç havuzlarında 1. `FLYBRAIN_LIF_THREADS` ortam değişkeniyle değiştirilebilir.
+- **Denenip bırakılanlar:** Dinlenimdeki nöronları atlamak sonucu değiştirmiyordu ama dallanmalar yüzünden 2 kat yavaşlattı. Poisson çekilişlerini seyreltmek (~0,2 sn/sn kazanç) rastgele sayı akışını değiştireceği için yapılmadı.
+
 ## Bulgu 1: Shiu ağırlıklarıyla beyin kalıcı bir çekiciye kilitleniyor
 
 Orijinal parametrelerle (w_syn = 0,275 mV) 34 şeker nöronu uyarıldı:

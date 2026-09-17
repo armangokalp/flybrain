@@ -154,7 +154,7 @@ Kas aktivitesinin neredeyse tamamı postun ilk 500 ms'inde. Sonraki pencerelerde
 
 **Çözüm:** Standart sapmaya sayma gürültüsü tabanı uygulanıyor. Tek bir spike en fazla yaklaşık 1 standart sapmalık kanıt sayılıyor.
 
-### Z-21 · Simülasyon hızı: görsel girdi pahalı 🔴
+### Z-21 · Simülasyon hızı: görsel girdi pahalı 🟢 (hedefte; sınırda)
 
 Görsel girdide yaklaşık 7.400 nöron her 0,1 ms'de rastgele sayı çekiyor. Buna 165 bin nöronluk durum güncellemesi de eklenince bir postun 1,8 saniyelik simülasyonu tek çekirdekte birkaç saniye sürüyor.
 
@@ -165,6 +165,19 @@ Görsel girdide yaklaşık 7.400 nöron her 0,1 ms'de rastgele sayı çekiyor. B
 3D gövdeyle birlikte önemi arttı: beyin, fizik ve görme aynı döngüde çalışacak. Fizik tek başına gerçek zamandan hızlı (tüm eklemlerle 1,3 kat), yani darboğaz beyin. Faz 5 hedefi: kapalı döngü gerçek zamanın en fazla 3 katı yavaşlıkta.
 
 **Durum (2026-09-17):** Beyin, gövde, görme ve telefon ekranı birlikte tek süreçte gerçek zamanın ~4–5 katı yavaş çalışıyor. Hedefin (3 kat) hâlâ gerisinde.
+
+**Durum (2026-09-17, hızlandırma):** Kapalı döngü artık gerçek zamanın **2,95–3,25 katı** yavaşlıkta çalışıyor (4 iş parçacığı). Tek iş parçacığında 3,9–4,1 kat.
+- **Profil (önce, 1 sn simülasyon, 4,5 sn):** beyin 2,2 sn, fizik 1,0 sn, görme 1,2 sn (çizim ve piksel okuma 0,64, kolon örneklemesi ~0,55).
+- **Beyin:** Paralel ve dallanmasız güncelleme; 2,2 sn'den 1,1 sn'ye ([06-simulasyon.md](06-simulasyon.md#performans)). Sonuç bit düzeyinde aynı.
+- **Görme:** Kolon örneklemesi tek bir Numba döngüsüne alındı (grup, kanal ve göz başına 24 ayrı interpolasyon yerine). Kare başına 4,7 ms'den 0,5 ms'ye indi. Sonuç 10⁻¹⁴ düzeyinde aynı; uyarılan nöronlar ve hızları (10⁻¹¹ Hz) değişmedi.
+- **Uçtan uca kontrol:** Eski ve yeni kodla aynı 9 gövdeli deneme (yaklaşma, solma, kaydırma) birebir aynı dev lif, LC4 ve sıçrama sonucunu verdi.
+- **Kalan (1 sn başına):**
+  - fizik 1,1 sn (0,1 ms'lik 10 alt adım; enerji hesabını kapatmak fark etmedi),
+  - beyin 1,1 sn,
+  - göz çizimi ve piksel okuma 0,6 sn,
+  - solma sırasında ekran karışımı ~0,1 sn.
+- **Sonuç değiştireceği için yapılmayanlar:** Poisson çekilişlerini seyreltmek, göz kamerası çözünürlüğünü düşürmek, fizik zaman adımını büyütmek.
+- **Deneylerin süreç havuzları:** Her işçi 1 iş parçacığı kullanıyor; kazanç yalnızca görme örneklemesinden ve dallanmasız güncellemeden geliyor.
 
 ---
 

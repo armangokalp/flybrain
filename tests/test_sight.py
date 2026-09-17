@@ -35,6 +35,16 @@ def test_columns_look_where_they_should(eyes):
     assert np.isfinite(lum).mean() > 0.9
 
 
+def test_uint8_and_float_frames_give_same_columns(eyes):
+    u8 = eyes.render(as_float=False)
+    assert all(f.dtype == np.uint8 for f in u8.values())
+    as_float = {s: f.astype(np.float64) / 255.0 for s, f in u8.items()}
+    a, b = eyes.column_values(u8), eyes.column_values(as_float)
+    for name in a:
+        for c in ("lum", "green", "blue"):
+            np.testing.assert_allclose(a[name][c], b[name][c], rtol=0, atol=1e-12)
+
+
 def test_static_scene_fades(eyes):
     eyes.reset()
     frames = eyes.render()

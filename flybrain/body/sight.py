@@ -26,8 +26,8 @@ Baş hareket ederse (boyun kasları) görüntü de onunla döner. Kameranın gö
 """
 
 import mujoco as mj
+import numba as nb
 import numpy as np
-from scipy.ndimage import map_coordinates
 
 from flybrain.connectome.connectome import Connectome
 from flybrain.senses.eye import Eye
@@ -54,6 +54,55 @@ def _kernel() -> tuple[np.ndarray, np.ndarray]:
     sigma = ACCEPTANCE_DEG / 2.355
     w = np.exp(-(offsets ** 2).sum(axis=1) / (2 * sigma ** 2))
     return offsets, w / w.sum()
+
+
+@nb.njit(cache=True)
+def _sample_eye(dirs, M, focal, img, scale, weights, out_rgb, out_wsum):
+    """Bir gözün bütün kolonları: izdüşüm, bilineer örnekleme, kabul açısı ağırlıklı ortalama.
+
+    dirs: (k, m, 3) baş çerçevesi yönleri; M: baş → kamera dönüşümü (v = d @ M);
+    img: (H, W, 3) kare, değerler × scale = [0, 1]. Çıktı: out_rgb (m, 3), out_wsum (m,).
+    """
+    k, m, _ = dirs.shape
+    H, W = img.shape[0], img.shape[1]
+    for j in range(m):
+        sw = 0.0
+        r = 0.0
+        g = 0.0
+        b = 0.0
+        for q in range(k):
+            dx = dirs[q, j, 0]
+            dy = dirs[q, j, 1]
+            dz = dirs[q, j, 2]
+            vx = dx * M[0, 0] + dy * M[1, 0] + dz * M[2, 0]
+            vy = dx * M[0, 1] + dy * M[1, 1] + dz * M[2, 1]
+            depth = -(dx * M[0, 2] + dy * M[1, 2] + dz * M[2, 2])
+            if depth <= 1e-3:
+                continue
+            x = W / 2 + focal * vx / depth
+            y = H / 2 - focal * vy / depth
+            if x < 0 or x > W - 1 or y < 0 or y > H - 1:
+                continue
+            x0 = min(int(x), W - 2)
+            y0 = min(int(y), H - 2)
+            fx = x - x0
+            fy = y - y0
+            w = weights[q]
+            sw += w
+            for ch in range(3):
+                val = ((img[y0, x0, ch] * (1 - fx) + img[y0, x0 + 1, ch] * fx) * (1 - fy)
+                       + (img[y0 + 1, x0, ch] * (1 - fx) + img[y0 + 1, x0 + 1, ch] * fx) * fy)
+                if ch == 0:
+                    r += w * val
+                elif ch == 1:
+                    g += w * val
+                else:
+                    b += w * val
+        out_wsum[j] = sw
+        norm = scale / max(sw, 1e-9)
+        out_rgb[j, 0] = r * norm
+        out_rgb[j, 1] = g * norm
+        out_rgb[j, 2] = b * norm
 
 
 def head_directions(side: np.ndarray, phi_deg: np.ndarray, theta_deg: np.ndarray) -> np.ndarray:
@@ -93,6 +142,12 @@ class FlyEyes:
             self.bias_mv = np.zeros(conn.n)
             self.bias_mv[np.concatenate(tonic)] = config.tonic_mv
         self.input_neurons = np.unique(np.concatenate([g[1] for g in self.groups] + tonic))
+        # Her göz için bütün grupların yönleri tek dizide: bir karede tek izdüşüm ve tek örnekleme.
+        self._eye_dirs = {}
+        for s in self._cams:
+            parts = [(k, np.flatnonzero(side == s)) for k, (_, side) in enumerate(self._group_dirs)]
+            dirs = np.ascontiguousarray(np.concatenate([self._group_dirs[k][0][:, sel] for k, sel in parts], axis=1))
+            self._eye_dirs[s] = (dirs, parts)
         self.last_frames: dict[str, np.ndarray] = {}
         self.last_samples: dict[str, np.ndarray] = {}
         self.last_contrast: dict[str, np.ndarray] = {}
@@ -103,51 +158,50 @@ class FlyEyes:
         self._adapted: dict[str, np.ndarray] = {}
         self._lowpass: dict[str, np.ndarray] = {}
 
-    def render(self) -> dict[str, np.ndarray]:
+    def render(self, as_float: bool = True) -> dict[str, np.ndarray]:
+        """İki gözün karesi: as_float ise [0, 1] aralığında float, değilse uint8.
+
+        last_frames her zaman uint8 kareleri tutar.
+        """
         d = self.sim.mj_data
         frames = {}
         for s, cam in self._cams.items():
             self.renderer.update_scene(d, cam, scene_option=self._option)
-            frames[s] = self.renderer.render().astype(np.float64) / 255.0
+            frames[s] = self.renderer.render()
         self.last_frames = frames
+        if as_float:
+            return {s: f.astype(np.float64) / 255.0 for s, f in frames.items()}
         return frames
 
-    def _sample(self, frames: dict[str, np.ndarray], dirs: np.ndarray, side: np.ndarray) -> dict[str, np.ndarray]:
-        """Kanal başına kolon değerleri; kameranın dışında kalanlar NaN."""
+    def column_values(self, frames: dict[str, np.ndarray] | None = None) -> dict[str, dict[str, np.ndarray]]:
+        """Grup ve kanal başına kolon değerleri; kameranın dışında kalanlar NaN."""
+        frames = frames or self.render(as_float=False)
         d = self.sim.mj_data
         R_head = d.xmat[self._head].reshape(3, 3)
-        k, n, _ = dirs.shape
-        out = {c: np.full(n, np.nan) for c in ("lum", "green", "blue")}
-        H, W = RENDER_HW
+        out = {g[0]: {c: np.full(len(g[1]), np.nan) for c in ("lum", "green", "blue")} for g in self.groups}
         for s, cam in self._cams.items():
-            sel = side == s
-            if not sel.any():
+            dirs, parts = self._eye_dirs[s]
+            if dirs.shape[1] == 0:
                 continue
-            R_cam = d.cam_xmat[cam].reshape(3, 3)
-            v = dirs[:, sel] @ R_head.T @ R_cam      # (k, m, 3), kamera çerçevesi
-            depth = -v[..., 2]
-            ok = depth > 1e-3
-            f = self._focal[s]
-            x = W / 2 + f * v[..., 0] / np.where(ok, depth, 1.0)
-            y = H / 2 - f * v[..., 1] / np.where(ok, depth, 1.0)
-            ok &= (x >= 0) & (x <= W - 1) & (y >= 0) & (y <= H - 1)
             img = frames[s]
-            rgb = np.stack([map_coordinates(img[..., ch], [y.ravel(), x.ravel()], order=1, mode="nearest")
-                            for ch in range(3)], axis=-1).reshape(k, -1, 3)
-            w = self._weights[:, None] * ok
-            wsum = w.sum(axis=0)
-            mean_rgb = (w[..., None] * rgb).sum(axis=0) / np.maximum(wsum, 1e-9)[:, None]
-            visible = wsum > 0.5
+            if img.shape[:2] != RENDER_HW:
+                raise ValueError(f"göz karesi {RENDER_HW} boyutunda olmalı")
+            M = R_head.T @ d.cam_xmat[cam].reshape(3, 3)  # baş → kamera çerçevesi
+            mean_rgb = np.empty((dirs.shape[1], 3))
+            wsum = np.empty(dirs.shape[1])
+            scale = 1.0 / 255.0 if img.dtype == np.uint8 else 1.0
+            _sample_eye(dirs, M, self._focal[s], img, scale, self._weights, mean_rgb, wsum)
+            hidden = wsum <= 0.5
             vals = {"lum": mean_rgb @ LUM_WEIGHTS, "green": mean_rgb[:, 1], "blue": mean_rgb[:, 2]}
-            for c in out:
-                col = np.full(sel.sum(), np.nan)
-                col[visible] = vals[c][visible]
-                out[c][sel] = col
+            start = 0
+            for k, sel in parts:
+                name = self.groups[k][0]
+                for c, val in vals.items():
+                    col = val[start:start + len(sel)].copy()
+                    col[hidden[start:start + len(sel)]] = np.nan
+                    out[name][c][sel] = col
+                start += len(sel)
         return out
-
-    def column_values(self, frames: dict[str, np.ndarray] | None = None) -> dict[str, dict[str, np.ndarray]]:
-        frames = frames or self.render()
-        return {g[0]: self._sample(frames, dirs, side) for g, (dirs, side) in zip(self.groups, self._group_dirs)}
 
     def encode(self, dt_ms: float, frames: dict[str, np.ndarray] | None = None) -> Stimulus:
         """Yeni kareyi kodlar; dt_ms önceki kareden bu yana geçen süre."""

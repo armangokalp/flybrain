@@ -841,7 +841,7 @@ Her tema dört geçişle ölçüldü (125 Hz, 12'şer geçiş; dev lifin ateşle
 | Yaklaşan nesne → kaçış | ✅ Çalışıyor: açık temada %96, koyu temada %77. Yaklaşmaya özgü değil, kararma da aynı güçte (12, 14, Z-25) |
 
 **Sıradakiler:**
-1. **Hız (Z-21):** Döngü gerçek zamanın ~4–5 katı yavaş; hedef 3 kat.
+1. ~~**Hız (Z-21)**~~ ✅ Döngü gerçek zamanın 2,95–3,25 katı yavaş; önce ~4,5 ([bölüm 16](#16-döngü-hızı-2026-09-17)).
 2. **Nöral karar ile gövdenin örtüşmesi (K-020, Z-27):** Gövdeli sinekte zamansal görme, 125 Hz ve solarak geçişle kararlar yeniden kalibre edilmeli.
 3. **Faz 6: görselleştirme.** Videolardaki üst/alt düzen (dışarıdan görünüm, sineğin gözleri) ilk adım. Eksikler: 3D beyin, ekran ve karar günlüğü.
 4. **Faz 7'den önce:** Kaçışın yaklaşmaya özgüllüğü (Z-25). Korkutucu içeriğe tepkinin anlam taşıması için gerekli.
@@ -850,3 +850,38 @@ Her tema dört geçişle ölçüldü (125 Hz, 12'şer geçiş; dev lifin ateşle
    - yürüme (Z-33),
    - yük algısı (Z-32),
    - uçuş (Z-26).
+
+## 16. Döngü hızı (2026-09-17)
+
+Zorluk: Z-21. Faz 5'in bitiş ölçütü: kapalı döngü gerçek zamanın en fazla 3 katı yavaş.
+
+**Profil (önce):** Koyu tema, 125 Hz görme; 1 sn'lik simülasyon 4,5 sn sürüyordu.
+
+| Kalem | Önce | Sonra |
+|---|---|---|
+| Beyin (LIF) | 2,2 sn | 1,1 sn |
+| Fizik (0,1 ms'lik 10 alt adım) | 1,0 sn | 1,1 sn (değişmedi; ölçüm oynaması) |
+| Göz çizimi ve piksel okuma | 0,64 sn | 0,6 sn |
+| Göz kolonlarının örneklenmesi | ~0,55 sn | ~0,05 sn |
+| **Toplam** | **4,5 sn** | **2,95–3,25 sn** |
+
+**Yapılanlar:**
+- **Beyin:** Durum güncellemesi 16 nöron parçası üzerinde paralel ve dallanmasız ([06-simulasyon.md](06-simulasyon.md#performans)). Sonuç bit düzeyinde aynı.
+- **Görme:** Her göz için bütün grupların yönleri tek dizide. İzdüşüm, bilineer örnekleme ve kabul açısı ortalaması tek Numba döngüsünde; göz kareleri 8 bit okunuyor. Sonuç 10⁻¹⁴ düzeyinde aynı.
+- **Doğrulama:** Eski ve yeni kodla aynı 9 deneme (3 post × yaklaşma, solma, kaydırma) birebir aynı sonucu verdi.
+
+**Koşula göre hız (4 iş parçacığı):**
+
+| Koşul | Gerçek zamanın kaç katı |
+|---|---|
+| Durağan ekran | 2,95 |
+| Solma ve sonrası | 3,25 |
+| Kaydırma ve sonrası (yoğun beyin) | 3,02 |
+
+Tek iş parçacığında (deneylerin süreç havuzlarındaki gibi) 3,9–4,1 kat.
+
+**Kalanlar:**
+- **Fizik:** MuJoCo'nun zaman adımı 0,1 ms. Büyütmek gövdenin davranışını değiştirir; ayrıca doğrulanması gerekir.
+- **Çizim:** Göz kamerası çözünürlüğünü (512 × 450) düşürmek görme girdisini değiştirir.
+- **Poisson:** Çekilişleri seyreltmek ~0,2 sn/sn kazandırır ama rastgele sayı akışını değiştirir.
+

@@ -143,3 +143,44 @@ def test_tonic_bias_drives_firing_and_inhibition_modulates_it():
 def test_std_exempt_neurons():
     sim = Simulator(tiny({}, 3), LIFParams(std_u=0.3), std_exempt=np.array([2]))
     assert sim._std_u.tolist() == [0.3, 0.3, 0.0]
+
+
+def _random_network(n: int, seed: int) -> Connectome:
+    rng = np.random.default_rng(seed)
+    m = 20 * n
+    pre, post = rng.integers(0, n, m), rng.integers(0, n, m)
+    w = rng.integers(1, 30, m) * np.where(rng.random(m) < 0.25, -1, 1)
+    W = sp.csc_matrix((w, (post, pre)), shape=(n, n), dtype=np.int32)
+    neurons = pd.DataFrame({"bodyId": np.arange(n), "type": ["x"] * n})
+    return Connectome(neurons=neurons, W=W, label="rastgele")
+
+
+@pytest.mark.parametrize("params", [
+    LIFParams(w_syn_mv=0.5, std_u=0.2, std_tau_ms=800.0),            # hızlı yol (a ve bias yok)
+    LIFParams(w_syn_mv=0.5, std_u=0.2, std_tau_ms=800.0, adapt_mv=1.0),  # genel yol
+])
+def test_parallel_update_gives_same_result_for_any_thread_count(params):
+    """Paralel güncelleme (Z-21): sonuç iş parçacığı sayısından bağımsız, bit düzeyinde aynı."""
+    import numba
+
+    conn = _random_network(3000, 0)
+    drive = np.arange(0, 3000, 7)
+    runs = []
+    for threads in sorted({1, min(4, numba.config.NUMBA_NUM_THREADS)}):
+        sim = Simulator(conn, params, seed=3)
+        sim.threads = threads
+        counts = sum(sim.run(1.0, stim_idx=drive, stim_hz=80.0, record=np.arange(50)).counts for _ in range(300))
+        runs.append((counts, sim.v.copy(), sim.g.copy(), sim.x.copy()))
+    assert runs[0][0].sum() > 0
+    for a, b in zip(runs[0], runs[-1]):
+        assert np.array_equal(a, b)
+
+
+def test_bias_is_read_only_and_selects_update_path():
+    sim = Simulator(tiny({}, 2))
+    assert sim._lean
+    with pytest.raises(ValueError):
+        sim.bias_mv[0] = 1.0
+    sim.bias_mv = np.array([0.0, 10.0])
+    assert not sim._lean
+    assert not Simulator(tiny({}, 2), LIFParams(adapt_mv=1.0))._lean

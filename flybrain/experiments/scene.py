@@ -190,9 +190,9 @@ def recorder(frames: list, fps: float = 30.0, camera: str = "izleme"):
         w = outside.shape[1]
         eyes = fly.eyes.last_frames
         if eyes:
-            view = np.concatenate([eyes["L"], eyes["R"]], axis=1)
+            view = np.concatenate([eyes["L"], eyes["R"]], axis=1)  # uint8
             h = 2 * int(round(w * view.shape[0] / view.shape[1] / 2))  # video kodlayıcı çift boyut ister
-            view = np.asarray(Image.fromarray(np.round(view * 255).astype(np.uint8)).resize((w, h)))
+            view = np.asarray(Image.fromarray(view).resize((w, h)))
         else:
             view = np.zeros((w // 2, w, 3), np.uint8)
         frames.append(np.concatenate([outside, view], axis=0))
