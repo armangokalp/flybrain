@@ -552,3 +552,21 @@ Durumlar: **önerildi** · **kabul edildi** · **yerine geçti**
   - **Duygunun ayrıca belirledikleri:** yorumun uzunluğu ve sonundaki emoji (küçük, sabit tablo), karar günlüğüne yazılan "baskın duygu".
 - **Ön koşul (ölçülecek):** Aynı kelime farklı beyin durumlarında gerçekten farklı yanıt alıyor mu? Fark çıkmazsa duygu yalnızca emojiyi ve uzunluğu belirler; bu durum açıkça raporlanır.
 - **Bilinen sınır:** Modelde açlık gibi bir **dürtü** yok; yalnızca şekere verilen anlık yanıt var. Kur devresi (pC1) postlarda neredeyse hiç ateşlemedi (K-017); libido baskın duygu olarak nadiren çıkacak.
+
+## K-037 · Gerçek feed'de geçiş 1200 ms
+
+- **Durum:** kabul edildi (2026-09-17), kullanıcı kararı. K-030'un geçiş süresini gerçek feed için günceller; yerel akışta 300 ms duruyor.
+- **Bağlam:** Gerçek Instagram'daki ilk kuru çalıştırmalarda sinek postların yaklaşık üçte birinde "çıkış" (uçup gitme) kararı verdi. Kaçışlar hep geçişin hemen ardındaki ilk pencerede oldu (z = 19–30).
+- **Ölçüm** (gerçek feed'den alınmış 9 ekran görüntüsü, 8 ardışık çift; kaçış kararı = çıkış kanalı eşiği aşıyor):
+
+  | Geçiş | Kaçış | Dev lif spike | Sıçrama |
+  |---|---|---|---|
+  | anında | 5/8 | 155 | 4 |
+  | 300 ms (K-030) | 6/8 | 224 | 6 |
+  | 600 ms | 4/8 | 151 | 4 |
+  | **1200 ms** | **2/8** | 57 | 1 |
+
+- **Karar:** Gerçek feed'de postlar arası geçiş 1200 ms (`insta/session.py`, `REAL_FADE_MS`). Yerel sentetik akışta 300 ms değişmedi; oradaki ölçümler (K-030) o süreyle yapıldı.
+- **Gerekçe:** Dünya tarafında bir ayar; sineğin devresine dokunulmuyor. Gerçek fotoğraflar sentetik postlardan çok daha kontrastlı ve K-030'un 300 ms'i bunlara yetmiyor.
+- **Bedel:** Instagram'da böyle bir geçiş yok; gerçekçilik azalıyor. Kök neden (gözün yaklaşmayı kontrast değişiminden ayıramaması, Z-25) duruyor ve Faz 7'ye kalıyor.
+- **Ek karar (deneyci):** "Çıkış" kararı oturumu bitirmiyor; sinek uçup gidince deneyci onu geri getiriyor ve akış sürüyor (K-031'deki yeniden yerleştirmenin aynısı). Her geri getirme kayda geçiyor.

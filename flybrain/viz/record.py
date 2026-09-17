@@ -102,8 +102,11 @@ class SessionRecorder:
         if frame is None:
             if name not in self._shapes:
                 return
-            frame = np.zeros(self._shapes[name] + (3,), np.uint8)  # henüz görüntü yoksa siyah kare
-        frame = _even(frame, self.video_scale)
+            # Görüntü yoksa siyah kare. _shapes ölçeklenmiş boyutu tuttuğu için yeniden
+            # ölçeklenmez; yoksa kare küçülür ve video yazıcı "boyutlar farklı" der.
+            frame = np.zeros(self._shapes[name] + (3,), np.uint8)
+        else:
+            frame = _even(frame, self.video_scale)
         if name not in self._writers:
             if len(self._frame_t) > 1:  # ilk görüntü geç geldiyse önceki kareleri siyahla doldur
                 blank = np.zeros_like(frame)

@@ -38,6 +38,10 @@ INSTA_ACTION = {"begen": "begen", "kaydet": "kaydet", "yorum": "yorum", "takip":
 # kaçıp devriliyor (kaçış 7 Hz, diklik 0,10). 2 sn'de kaçış sıfır, diklik 0,99 (docs/11-instagram.md).
 SETTLE_MS = 2000.0
 
+# Gerçek feed'de postlar arası geçiş (K-037). Yerel akıştaki 300 ms (K-030) gerçek fotoğraflarda
+# yetmiyor: 8 post çiftinde kaçış 300 ms'de 6/8, 1200 ms'de 2/8 (docs/11-instagram.md).
+REAL_FADE_MS = 1200.0
+
 
 def _make_viewer(seed: int, homeostasis: bool = True):
     from flybrain.body.embodied import EMBODIED_VISION, EmbodiedFly
@@ -55,11 +59,13 @@ def _make_viewer(seed: int, homeostasis: bool = True):
 
 
 def run_session(n_posts: int = 5, dry_run: bool = True, seed: int = 8003, out: str | None = None,
-                headless: bool = False, limits: Limits | None = None, url: str | None = None):
+                headless: bool = False, limits: Limits | None = None, url: str | None = None,
+                live: bool = False, fade_ms: float | None = None):
     """Oturumu yürütür. dry_run=False ise eylemler gerçekten uygulanır.
 
     url: gerçek Instagram yerine yerel bir sayfa (tests/sahte_akis.html). Döngünün tamamını
     gerçek hesaba dokunmadan çalıştırmak için.
+    live: oturum sürerken tarayıcıdan izlenebilen canlı yayın (viz/live.py, ağır çekim).
     """
     from flybrain.viz.record import SessionRecorder
 
@@ -68,6 +74,7 @@ def run_session(n_posts: int = 5, dry_run: bool = True, seed: int = 8003, out: s
     browser = Browser(headless=headless).open()
     feed = InstaFeed(browser, gov, require_login=url is None)
     viewer = None
+    stream = None
     try:
         feed.open() if url is None else feed.open_url(url)
         if url is None and not browser.logged_in():
@@ -75,6 +82,7 @@ def run_session(n_posts: int = 5, dry_run: bool = True, seed: int = 8003, out: s
         print(report(gov), flush=True)
         viewer = _make_viewer(seed)
         fly = viewer.fly
+        fly.fade_ms = REAL_FADE_MS if fade_ms is None else fade_ms  # K-037
         # Sinek akış açıkken yerleştirilir: boş (siyah) ekrandan ilk posta geçiş büyük bir
         # parlaklık değişimi ve sineği kaçırıyor (Z-25, Z-34). Gerçek kullanıcı da uygulamayı
         # zaten bir postun üstünde açar.
@@ -82,13 +90,21 @@ def run_session(n_posts: int = 5, dry_run: bool = True, seed: int = 8003, out: s
         fly.show_post(Shot(first.shot))  # sahnedeki dokuyu da yeniler
         fly.reset()
         fly.run(SETTLE_MS)  # sinek yerine otursun
+        if live:
+            from flybrain.viz.live import LiveStream
+
+            stream = LiveStream(fly)
+            print(f"canlı izleme: {stream.url}", flush=True)
         info = {"sinek_tohumu": seed, "post_sayisi": n_posts, "kuru_calistirma": dry_run,
                 "kalibrasyon": CALIBRATION_EMBODIED_PATH.name, "kaynak": url or "instagram"}
         results = []
+        escapes = 0
         t0 = time.perf_counter()
         with SessionRecorder(fly, out, info=info) as rec:
             for k in range(n_posts):
                 item = first if k == 0 else feed.next_post()
+                if stream is not None:
+                    stream.say(f"post {k + 1}/{n_posts} @{item.username}: {item.caption[:50]}")
                 rec.event("instagram_post", sira=k + 1, kullanici=item.username, baglanti=item.url,
                           video=item.video)
                 decision = viewer.look(Post(image=item.shot, caption=item.caption))
@@ -105,14 +121,26 @@ def run_session(n_posts: int = 5, dry_run: bool = True, seed: int = 8003, out: s
                               uygulandi=applied["uygulandi"], aciklama=applied["not"])
                     fly.feed.show(browser.screen(fly.scene.texture_shape))  # eylem sonrası ekran
                 results.append((item, decision, applied))
+                if stream is not None:
+                    stream.say(f"post {k + 1} @{item.username} → {decision.action}"
+                               + ("" if applied is None else f" ({applied['not'] or 'uygulandı'})"))
                 note = "" if applied is None else f" → {action}: {'uygulandı' if applied['uygulandi'] else applied['not']}"
                 print(f"post {k + 1}/{n_posts} @{item.username}: {decision.action} "
                       f"({decision.dwell_ms} ms){note} | {time.perf_counter() - t0:.0f} sn", flush=True)
                 if decision.action == "cikis":
-                    print("sinek oturumu bitirdi (uçup gitti)", flush=True)
-                    break
+                    # Sinek uçup gitti. Yerel oturumlarda (Faz 6) bu karar akışı durdurmuyordu;
+                    # deneyci sineği geri getiriyor (K-031'deki yeniden yerleştirmenin aynısı).
+                    escapes += 1
+                    rec.event("geri_getirildi", sira=k + 1)
+                    if stream is not None:
+                        stream.say(f"post {k + 1}: sinek uçtu, deneyci geri getiriyor")
+                    fly.reset()
+                    fly.run(SETTLE_MS)
+        print(f"bitti: {len(results)} post, {escapes} kez uçup gitti (deneyci geri getirdi)", flush=True)
         return rec.path, results
     finally:
+        if stream is not None:
+            stream.close()
         browser.close()
         if viewer is not None:
             viewer.fly.eyes.close()
@@ -127,13 +155,16 @@ def main() -> None:
     ap.add_argument("--gercek", action="store_true", help="eylemleri gerçekten uygula (varsayılan: kuru çalıştırma)")
     ap.add_argument("--headless", action="store_true", help="tarayıcı penceresi açılmasın (yalnızca test)")
     ap.add_argument("--sahte", action="store_true", help="gerçek Instagram yerine yerel sahte akış (tests/sahte_akis.html)")
+    ap.add_argument("--izle", action="store_true", help="canlı izleme yayını aç (http://127.0.0.1:8766/)")
+    ap.add_argument("--solma", type=float, default=None,
+                    help=f"postlar arası geçiş süresi (ms; varsayılan {REAL_FADE_MS:.0f})")
     args = ap.parse_args()
     url = None
     if args.sahte:
         from flybrain.paths import ROOT
         url = (ROOT / "tests" / "sahte_akis.html").as_uri()
     path, _ = run_session(args.posts, dry_run=not args.gercek, seed=args.seed, out=args.out,
-                          headless=args.headless, url=url)
+                          headless=args.headless, url=url, live=args.izle, fade_ms=args.solma)
     print(f"kayıt: {path}")
 
 

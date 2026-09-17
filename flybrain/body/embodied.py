@@ -173,6 +173,10 @@ class EmbodiedFly:
         self._hold_ms = 0.0
         # Verilirse her adımda bütün nöronların spike sayıları buna eklenir (karar okuması için).
         self.spike_counter: np.ndarray | None = None
+        # Verilirse her adımın sonunda çağrılır: canlı izleme (viz/live.py).
+        self.on_step = None
+        # Sonraki posta solarak geçişin süresi (K-030); gerçek feed'de uzatılabiliyor.
+        self.fade_ms = FADE_MS
         # Verilirse her adımın sonunda (fizikten ve deneyci müdahalesinden sonra) çağrılır:
         # recorder.step(sinek, spike sayıları) (viz/record.py).
         self.recorder = None
@@ -258,7 +262,7 @@ class EmbodiedFly:
 
     def next_post(self, post: FeedPost) -> None:
         """Akışta sonraki posta geçer: solarak (K-030). Geçiş sonraki `run` sırasında oynar."""
-        self.fade_to_post(post)
+        self.fade_to_post(post, self.fade_ms)
 
     def scroll_to_post(self, post: FeedPost, duration_ms: float = SCROLL_MS) -> None:
         """Akışı yeni posta kaydırır; kaydırma sonraki `run` sırasında oynar."""
@@ -340,6 +344,8 @@ class EmbodiedFly:
                     trace.repositions.append(self.brain.time_ms)
             if self.recorder is not None:
                 self.recorder.step(self, result)
+            if self.on_step is not None:
+                self.on_step(self)
             if cameras and k % frame_every == 0:
                 for c in cameras:
                     trace.frames[c].append(self.body.render(c))

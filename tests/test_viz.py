@@ -121,3 +121,24 @@ def test_short_video_renders(session, tmp_path):
     reader = imageio.get_reader(out)
     assert reader.count_frames() == 12 and reader.get_data(0).shape == (720, 1280, 3)
     reader.close()
+
+
+def test_recorder_keeps_frame_size_when_vision_is_off(tmp_path):
+    """Kayıt sürerken sinek yeniden yerleştirilince (görme kapalı) video karesi küçülmemeli."""
+    import imageio.v2 as imageio
+
+    from flybrain.viz.record import SessionRecorder
+
+    rec = SessionRecorder.__new__(SessionRecorder)
+    rec.path = tmp_path / "kayit"
+    rec.path.mkdir()
+    rec.fps, rec.video_scale = 30, 0.5
+    rec._writers, rec._shapes, rec._frame_t = {}, {}, [0.0]
+    rec._write("ekran", np.full((120, 80, 3), 30, np.uint8))
+    rec._frame_t.append(33.0)
+    rec._write("ekran", None)  # görme kapalı: siyah kare, aynı boyutta
+    rec._writers["ekran"].close()
+    reader = imageio.get_reader(rec.path / "ekran.mp4")
+    assert reader.count_frames() == 2
+    assert reader.get_data(0).shape == reader.get_data(1).shape == (60, 40, 3)
+    reader.close()

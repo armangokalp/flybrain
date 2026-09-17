@@ -98,9 +98,25 @@ Yerel web sayfası; three.js ile çiziliyor (K-033). Sunucu yalnızca `127.0.0.1
 - **Emojiler:** Caption'lardaki emojiler Arial'de yok; renkli emoji yazı tipiyle ayrıca çiziliyor.
 - **Telefon ekranı:** MuJoCo'da kaydedilen ekran görüntüsüyle doku olarak güncelleniyor. Kamera sineğin arkasında, ekranın iç yüzünü görüyor.
 
-## 5. Sıradakiler
+## 5. Canlı izleme (`viz/live.py`)
 
-- **Canlı mod:** Simülasyon sürerken panelin kaydı parça parça okuması, açıkça "ağır çekim" etiketiyle (Z-28).
+Oturum sürerken tarayıcıdan seyretmek için. `EmbodiedFly.on_step` kancası her adımda çağrılıyor;
+her 50 ms'lik simülasyon zamanında bir kare çizilip JPEG olarak yerel bir sunucuya konuyor,
+tarayıcı da onu akış (multipart/x-mixed-replace) olarak gösteriyor.
+
+```bash
+python -m flybrain.insta.session --posts 14 --izle    # http://127.0.0.1:8766/
+```
+
+- **Ağır çekim, etiketli:** Karenin üstünde süre ve ölçülen anlık hız var ("ağır çekim 0,21×").
+  Hiçbir şey hızlandırılmıyor (Z-28).
+- **Ne görünüyor:** Sinek, önündeki telefonda o an gösterilen gerçek ekran, altta hangi postta
+  olduğu ve son karar; deneyci sineği tutuyorsa o da yazıyor.
+- **Yük:** Çizim ~50 ms'de bir; ölçülen hız 0,2–0,3× (yayınsız döngüyle aynı büyüklükte).
+- **Sunucu** yalnızca 127.0.0.1'de dinliyor.
+
+## 6. Sıradakiler
+
 - **Uzun oturumlar:** Spike dosyasının parçalı yüklenmesi (ham spike dizisi 44 sn için 27 MB, 5 dakikada ~185 MB).
 - **Beyin bölgeleri:** Bölge yüzeyleri ve önemli nöronların şekilleri (indirme izni gerekir).
 - **Faz 7:** Yerel feed. Panel aynı kayıt biçimini kullanacak.

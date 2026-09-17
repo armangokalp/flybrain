@@ -77,7 +77,7 @@ Kalan risk videolarda ve çoklu görsellerde; oradaki sert değişimler "anında
    ```
 2. **Kuru çalıştırma:** Gerçek hesapta; sinek karar verir, eylemler kaydedilir ama tıklanmaz.
    ```bash
-   python -m flybrain.insta.session --posts 5
+   python -m flybrain.insta.session --posts 20 --izle     # --izle: canlı yayın
    ```
 3. **Gerçek oturum:** `--gercek` ile, düşük limitlerle ve kullanıcı onayıyla.
 
@@ -101,7 +101,39 @@ Oturum yerleştirmeden sonra **2 sn** bekliyor (`insta/session.py`, `SETTLE_MS`)
 akışta üç post sorunsuz geçti. Aynı kısa bekleme yerel oturumlarda da (Faz 6) kullanılıyordu;
 oradaki erken "çıkış" kararlarının bir kısmı bundan olabilir — ölçülmedi.
 
-## 7. Açık konular
+## 7. Gerçek hesapta ilk kuru çalıştırmalar (2026-09-17)
+
+Giriş kullanıcı tarafından yapıldı; aşağıdaki oturumların hiçbirinde düğmeye basılmadı.
+
+**Arayüz doğrulandı (Z-36):** Gerçek sayfadaki etiketler `Like`, `Comment`, `Save`, `Follow`;
+kodun aradıklarıyla aynı. Post bir `article`, kullanıcı adı ilk profil bağlantısından, açıklama
+ise postun metin bloğundan okunuyor.
+
+**Üç hata bulundu ve düzeltildi:**
+
+| Hata | Belirti | Çözüm |
+|---|---|---|
+| Giriş sonrası kutu | Sinek akış yerine "Save your login info?" kutusunu gördü | Kutular kapatılıyor; yalnızca reddeden düğmeye basılıyor |
+| Açıklama okuması | Açıklama "89K", "Suggested for you" çıkıyordu | Sayaç, öneri ve zaman satırları eleniyor |
+| Akışta ilerleme | 10. postta "yüklenmedi" hatası | Sıradaki post indeksle değil **bağlantısıyla** bulunuyor; akış gerektikçe yükleniyor |
+
+**Kaçış (K-037):** Sinek gerçek fotoğraflarda sık "çıkış" veriyor; geçiş süresi uzatılarak
+azaltıldı (ölçüm tablosu K-037'de). Uçup giden sineği deneyci geri getiriyor.
+
+**20 postluk oturum** (geçiş 1200 ms, kuru çalıştırma, `runs/insta-kuru6`):
+
+| Karar | Sayı |
+|---|---|
+| ilgi kaybı | 9 |
+| beğeni | 3 |
+| ileri | 3 |
+| çıkış (uçup gitme) | 4 |
+| tımar | 1 |
+
+Süre 131 sn (simülasyon ~2,2 dakika). Beğeni kararlarının üçü de uygulanmadı; kuru çalıştırmada
+yalnızca kaydedildi.
+
+## 8. Açık konular
 
 - **Z-36 · Arayüz etiketleri:** Düğme etiketleri gerçek oturumda doğrulanmadı; Instagram arayüzü
   değişirse eylem "başarısız" olarak kaydedilir (sessizce yanlış bir düğmeye basılmaz).

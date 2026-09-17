@@ -21,6 +21,7 @@ oturumda doğrulanmalı (Z-36).
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -38,6 +39,17 @@ FOLLOW_TEXTS = ("Follow", "Takip et")
 FOLLOWING_TEXTS = ("Following", "Requested", "Takip ediliyor", "İstek gönderildi")
 COMMENT_PLACEHOLDERS = ("Add a comment", "Yorum ekle")
 POST_TEXTS = ("Post", "Paylaş")
+# Girişten sonra çıkan kutular. Yalnızca **reddeden** seçeneğe basılır; hiçbir şey kabul edilmez.
+DISMISS_TEXTS = ("Not now", "Not Now", "Şimdi değil", "Şu an değil")
+# Açıklama okunurken atlanacak satırlar (gerçek sayfadan: beğeni sayısı, "more", zaman damgası).
+SKIP_LINES = ("more", "less", "daha fazla", "daha az", "Verified", "Onaylanmış", "Translate", "Çevir")
+SKIP_PREFIX = ("Liked by", "Beğenen", "View all", "Tüm yorum", "Add a comment", "Yorum ekle",
+               "Original audio", "Orijinal ses", "Follow", "Takip et", "Suggested for you",
+               "Senin için önerilen", "Sponsored", "Sponsorlu", "Paid partnership", "Reels")
+_TIME_LINE = re.compile(r"^\d+\s*(saniye|dakika|saat|gün|hafta|second|minute|hour|day|week)", re.I)
+# Sayaç satırları: "89K", "277.4K", "1,234"; ve "and 5 others" gibi beğeni satırının kuyruğu.
+_COUNT_LINE = re.compile(r"^\d[\d.,\s]*[KMBkmb]?$")
+_OTHERS_LINE = re.compile(r"^(and|ve)\s+[\d.,]+\s*(others|diğer)", re.I)
 
 
 @dataclass
@@ -59,6 +71,7 @@ class InstaFeed:
         self.gov = governor
         self.require_login = require_login
         self.index = -1
+        self.seen: set[str] = set()  # gösterilmiş postların bağlantıları
 
     # ---- akış ----
 
@@ -69,8 +82,24 @@ class InstaFeed:
         """Akışı açar. Gerçek Instagram için `open`; yerel sahte akış testlerde bu yolla açılır."""
         self.b.goto(url, wait_ms=wait_ms)
         self.guard()
+        self.dismiss_dialogs()
         self.b.page.wait_for_selector("article", timeout=30_000)
         self.freeze_videos()
+
+    def dismiss_dialogs(self) -> list[str]:
+        """Akışın önünü kapatan kutuları kapatır ("Giriş bilgilerini kaydet?" gibi).
+
+        Yalnızca **reddeden** düğmeye basılır ("Not now"); hiçbir şey kabul edilmez, kaydedilmez.
+        Kapatılmazsa sinek akış yerine kutuyu görür (ilk kuru çalıştırmada olan buydu).
+        """
+        kapatilan = []
+        for text in DISMISS_TEXTS:
+            btn = self.b.page.get_by_role("button", name=text, exact=True)
+            if btn.count() and btn.first.is_visible():
+                btn.first.click(timeout=3000)
+                kapatilan.append(text)
+                self.b.page.wait_for_timeout(600)
+        return kapatilan
 
     def guard(self) -> None:
         """Doğrulama sayfası ya da düşmüş oturum varsa durur (Z-11)."""
@@ -101,9 +130,28 @@ class InstaFeed:
         self.freeze_videos()
         self.index = i
 
+    def _load_more(self) -> None:
+        """Akışın sonuna inip yeni postların yüklenmesini bekler."""
+        n = self.articles.count()
+        if n:
+            self.articles.nth(n - 1).evaluate("el => el.scrollIntoView({block: 'end', behavior: 'instant'})")
+        self.b.page.wait_for_timeout(1500)
+
     def next_post(self) -> FeedItem:
-        """Sonraki posta geçer ve onu okur."""
-        return self.read(self.index + 1)
+        """Sıradaki **görülmemiş** postu bulur ve okur.
+
+        İndeksle ilerlemek yetmiyor: Instagram postları kaydırdıkça yüklüyor ve listeyi yeniden
+        düzenleyebiliyor. Bu yüzden post bağlantısı ölçüt alınıyor.
+        """
+        for _ in range(8):
+            for i in range(self.articles.count()):
+                url = self._post_url(self._article(i))
+                if url and url not in self.seen:
+                    self.seen.add(url)
+                    self.goto_post(i)
+                    return self.read(i)
+            self._load_more()
+        raise RuntimeError("akışta yeni post bulunamadı")
 
     def read(self, i: int | None = None) -> FeedItem:
         """Postu okur: kullanıcı adı, açıklama, bağlantı ve ekran görüntüsü."""
@@ -113,29 +161,51 @@ class InstaFeed:
         self.guard()
         art = self._article(i)
         item = FeedItem(index=i)
-        try:
-            item.username = art.locator("header a").first.inner_text(timeout=2000).strip().splitlines()[0]
-        except Exception:
-            item.username = ""
+        item.username = self._username(art)
         item.caption = self._caption(art, item.username)
-        try:
-            item.url = art.locator("a[href*='/p/'], a[href*='/reel/']").first.get_attribute("href", timeout=2000) or ""
-        except Exception:
-            item.url = ""
+        item.url = self._post_url(art)
         item.video = art.locator("video").count() > 0
         item.shot = self.b.shot()
         return item
 
-    def _caption(self, art, username: str) -> str:
-        """Postun açıklaması: kullanıcı adından sonraki metin (koku kaynağı)."""
+    def _username(self, art) -> str:
+        """Postun sahibi: ilk profil bağlantısından (/kullanici/)."""
         try:
-            text = art.locator("h1, ul li span[dir='auto'], span[dir='auto']").first.inner_text(timeout=2000)
+            href = art.locator("a[href]").first.get_attribute("href", timeout=2000) or ""
         except Exception:
             return ""
-        text = text.strip()
-        if username and text.startswith(username):
-            text = text[len(username):].strip()
-        return text
+        m = re.match(r"^/([^/]+)/?$", href)
+        return m.group(1) if m else ""
+
+    def _post_url(self, art) -> str:
+        """Postun bağlantısı; beğenenler listesi (/liked_by/) değil."""
+        links = art.locator("a[href*='/p/'], a[href*='/reel/']")
+        for i in range(min(links.count(), 8)):
+            href = links.nth(i).get_attribute("href") or ""
+            if "liked_by" not in href and "comments" not in href:
+                return href
+        return ""
+
+    def _caption(self, art, username: str) -> str:
+        """Postun açıklaması (koku kaynağı).
+
+        Gerçek sayfada açıklama, beğeni sayısı ve zaman damgasıyla aynı metin bloğunda; satırlar
+        elenerek bulunuyor. Kullanıcı adı iki kez geçiyor (beğenenler satırında ve açıklamadan
+        önce), ikisi de atlanıyor.
+        """
+        try:
+            text = art.inner_text(timeout=3000)
+        except Exception:
+            return ""
+        for line in (ln.strip() for ln in text.splitlines()):
+            if not line or line == username or _COUNT_LINE.match(line) or _OTHERS_LINE.match(line):
+                continue
+            if line in SKIP_LINES or line.startswith(SKIP_PREFIX) or _TIME_LINE.match(line):
+                continue
+            if username and line.startswith(username + " "):
+                line = line[len(username) + 1:].strip()  # "kullanıcı açıklama" aynı satırdaysa
+            return line
+        return ""
 
     # ---- eylemler ----
 

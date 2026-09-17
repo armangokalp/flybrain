@@ -94,7 +94,7 @@ Ayrıntı: [10-gorsellestirme.md](10-gorsellestirme.md). Karar: K-033.
   - karar günlüğü
 - [x] Geriye izleme: karara ya da gövde parçasına tıklayınca ilgili motor nöronlar ve spike sayıları
 - [x] Kayıttan gerçek hızda ve ağır çekimde oynatma
-- [ ] Canlı mod: simülasyon sürerken izleme, açıkça ağır çekim etiketli (Z-28)
+- [x] Canlı mod: simülasyon sürerken tarayıcıdan izleme, ağır çekim etiketli (`viz/live.py`, Z-28)
 - [ ] Uzun oturumlar için spike verisinin parçalı yüklenmesi
 - [ ] Beyin bölgesi yüzeyleri ve önemli nöronların şekilleri (indirme için ayrıca izin istenecek)
 - [x] Paylaşılabilir video dışa aktarımı (gerçek hız ya da etiketli ağır çekim)
