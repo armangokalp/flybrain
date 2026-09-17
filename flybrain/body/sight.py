@@ -73,7 +73,7 @@ class FlyEyes:
         if min(self._cams.values()) < 0:
             raise ValueError("göz kameraları yok; gövde add_vision() ile kurulmalı")
         self._focal = {s: (RENDER_HW[0] / 2) / np.tan(np.radians(m.cam_fovy[c]) / 2) for s, c in self._cams.items()}
-        self._renderer = mj.Renderer(m, *RENDER_HW)
+        self.renderer = mj.Renderer(m, *RENDER_HW)
         self._option = mj.MjvOption()
         self._option.geomgroup[1] = 0  # yardımcı işaretler
         self._option.geomgroup[2] = 0  # gözün kendini görmemesi için gizlenen gövde parçaları
@@ -107,8 +107,8 @@ class FlyEyes:
         d = self.sim.mj_data
         frames = {}
         for s, cam in self._cams.items():
-            self._renderer.update_scene(d, cam, scene_option=self._option)
-            frames[s] = self._renderer.render().astype(np.float64) / 255.0
+            self.renderer.update_scene(d, cam, scene_option=self._option)
+            frames[s] = self.renderer.render().astype(np.float64) / 255.0
         self.last_frames = frames
         return frames
 
@@ -178,4 +178,4 @@ class FlyEyes:
         return contrast_to_stimulus(self.cfg, [(g[0], g[1], g[3]) for g in self.groups], contrast)
 
     def close(self):
-        self._renderer.close()
+        self.renderer.close()

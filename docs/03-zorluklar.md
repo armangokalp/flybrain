@@ -164,6 +164,8 @@ Görsel girdide yaklaşık 7.400 nöron her 0,1 ms'de rastgele sayı çekiyor. B
 
 3D gövdeyle birlikte önemi arttı: beyin, fizik ve görme aynı döngüde çalışacak. Fizik tek başına gerçek zamandan hızlı (tüm eklemlerle 1,3 kat), yani darboğaz beyin. Faz 5 hedefi: kapalı döngü gerçek zamanın en fazla 3 katı yavaşlıkta.
 
+**Durum (2026-09-17):** Beyin, gövde, görme ve telefon ekranı birlikte tek süreçte gerçek zamanın ~4–5 katı yavaş çalışıyor. Hedefin (3 kat) hâlâ gerisinde.
+
 ---
 
 ## Gövde ve görselleştirme zorlukları
@@ -215,6 +217,13 @@ Kaçış devresi (LPLC2/LC4 → dev lif DNp01 → TTMn) konnektomda mevcut. Ama 
 - **Zamansal kodlama eklendi (K-027):** Gövdeli sinekte her kolon parlaklığa uyum sağlıyor; L2, Mi1 ve Tm3 geçici yanıt veriyor.
 - **Tetikleme sorunu çözüldü:** Durağan sahne artık dev lifi ateşletmiyor. Durağan kodlamada ateşletiyordu (63 Hz).
 - **Açık:** Yaklaşan nesne testi, sahne kurulduktan sonra yapılacak.
+
+**Durum (2026-09-17, sahne):**
+- **Yaklaşan disk kaçışı tetikliyor:** Telefon ekranında büyüyen koyu disk (l/v 40 ms) 125 Hz'de denemelerin %91'inde (20/22) dev lifi ateşletiyor. Sinek sıçrıyor; LC4 yüzlerce spike üretiyor ([09-govde.md](09-govde.md#12-yaklaşan-nesne-ve-görme-kazancı-2026-09-17)). Uçtan uca zincir çalışıyor: ekran → göz kameraları → kolonlar → LC4 → dev lif → TTMn → orta bacaklar.
+- **Açık:**
+  - İlk dev lif spike'ı disk en büyük boyuna ulaştıktan sonra, çarpışma anının +7 ile +40 ms sonrasında geliyor (medyan).
+  - Gerçek sineklerde kalkışın zamanı l/v'ye bağlı; literatürle nicel karşılaştırma yapılmadı.
+  - von Reyn ve ark. (2014) dev lifin kısa, uçuş dengesini feda eden kalkışı zorladığını gösteriyor. Bizim sineğimizde yalnızca bu yol var: uzun kalkış dizisi ve uçuş yok (Z-26).
 
 ### Z-26 · Uçuş yok 🟡
 
@@ -314,6 +323,54 @@ Pugliese ve ark.'nın modeli MaleCNS'te yeniden üretildi (K-025): ön bacak ağ
 - İki kalibrasyon: hız modeli → kas eşlemesi ve duyu girdisi kazancı. Hedefler literatürden: yürümede motor nöron hızları, dinlenmede sessiz duruş, direnç refleksinin yönü.
 - Hız modeline biyolojik bir dengeleyici eklemek (ateşleme adaptasyonu). Doygun durumu sonlandırabilir; ön bacak ritminin korunduğu yeniden doğrulanmalı.
 - Yürümeyi araştırma olarak bırakıp sonraki adımlara geçmek. Varsayılan model şimdilik LIF: sessiz duruş, refleksler ve sıçrama orada doğru çalışıyor.
+
+### Z-34 · Durağan ekranda kendiliğinden kaçış: kendi hareketinden gelen görme 🟡
+
+Sahnede sineğin dinlenirken yaptığı küçük hareketler bir döngü başlatıyor:
+
+1. Sessiz beyinde propriyosepsiyon bacak motor nöronlarını hafifçe ateşletiyor.
+2. Göğüs 200 ms'de ~0,05 mm kayıyor.
+3. 2 mm uzaktaki dokulu ekranda bu kayma görme uyarımını 0'dan 170 kHz'e çıkarıyor.
+4. Artan görme uyarımı bacakları daha çok oynatıyor ve sonunda dev lif ateşliyor.
+
+**Tarama (250 Hz, 6'şar deneme, 1 sn):**
+
+| Koşul | Kaçış |
+|---|---|
+| Varsayılan | 3/6 |
+| Propriyosepsiyon kapalı | 0/6 (beyin tamamen sessiz) |
+| Gövde sabit | 0/6 |
+| Ekran kapalı (siyah) | 4/6 |
+| Ekran 6 mm'de | 2/6 |
+
+Yani döngü, ekranın içeriğinden değil, sineğin kendi hareketinden besleniyor.
+
+**Yapılanlar:**
+- Görme kazancı 125 Hz'e indirildi (K-029).
+- Görme açılmadan önce 300 ms propriyosepsiyon ısınması eklendi.
+
+**Kalan:** Durağan ekranda ~17 sn'de bir dev lif ateşlemesi (85 sn'de 5; 3'ü sıçrama).
+
+**Çözüm yolları:**
+- Duruş tonusu (Z-29) ve propriyosepsiyon kazancı (Z-33): dinlenen sinek kıpırdamamalı.
+- Kendi hareketinin görmedeki izinin bastırılması. Uçan ve yürüyen sineklerde görme nöronlarına motor kaynaklı sinyaller geliyor; bu devreler konnektomda aranmalı, elle eklenemez.
+
+### Z-35 · Kaydırma sineği kaçırıyor 🟡
+
+Ekran sineğe çok yakın (2 mm). Bu yüzden bir post boyu kaydırma, sineğin gözünde ~80°'lik ve saniyede yüzlerce derecelik bir hareket oluyor; araya giren beyaz şerit de büyük bir parlaklık değişimi yaratıyor.
+
+**Ölçüm (125 Hz, 12'şer post çifti):**
+
+| Geçiş | Dev lif ateşleyen deneme | Ortalama spike | Göğüs hareketi |
+|---|---|---|---|
+| Kaydırma, 400 ms | 12/12 | 8,8 | 2,1 mm |
+| Kaydırma, 1,2 sn | 12/12 | 18,1 | 2,4 mm |
+| Ani değişim | 5/12 | 1,9 | 0,4 mm |
+| Solarak geçiş, 300 ms | 2/12 | 0,6 | 0,2 mm |
+
+**Karar (kullanıcı, K-028):** Gerçek kaydırma kalıyor; sineğin kaydırmada kaçması modelin kendi öngörüsü olarak kabul edildi.
+
+**Sonuç:** Sinek her "sonraki post" kararında sıçrayacak. Karar ile gövdenin örtüşmesi (Z-27) bu tepkiyle birlikte değerlendirilmeli.
 
 ---
 

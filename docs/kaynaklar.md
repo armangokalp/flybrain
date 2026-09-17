@@ -56,6 +56,7 @@ Taban adres: `https://storage.googleapis.com/flyem-male-cns/v1.0/connectome-data
 - Arenz ve ark. 2017, *Current Biology* — [hareket algılayıcılarının zamansal ayarı girdi hücrelerinin dinamiğinden gelir](https://www.sciencedirect.com/science/article/pii/S0960982217300866)
 - Nikolaev ve ark. 2009, *PLoS One* — [ağ adaptasyonu, sinek gözünde doğal uyaranların zamansal temsilini iyileştirir](https://pmc.ncbi.nlm.nih.gov/articles/PMC2628722/): fotoreseptör ve lamina adaptasyonu saniyeler içinde
 - Stowers ve ark. 2017, *Nature Methods* — [serbest hareket eden hayvanlar için sanal gerçeklik (FreemoVR)](https://www.nature.com/articles/nmeth.4399)
+- von Reyn ve ark. 2014, *Nature Neuroscience* 17:962–970 — [eylem seçimi için spike zamanlaması mekanizması](https://www.nature.com/articles/nn.3741): yaklaşan uyarana kaçışta dev lifin kısa kalkışı zorlaması; yaklaşan disk uyaranımızın türü (Z-25)
 
 ## Gövde modelleri
 

@@ -9,6 +9,10 @@ Her COUPLE_MS milisaniyede:
 
 Görme açıksa her VISION_EVERY_MS milisaniyede sineğin göz kameraları sahneyi çizer ve
 göz kolonlarının uyarımı güncellenir (body/sight.py).
+
+Sahne açıksa (body/scene.py) telefon ekranı her adımda sineği gecikmeyle izler. Ekrandaki
+akış (body/phone.py) `show_post` ile doğrudan, `scroll_to_post` ile kaydırılarak,
+`fade_to_post` ile solarak değişir; ekran görüntüsü görmeyle aynı aralıkla yenilenir.
 """
 
 from collections.abc import Callable
@@ -18,7 +22,9 @@ import numpy as np
 
 from flybrain.body.body import TIMESTEP_S, Body
 from flybrain.body.muscles import MuscleModel, build_table
+from flybrain.body.phone import SCROLL_MS, FeedPost, PhoneFeed
 from flybrain.body.proprio import build_proprioception
+from flybrain.body.scene import SceneConfig
 from flybrain.body.sight import FlyEyes
 from flybrain.connectome.connectome import Connectome, load_connectome
 from flybrain.connectome.electrical import with_electrical
@@ -29,6 +35,16 @@ from flybrain.sim.hybrid import HybridCNS
 COUPLE_MS = 1.0
 # Nötr pozdan pasif duruşa oturma süresi (ölçüm: 500 ms'den sonra eklemler < 0,002 rad/100 ms).
 SETTLE_MS = 500.0
+# Oturmadan sonra görme açılmadan önce propriyosepsiyonun ısınma süresi. Propriyosepsiyonun
+# açıldığı ilk 300 ms'de bacak motor nöronları sonrakinin ~2 katı ateşliyor (ölçüm: 14-21'e
+# karşı 0-14 spike); bu geçici hareket görmeyle birleşince kaçışı tetikleyebiliyordu.
+PROPRIO_WARMUP_MS = 300.0
+# Gövdeli sinekte görme kazancı (K-029). Gövdesiz sineğin 250 Hz'i (K-012) durağan bir postun
+# sürekli kontrastı için seçilmişti. Zamansal kodlamada sineğin dinlenirken kendi küçük
+# hareketleri de görme uyarımı üretiyor ve 250 Hz'de telefon ekranına bakan sinek çoğu
+# denemede bir saniye içinde kendiliğinden kaçıyordu. 125 Hz'de yaklaşan diske kaçış %91,
+# durağan ekranda kendiliğinden dev lif ateşlemesi ~17 sn'de bir (docs/09-govde.md 12).
+EMBODIED_VISION = VisionConfig(mode="onoff", r_max_hz=125.0)
 # Göz görüntüsünün yenilenme aralığı (VARSAYIM; 100 kare/sn, sineğin titreşim birleşme
 # frekansının altında; çizim maliyeti nedeniyle).
 VISION_EVERY_MS = 10.0
@@ -73,21 +89,27 @@ class EmbodiedFly:
         proprioception: bool = True,
         vnc: str = "lif",
         vision: VisionConfig | None = None,
+        scene: SceneConfig | None = None,
     ):
         """vnc: "lif" — tüm sinir sistemi LIF; "rate" — bacak motor ağı hız modeliyle (K-025, deneysel).
         vision: verilirse sinek sahneyi kendi gözleriyle görür (body/sight.py).
+        scene: verilirse gri arena ve sineği izleyen telefon ekranı (body/scene.py).
         """
         self.conn = conn or load_connectome()
         self.gap_junctions = []
         if electrical:
             self.conn, gap_exempt, self.gap_junctions = with_electrical(self.conn, params)
             std_exempt = gap_exempt if std_exempt is None else np.union1d(std_exempt, gap_exempt)
-        self.body = Body(camera_res=camera_res)
+        self.body = Body(camera_res=camera_res, scene=scene)
+        self.scene = self.body.scene
+        self.feed = PhoneFeed(scene.texture_shape) if scene is not None else None
         self.eyes = None
         if vision is not None:
             if vision.mode == "foto":
                 raise ValueError("gövdeli sinekte 'foto' görme yöntemi henüz desteklenmiyor")
             self.eyes = FlyEyes(self.body.sim, self.body.fly.name, "c_head", self.conn, vision)
+            if self.scene is not None:
+                self.scene.register(self.eyes.renderer)
             std_exempt = self.eyes.input_neurons if std_exempt is None else np.union1d(std_exempt, self.eyes.input_neurons)
         self._vision_stim = Stimulus.empty()
         self.table = build_table(self.conn, self.body.passive)
@@ -118,6 +140,7 @@ class EmbodiedFly:
 
         Oturma sırasında propriyosepsiyon ve görme kapalıdır: model sineği havada nötr pozda
         başlatır ve zemine iniş gerçek bir durum değildir. Beyin bu sürede girdi almaz.
+        Ardından PROPRIO_WARMUP_MS boyunca yalnızca propriyosepsiyon açıktır; görme en son açılır.
         """
         if self.cns is not None:
             self.cns.reset()
@@ -133,10 +156,42 @@ class EmbodiedFly:
             eyes, self.eyes = self.eyes, None
             try:
                 self.run(SETTLE_MS)
+                if proprio is not None:
+                    self.proprio = proprio
+                    self.run(PROPRIO_WARMUP_MS)
             finally:
                 self.proprio, self.eyes = proprio, eyes
+            if self.scene is not None:
+                self.scene.snap()
             if self.eyes is not None:
                 self.eyes.reset()
+
+    def _need_feed(self) -> PhoneFeed:
+        if self.feed is None:
+            raise RuntimeError("sahne yok: EmbodiedFly(scene=SceneConfig()) ile kurulmalı")
+        return self.feed
+
+    def show_post(self, post: FeedPost) -> None:
+        """Ekrandaki akışta yeni posta kaydırmadan geçer (ekran hemen değişir)."""
+        self._need_feed().show(post)
+        self._refresh_screen()
+
+    def scroll_to_post(self, post: FeedPost, duration_ms: float = SCROLL_MS) -> None:
+        """Akışı yeni posta kaydırır; kaydırma sonraki `run` sırasında oynar."""
+        self._need_feed().scroll_to(post, self.brain.time_ms, duration_ms)
+
+    def fade_to_post(self, post: FeedPost, duration_ms: float) -> None:
+        """Ekran yeni posta solarak geçer; geçiş sonraki `run` sırasında oynar."""
+        self._need_feed().fade_to(post, self.brain.time_ms, duration_ms)
+        self._refresh_screen()
+
+    def play_video(self, video) -> None:
+        """Bakılan postun görselinde video oynatır (body/phone.py `PhoneFeed.play`)."""
+        self._need_feed().play(video, self.brain.time_ms)
+
+    def _refresh_screen(self) -> None:
+        if self.feed is not None and self.feed.update(self.brain.time_ms):
+            self.scene.show(self.feed.frame())
 
     def run(
         self,
@@ -161,8 +216,10 @@ class EmbodiedFly:
         pr_acc = np.zeros(len(pr), dtype=np.int32)
         vision_every = max(1, int(round(VISION_EVERY_MS / COUPLE_MS)))
         for k in range(n):
-            if self.eyes is not None and int(round(self.brain.time_ms / COUPLE_MS)) % vision_every == 0:
-                self._vision_stim = self.eyes.encode(VISION_EVERY_MS)
+            if int(round(self.brain.time_ms / COUPLE_MS)) % vision_every == 0:
+                self._refresh_screen()
+                if self.eyes is not None:
+                    self._vision_stim = self.eyes.encode(VISION_EVERY_MS)
             drive_stim = stim
             if len(self._vision_stim):
                 drive_stim = self._vision_stim if stim is None or len(stim) == 0 else stim + self._vision_stim
@@ -181,6 +238,8 @@ class EmbodiedFly:
             torques = self.muscles.step(counts, COUPLE_MS, angles)
             if on_step is not None:
                 on_step(self)
+            if self.scene is not None:
+                self.scene.follow(COUPLE_MS)
             self.body.step(torques, self._steps)
             if cameras and k % frame_every == 0:
                 for c in cameras:

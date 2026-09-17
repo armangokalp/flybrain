@@ -321,3 +321,50 @@ Durumlar: **önerildi** · **kabul edildi** · **yerine geçti**
 - **Açık:**
   - Geçici süzgecin zaman sabiti için kaynak bulunamadı.
   - Instagram kararları (K-020) gövdeli sinekte zamansal yanıtlarla yeniden kalibre edilmeli.
+
+## K-028 · Sahne: sineğin önünde dikey, kavisli telefon ekranı
+
+- **Durum:** kabul edildi (2026-09-17). Ekran boyu, izleme ve geçiş kullanıcı kararı; geometrinin ayrıntıları ölçümle seçildi.
+- **Bağlam:** K-021 sahneyi "serbest sinek + onu izleyen ekran" olarak belirlemişti. Ekranın boyu, izleme biçimi ve post geçişi açıktı.
+- **Karar:**
+  - **Boyut (kullanıcı):** Önde geniş ekran, ama akıllı telefon oranında (9:19,5, dikey). Bu, K-014'teki tam panoramanın yerini alıyor.
+  - **Geometri:** Başın düşey ekseni etrafında 180°'lik yay, 2 mm uzaklık. Yükseklik orandan geliyor (13,6 mm).
+  - **Post konumu:** Görsel gezinme çubuğunun hemen üstünde (aşağı kaydırılmış akış).
+  - **Yuva:** Telefon zemindeki bir yuvaya oturuyor; gezinme çubuğu ve alt çerçeve (0,95 mm) zeminin altında kalıyor.
+  - **İzleme (kullanıcı):** Ekran başın konumunu ve göğsün yönünü 500 ms zaman sabitiyle izliyor.
+  - **Geçiş (kullanıcı):** Sonraki posta gerçek kaydırmayla geçiliyor (400 ms, hızlı başlayıp yavaşlayan).
+  - **Arena:** Gri; gökyüzü 0,5, zemin 0,40/0,45. Işık yukarıdan geliyor, kameraya bağlı ışık zayıf.
+- **Gerekçe:**
+  - **Görünen bölge:** Gözler 0,7 mm yüksekte ve kolonların en üstü ~75° yukarı bakıyor. Sinek dikey bir telefonun yalnızca alt ~%60'ını görüyor; post bu bölgeye konuldu.
+  - **Yuva:** Yuva olmadan gezinme çubuğu, kolonların en yoğun olduğu ufuk bandına düşüyordu; postu kolonların %37'si görüyordu. Yuvayla bu oran %62.
+  - **Neden yaklaştırılmadı:** Ekranı 1 mm'ye yaklaştırmak da işe yarıyordu (%66), ama ön bacak uçları başın ekseninden 1,35 mm öteye uzandığı için bacaklar ekranın içinden geçiyordu.
+- **Sonuç ([09-govde.md](09-govde.md#11-telefon-ekranlı-sahne-2026-09-17)):**
+  - Ekran kolonların %66'sını, post görseli %62'sini kaplıyor.
+  - Kaydırma, sineği her geçişte kaçırıyor (12/12). Kullanıcı bunu modelin kendi öngörüsü olarak kabul etti (Z-35).
+  - Ani değişim ve solarak geçiş deneyler için seçenek olarak duruyor.
+- **İlke notu:** Ekranın izlemesi ve geçişin biçimi "dünya fiziği" kararları; sineğin kararlarına dokunmuyor.
+
+## K-029 · Gövdeli sinekte görme kazancı 125 Hz
+
+- **Durum:** kabul edildi (2026-09-17), kullanıcı kararı
+- **Bağlam:**
+  - K-012'deki 250 Hz, gövdesiz sinekte durağan bir postun sürekli kontrastı için seçilmişti.
+  - Gövdeli sinekte zamansal kodlamayla (K-027) sineğin dinlenirken yaptığı küçük hareketler de görme uyarımı üretiyor.
+  - 250 Hz'de telefona bakan sinek çoğu denemede bir saniye içinde kendiliğinden kaçıyordu (Z-34).
+- **Seçenekler ve ölçümler (yaklaşan disk: l/v 40 ms):**
+
+  | Kazanç | Yaklaşan diske kaçış | Durağan ekranda kendiliğinden kaçış |
+  |---|---|---|
+  | 250 Hz | 4/4 | 0,76 sn'lik denemelerin 6/8'inde |
+  | 150 Hz | 18/18 | 0,76 sn: 9/20; 3,3 sn: 6/12 |
+  | **125 Hz** | **20/22** | toplam ~85 sn izlemede 5 dev lif ateşlemesi (3'ü sıçrama) |
+  | 100 Hz | 4/8 | 3,3 sn: 0/6 |
+
+- **Karar:**
+  - Gövdeli sinek `EMBODIED_VISION` (125 Hz) kullanıyor.
+  - Gövdesiz sinek (Fly, Faz 3–4) 250 Hz'de kalıyor.
+  - Sinek oturduktan sonra görme açılmadan önce 300 ms yalnızca propriyosepsiyon çalışıyor. Propriyosepsiyonun açıldığı ilk 300 ms'de motor nöronlar ~2 kat ateşliyordu.
+- **Açık:**
+  - Kalan kendiliğinden kaçışlar (Z-34).
+  - Dev lifin yaklaşma sırasındaki zamanlaması literatürle karşılaştırılmadı (Z-25).
+  - Instagram kararları gövdeli sinekte yeniden kalibre edilecek (K-020).

@@ -55,7 +55,7 @@ Her faz, bitiş kriterleri sağlanmadan kapanmaz. Gerçek Instagram hesabına il
 
 ## Faz 5 — Gövde (bedenlenme)
 
-Ayrıntı: [09-govde.md](09-govde.md). Kararlar: K-019–K-024.
+Ayrıntı: [09-govde.md](09-govde.md). Kararlar: K-019–K-029.
 
 - [x] Gövde kütüphanesi (FlyGym 2.1, NeuroMechFly): 126 eklem serbestlik derecesi, fizik gerçek zamandan hızlı
 - [x] Yürüme ritmi yoklaması: DNg100 → ritim çekirdeği → bacak motor nöronları (Z-22)
@@ -65,8 +65,10 @@ Ayrıntı: [09-govde.md](09-govde.md). Kararlar: K-019–K-024.
 - [x] Sinir kordonu hız modeli (K-025, deneysel): Pugliese ve ark. ön bacak ritmi yeniden üretildi, altı bacağa genişletildi, LIF beyinle melez
 - [ ] Yürüme: hız modelinde motor çıktı düşük, doyum ve duyu kazancı kalibre değil (Z-33) — ertelendi (K-026)
 - [x] Sineğin gözleriyle görme: başa bağlı kameralar → konnektom göz kolonları, zamansal uyum (K-027)
-- [ ] Sahne: serbest sinek ve onu izleyen Instagram ekranı (K-021) — tasarım önerisi hazır (09-govde.md 10)
-- [ ] Kapalı döngü (beyin + gövde + görme) ve hız iyileştirmesi (Z-21) — döngü çalışıyor, gerçek zamanın ~5 katı yavaş
+- [x] Sahne: serbest sinek ve onu izleyen dikey, kavisli telefon ekranı; Instagram benzeri akış ve gerçek kaydırma (K-021, K-028)
+- [x] Yaklaşan nesne → kaçış: ekranda büyüyen disk dev lifi %91 ateşletiyor; gövdeli görme kazancı 125 Hz (K-029, Z-25)
+- [ ] Dinlenen sineğin kendi hareketinden gelen kendiliğinden kaçışlar (~17 sn'de bir, Z-34); kaydırma her seferinde kaçış tetikliyor (Z-35, modelin öngörüsü olarak kabul edildi)
+- [ ] Kapalı döngü (beyin + gövde + görme + ekran) ve hız iyileştirmesi (Z-21) — döngü çalışıyor, gerçek zamanın ~4–5 katı yavaş
 - [x] Neden–sonuç testleri: MN9 → hortum ✅, dev lif → sıçrama ✅ (K-023), DNg100 → bacaklar kıpırdıyor ama yürüme yok, şeker → kısmi (Z-30)
 - [ ] Nöral karar ile gövde hareketinin örtüşme ölçümü (K-020, Z-27)
 

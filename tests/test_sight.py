@@ -51,9 +51,9 @@ def test_static_scene_fades(eyes):
 
 
 def test_embodied_static_scene_does_not_trigger_escape():
-    from flybrain.body.embodied import EmbodiedFly
+    from flybrain.body.embodied import EMBODIED_VISION, EmbodiedFly
 
-    f = EmbodiedFly(vision=VISION)
+    f = EmbodiedFly(vision=EMBODIED_VISION)
     f.reset()
     gf = np.flatnonzero(f.conn.neurons.type.fillna("").to_numpy(dtype=object) == "DNp01")
     total = np.zeros(f.conn.n)

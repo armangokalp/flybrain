@@ -10,6 +10,7 @@ import mujoco as mj
 import numpy as np
 
 from flybrain.body.muscles import LEGS, load_geometry
+from flybrain.body.scene import Scene, SceneConfig, add_to_world
 
 # Bacak eklemleri: kas-iskelet modelinin pasif özellikleri (kas kuvvetleriyle birlikte
 # kullanılan değerler). Kütle eylemsizliği NeuroMechFly'ınki gibi küçük tutulur; küçük
@@ -54,9 +55,9 @@ class BodyState:
 
 
 class Body:
-    """3D sinek gövdesi ve dünyası (şimdilik düz zemin)."""
+    """3D sinek gövdesi ve dünyası: düz zemin; istenirse gri arena ve telefon ekranı (body/scene.py)."""
 
-    def __init__(self, camera_res: tuple[int, int] = (360, 480)):
+    def __init__(self, camera_res: tuple[int, int] = (360, 480), scene: SceneConfig | None = None):
         from flygym import Simulation
         from flygym.anatomy import ActuatedDOFPreset, AxisOrder, JointPreset, Skeleton
         from flygym.compose import ActuatorType, FlatGroundWorld, KinematicPosePreset, NeuroMechFly
@@ -80,11 +81,14 @@ class Body:
         )
         fly.add_leg_adhesion()
         world = FlatGroundWorld()
+        if scene is not None:
+            add_to_world(world.mjcf_root, scene)
         world.add_fly(fly, [0, 0, 0.7], Rotation3D(format="quat", values=[1, 0, 0, 0]))
         self.fly = fly
         self.sim = Simulation(world, timestep=TIMESTEP_S)
         self._motor = ActuatorType.MOTOR
         self.dofs = [d.name for d in fly.get_actuated_jointdofs_order(ActuatorType.MOTOR)]
+        self.scene = Scene(self.sim, fly.name, scene) if scene is not None else None
         self._renderers: dict[str, mj.Renderer] = {}
         self.camera_res = camera_res
         self.reset()
@@ -123,6 +127,8 @@ class Body:
         self.sim.set_leg_adhesion_states(self.fly.name, np.ones(6))
         self.sim.mj_data.qfrc_applied[:] = 0.0
         self._zero = np.zeros(len(self.dofs))
+        if self.scene is not None:
+            self.scene.snap()
 
     @property
     def time_s(self) -> float:
@@ -186,6 +192,8 @@ class Body:
         if camera not in self._renderers:
             h, w = self.camera_res
             self._renderers[camera] = mj.Renderer(self.sim.mj_model, h, w)
+            if self.scene is not None:
+                self.scene.register(self._renderers[camera])
         r = self._renderers[camera]
         r.update_scene(self.sim.mj_data, camera=f"{self.fly.name}/{camera}")
         return r.render()

@@ -549,6 +549,8 @@ Görüntü çizimi 10 ms'de bir yapılıyor ve beyin + gövde + görme döngüs�
 
 ## 10. Kaldığımız yer (2026-09-17)
 
+> Bu bölüm sahneden önceki durumu anlatıyor; güncel durum [bölüm 13](#13-kaldığımız-yer-sahneden-sonra)'te.
+
 **Bitenler:**
 
 | Adım | Durum |
@@ -577,3 +579,154 @@ Görüntü çizimi 10 ms'de bir yapılıyor ve beyin + gövde + görme döngüs�
    - yük ve zemin teması algısı (Z-32),
    - duruş tonusu (Z-29),
    - uçuş (Z-26).
+
+## 11. Telefon ekranlı sahne (2026-09-17)
+
+Kararlar: K-021, K-028. Kod: `flybrain/body/scene.py` (ekran ve arena), `flybrain/body/phone.py` (ekranın görüntüsü), `EmbodiedFly(scene=SceneConfig())`. Deney: `python -m flybrain.experiments.scene`.
+
+### 11.1 Geometri
+
+Kullanıcı ekranın önde geniş ama akıllı telefon oranında (9:19,5, dikey) olmasını istedi. Dar ve dikey bir telefonun geniş bir görme alanını kaplaması için ekran başın etrafında kıvrılıyor:
+
+| Özellik | Değer |
+|---|---|
+| Biçim | Başın düşey ekseni etrafında silindir parçası, 180° |
+| Uzaklık | 2 mm |
+| Boyut | 6,3 mm (yay boyunca) × 13,6 mm |
+| Doku | 540 × 1170 piksel |
+| Malzeme | Işık yayıyor (aydınlatmadan etkilenmiyor); arkası koyu gri |
+| Fizik | Çarpışma yok; sinek içinden geçebilir |
+
+**Sinek telefonun hangi kısmını görüyor?**
+- Gözler zeminden 0,7 mm yüksekte ve kolonların en üstü ~75° yukarı bakıyor. Bu yüzden sinek dikey telefonun yalnızca alt ~%60'ını görüyor.
+- Post görseli bu bölgede: gezinme çubuğunun hemen üstünde (aşağı kaydırılmış akış).
+
+**Yuva:** Gezinme çubuğu ekranın altında kalınca, kolonların en yoğun olduğu ufuk bandına (θ ≈ −19°…+7°) düşüyordu. Üç yerleşimi ölçtüm:
+
+| Yerleşim | Ekranı gören kolon | Postu gören kolon | Sorun |
+|---|---|---|---|
+| 2 mm, zeminde | %69 | %37 | Post ufkun üstünde kalıyor |
+| 1 mm, zeminde | %90 | %66 | Ön bacaklar (1,35 mm) ekranın içinden geçiyor |
+| **2 mm, yuvada** | **%66** | **%62** | Gezinme çubuğu zeminin altında |
+
+Seçilen yerleşimde telefon zemindeki bir yuvaya oturuyor ve post zemin hizasından başlıyor.
+
+**İzleme:** Ekranın ekseni başın konumunu, yönü göğsün yönünü 500 ms zaman sabitiyle izliyor. Oturma bitince ekran gecikmesiz yerleştiriliyor.
+
+**Arena ve ışık:**
+- Gökyüzü gri (0,5); zemin 0,40/0,45 damalı, yansımasız.
+- Işık yukarıdan gelen yönlü bir ışık (gölgesiz).
+- MuJoCo'nun kameraya bağlı ışığı zayıflatıldı. Bu ışık göz kameralarıyla birlikte hareket ettiği için zeminin parlaklığı bakış açısına bağlı oluyordu.
+
+### 11.2 Ekranın görüntüsü
+
+Faz 8'e kadar yer tutucu bir Instagram akışı çiziliyor:
+- **Sabit katman:** Durum çubuğu, başlık, gezinme çubuğu ve çerçeve.
+- **Kayan akış:** Her post için kullanıcı satırı, 4:5 görsel, simgeler, beğeni, açıklama, yorum bağlantısı ve zaman.
+- **Yazı tipi:** Yazılar Türkçe harfli bir yazı tipiyle (DejaVu Sans) çiziliyor; sinek onları yalnızca açık-koyu desen olarak görüyor.
+
+Geçiş yolları:
+
+| Yol | Açıklama |
+|---|---|
+| `scroll_to_post` (varsayılan, K-028) | Akış 400 ms'de, hızlı başlayıp yavaşlayarak bir post boyu kayar |
+| `show_post` | Ekran bir karede değişir |
+| `fade_to_post` | Eski ekran görüntüsü yenisine karışır |
+| `play_video` | Bakılan postun görselinde video oynar (yaklaşma uyaranı bununla) |
+
+**Güncelleme ve maliyet:**
+- Ekran görüntüsü görmeyle aynı aralıkla (10 ms) yenileniyor.
+- Doku modelde değiştirilip her çiziciye (göz kameraları, video kameraları) yeniden yükleniyor.
+- Beyin, gövde, görme ve ekran birlikte gerçek zamanın ~4–5 katı yavaş.
+
+### 11.3 Post geçişlerine yanıt (125 Hz, 12'şer post çifti)
+
+Ekran baştan açık. Sinek 500 ms bakıyor, sonra sonraki posta geçiliyor ve 1,5 sn izleniyor. Beyne dışarıdan uyarım verilmiyor.
+
+| Geçiş | Dev lif ateşleyen deneme | Ortalama spike | Göğüs hareketi | İlk 100 ms'deki görme uyarımı |
+|---|---|---|---|---|
+| Kaydırma, 400 ms | 12/12 | 8,8 | 2,1 mm | 198 kHz |
+| Kaydırma, 1,2 sn | 12/12 | 18,1 | 2,4 mm | 175 kHz |
+| Ani değişim | 5/12 | 1,9 | 0,4 mm | 118 kHz |
+| Solarak geçiş, 300 ms | 2/12 | 0,6 | 0,2 mm | 27 kHz |
+
+- **Ekranın açılması:** Ekran siyahken açılınca (görme uyarımı 173 kHz) dev lif ateşlemedi. 250 Hz'de bu durumda 28 spike'la kaçıyordu.
+- **Kaydırmanın etkisi:** Ekran yakın olduğu için bir post boyu kaydırma sineğin gözünde ~80°'lik hızlı bir hareket; araya giren beyaz şerit ayrıca büyük bir parlaklık değişimi. LC4 30–100 spike üretiyor, dev lif ateşliyor.
+- **Karar:** Kullanıcı kararıyla gerçek kaydırma kaldı ve sineğin kaçması modelin öngörüsü olarak kabul edildi (Z-35).
+
+**Videolar:**
+- `runs/scene-kaydirma-0.mp4`: üstte dışarıdan görünüm, altta sineğin iki gözünün gördüğü.
+- `runs/scene-acilis-0.mp4`: ekranın açılışı.
+
+## 12. Yaklaşan nesne ve görme kazancı (2026-09-17)
+
+Karar: K-029. Deney: `python -m flybrain.experiments.escape`.
+
+### 12.1 Uyaran
+
+**Yaklaşan disk:** Bakılan postun görselinde büyüyen koyu bir disk.
+- Açısal yarıçap ψ(t) = atan(l/v / τ(t)); l/v = 40 ms (VARSAYIM).
+- Tam açı 10°'den 160°'ye büyüyor, sonra 300 ms sabit kalıyor.
+- Başlangıçtan çarpışma anına kadar 457 ms geçiyor.
+
+**Geometri:** Diskin merkezi tam önde, ufkun 10° üstünde. Disk, kavisli ekranda her pikselin gözden bakış yönüne göre çiziliyor; bu yüzden ekranda yumurta biçimli, sineğin gözünde yuvarlak görünüyor.
+
+### 12.2 Neden görme kazancı değişti?
+
+250 Hz'de sinek durağan telefona bakarken çoğu denemede bir saniye içinde kaçıyordu. Tarama, nedenin sineğin kendi hareketi olduğunu gösterdi (Z-34):
+- **Propriyosepsiyon kapalıyken** beyin tamamen sessiz kaldı.
+- **Gövde sabitken** görme uyarımı 0,1 kHz'de kaldı ve kaçış olmadı.
+- **Ekran siyahken bile** sinek kaçtı.
+
+### 12.3 Kazanç taraması
+
+Yaklaşma denemelerinde yalnızca bekleme sırasında kaçmamış ("temiz") denemeler sayılıyor. Durağan denemeler 0,76 sn ya da 3,3 sn sürüyor.
+
+| Kazanç | Yaklaşan diske kaçış | İlk dev lif spike'ı (çarpışmaya göre, medyan) | Durağan ekranda kaçış |
+|---|---|---|---|
+| 250 Hz | 4/4 | −12 ms | 0,76 sn: 6/8 |
+| 150 Hz | 18/18 | +7…+10 ms | 0,76 sn: 9/20; 3,3 sn: 6/12 |
+| **125 Hz** | **20/22** | +25…+40 ms | 85 sn'de 5 ateşleme (3 sıçrama) |
+| 100 Hz | 4/8 | +42 ms | 3,3 sn: 0/6 |
+| 75 Hz | 0/7 | — | 0,76 sn: 2/8 (LC4 sessizken) |
+
+**Propriyosepsiyon ısınması:**
+- Propriyosepsiyon oturmanın sonunda açılıyordu. İlk 300 ms'de bacak motor nöronları sonrakinin ~2 katı ateşliyordu (14–21'e karşı 0–14 spike).
+- Görme açılmadan önce 300 ms'lik ısınma eklendi.
+- Kendiliğinden kaçışları ölçülebilir biçimde azaltmadı, ama bilinen bir yapaylığı kaldırıyor.
+
+**Sonuç (125 Hz):**
+- Yaklaşan disk denemelerin %91'inde dev lifi ateşletiyor ve sinek sıçrıyor.
+- Durağan ekranda ~17 sn'de bir kendiliğinden ateşleme kalıyor.
+- Gövdesiz sinek (Faz 3–4) 250 Hz'de kalıyor.
+
+**Video:** `runs/escape-yaklasma-1.mp4` (4 kat ağır çekim). Sıçrayan sinek zaman zaman sırtüstü düşüyor; uçuş ve iniş denetimi yok (Z-26).
+
+### 12.4 Açık konular
+
+- **Zamanlama:** Dev lif, disk en büyük boyuna ulaştıktan sonra ateşliyor. Gerçek sineklerle nicel karşılaştırma yapılmadı (Z-25).
+- **Kendiliğinden kaçışlar:** Kök neden dinlenen sineğin kıpırdanması. Duruş tonusu (Z-29) ve propriyosepsiyon kazancıyla (Z-33) birlikte ele alınmalı (Z-34).
+
+## 13. Kaldığımız yer (sahneden sonra)
+
+| Adım | Durum |
+|---|---|
+| Motor nöron → kas → eklem | ✅ (6) |
+| Propriyosepsiyon | ✅ İlk sürüm (7) |
+| Sinir kordonu hız modeli | ⚠️ Deneysel; yürüme ertelendi (8, K-026) |
+| Sineğin kendi gözleriyle görmesi | ✅ (9) |
+| Telefon ekranlı sahne | ✅ Dikey, kavisli, izleyen ekran; kaydırma (11, K-028) |
+| Yaklaşan nesne → kaçış | ✅ %91, görme kazancı 125 Hz (12, K-029) |
+
+**Sıradakiler:**
+1. **Hız (Z-21):** Döngü gerçek zamanın ~4–5 katı yavaş; hedef 3 kat.
+2. **Nöral karar ile gövdenin örtüşmesi (K-020, Z-27):**
+   - Gövdeli sinekte zamansal görme ve 125 Hz'le kararlar yeniden kalibre edilmeli.
+   - Kaydırmanın her seferinde kaçış tetiklemesi (Z-35) bu değerlendirmenin parçası.
+3. **Faz 6: görselleştirme.** Videolardaki üst/alt düzen (dışarıdan görünüm, sineğin gözleri) ilk adım. Eksikler: 3D beyin, ekran ve karar günlüğü.
+4. **Sonraya bırakılanlar:**
+   - dinlenmede kıpırdanma ve duruş tonusu (Z-29, Z-34),
+   - yürüme (Z-33),
+   - yük algısı (Z-32),
+   - uçuş (Z-26).
+
