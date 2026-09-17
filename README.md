@@ -17,8 +17,8 @@ Kararları insan, dil modeli ya da eğitilmiş bir yorumlayıcı ağ vermez. Sin
 - ✅ **Faz 2:** simülasyon çekirdeği (neredeyse gerçek zamanlı, kararlı beyin ayarı)
 - ✅ **Faz 3:** duyu kodlayıcıları (görsel → göz, caption → koku, bildirim → dopamin)
 - ✅ **Faz 4:** motor kod çözücü (kas grupları → Instagram eylemleri, eylem bütçesi, eşik homeostazı)
-- ⏭️ **Faz 5:** 3D gövde (motor nöron → kas → eklem, NeuroMechFly), propriyosepsiyon, sineğin kendi gözleriyle görmesi, telefon ekranlı sahne ve yaklaşan nesneye kaçış, deneysel sinir kordonu hız modeli — sürüyor; yürüme henüz yok
-- **Faz 6:** görselleştirme ve kayıt (3D sinek, 3D beyin, sineğin gördüğü)
+- ✅ **Faz 5:** 3D gövde (motor nöron → kas → eklem, NeuroMechFly), propriyosepsiyon, sineğin kendi gözleriyle görmesi, telefon ekranlı sahne, yaklaşan nesneye kaçış, gövdeli kararlar ve gövde onayı; yürüme ve doğrulma henüz yok
+- ⏭️ **Faz 6:** görselleştirme ve kayıt: oturum kaydı, tarayıcı paneli (3D sinek, 3D sinir sistemi, sineğin gördüğü, kararlar, geriye izleme) ve video — sürüyor; canlı mod henüz yok
 - **Faz 7:** yerel kum havuzu ve korku tepkisi
 - **Faz 8–10:** Instagram bağlantısı, içerik üretimi, öğrenme
 
@@ -37,6 +37,14 @@ python3.13 -m venv .venv
 .venv/bin/python -m pytest
 ```
 
+## Bir oturumu izlemek
+
+```bash
+.venv/bin/python -m flybrain.viz.session --posts 40 --out runs/oturum-ilk   # kayıt (~3 dk)
+.venv/bin/python -m flybrain.viz.serve runs/oturum-ilk                       # panel: http://127.0.0.1:8765/
+.venv/bin/python -m flybrain.viz.video runs/oturum-ilk --son 20              # paylaşılabilir video
+```
+
 ## Belgeler
 
 | Belge | İçerik |
@@ -49,7 +57,8 @@ python3.13 -m venv .venv
 | [06 — Simülasyon](docs/06-simulasyon.md) | LIF motoru, kalıcı çekici bulgusu, ayar taramaları |
 | [07 — Duyular](docs/07-duyular.md) | Göz geometrisi, görme/koku/ödül kodlayıcıları ve deneyleri |
 | [08 — Motor](docs/08-motor.md) | Kas grubu okuması, eylem bütçesi, kalibrasyon ve homeostaz |
-| [09 — Gövde](docs/09-govde.md) | 3D gövde, motor nöron → kas → eklem, yürüme ritmi deneyleri |
+| [09 — Gövde](docs/09-govde.md) | 3D gövde, motor nöron → kas → eklem, sahne, kaçış, gövdeli kararlar |
+| [10 — Görselleştirme](docs/10-gorsellestirme.md) | Oturum kaydı, izleme paneli, geriye izleme, video |
 | [Kararlar](docs/kararlar.md) | Alınan tasarım kararlarının kaydı |
 | [Kaynaklar](docs/kaynaklar.md) | Veri setleri, makaleler, referans kodlar |
 | [Günlük](docs/gunluk/) | Oturum oturum süreç kaydı |

@@ -63,6 +63,7 @@ class FeedViewer:
         self.counts = np.zeros(fly.conn.n, dtype=np.int64)
         fly.spike_counter = self.counts
         self.selector = None
+        self.posts = 0
         if calibration is not None or CALIBRATION_EMBODIED_PATH.exists():
             self.selector = ActionSelector(calibration or Calibration.load(CALIBRATION_EMBODIED_PATH), homeostasis)
 
@@ -72,6 +73,10 @@ class FeedViewer:
     def _begin(self, post: Post) -> Stimulus:
         self.counts[:] = 0
         self.fly.next_post(FeedPost(post.image, caption=post.caption))
+        self.posts += 1
+        if self.fly.recorder is not None:
+            self.fly.recorder.event("post", sira=self.posts, aciklama=post.caption,
+                                    odul=post.rewards, ceza=post.punishments)
         return self.stimulus(post)
 
     def _window(self, stim: Stimulus, w: int):
@@ -100,6 +105,10 @@ class FeedViewer:
             if decision is not None:
                 decision.body = {k: round(float(v), 4) for k, v in zip(MEASURES, measures)}
                 decision.body["yeniden_yerlestirme"] = placed
+                if self.fly.recorder is not None:
+                    self.fly.recorder.event("karar", sira=self.posts, eylem=decision.action, kanal=decision.channel,
+                                            pencere=decision.window, sure_ms=decision.dwell_ms,
+                                            gerekce=decision.reason, z=decision.z, govde=decision.body)
                 self.selector.learn(decision)
                 return decision
         raise AssertionError("seçici son pencerede her zaman karar verir")

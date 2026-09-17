@@ -173,6 +173,9 @@ class EmbodiedFly:
         self._hold_ms = 0.0
         # Verilirse her adımda bütün nöronların spike sayıları buna eklenir (karar okuması için).
         self.spike_counter: np.ndarray | None = None
+        # Verilirse her adımın sonunda (fizikten ve deneyci müdahalesinden sonra) çağrılır:
+        # recorder.step(sinek, spike sayıları) (viz/record.py).
+        self.recorder = None
         self._joint_index = {n: i for i, n in enumerate(self.body.joint_names)}
 
     def joint(self, name: str) -> int:
@@ -332,6 +335,8 @@ class EmbodiedFly:
                 if self._down_ms >= REPOSITION_MS:
                     self.place_upright()
                     trace.repositions.append(self.brain.time_ms)
+            if self.recorder is not None:
+                self.recorder.step(self, result)
             if cameras and k % frame_every == 0:
                 for c in cameras:
                     trace.frames[c].append(self.body.render(c))

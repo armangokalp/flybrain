@@ -302,7 +302,7 @@ Instagram eylemleri nöral okumadan seçiliyor, gövde aynı nöronlarla hareket
   - Onaylı kuralda sekme ve önceki post neredeyse hiç seçilmiyor: baş eklemleri ve geri yürüme nadiren görünür hareket ediyor.
   - Uzun oturumda sonraki post ile ilgi kaybı sineğin etkinlik dönemleriyle salınıyor. Durgun sinek bacağını oynatmayınca sonraki post onaylanmıyor; homeostaz bunu düzeltemez (09-govde.md 17.9).
 
-### Z-28 · Görselleştirme verisinin boyutu ve canlı izleme 🔴
+### Z-28 · Görselleştirme verisinin boyutu ve canlı izleme 🟡
 
 - **Veri hacmi:** 165 bin nöronun spike'ları, 126 eklemin açıları ve ekran kareleri, saniyede yüzbinlerce olay demek.
 - **Hız:** Simülasyon gerçek zamandan yavaş.
@@ -311,6 +311,13 @@ Instagram eylemleri nöral okumadan seçiliyor, gövde aynı nöronlarla hareket
 - Sıkıştırılmış oturum kaydı ve gerçek hızda oynatma.
 - Canlı modun ağır çekim olarak açıkça etiketlenmesi.
 - Beyin görünümünde spike'ların kısa zaman kutularında toplanması.
+
+**Durum (2026-09-17, K-033):**
+- **Kayıt:** 44 sn'lik bir oturum 30 MB tutuyor: 6,8 milyon spike 11 MB'a sıkışıyor, videolar 14 MB. Kayıt simülasyonu ~4 kat yavaşlatıyor.
+- **Oynatma:** Panel ve video kayıttan gerçek hızda ya da etiketli ağır çekimde oynatıyor. Beyin görünümünde her spike üstel sönümle (60 ms) parlıyor.
+- **Açık:**
+  - Canlı mod yok.
+  - Panel spike dizisini tek parça yüklüyor (44 sn için 27 MB). Uzun oturumlarda parçalı yükleme gerekecek.
 
 ### Z-29 · Duruş tonusu yok 🔴
 

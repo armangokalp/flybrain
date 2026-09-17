@@ -36,7 +36,7 @@ flowchart LR
 | `flybrain/senses/` | Görme, koku ve ödül kodlayıcıları |
 | `flybrain/motor/` | Motor nöron havuzlarının tanımı, kalibrasyon, eylem seçimi |
 | `flybrain/body/` | 3D gövde: motor nöron → kas → eklem, propriyosepsiyon, sahne, kapalı döngü (Faz 5) |
-| `flybrain/viz/` | Oturum kaydı ve izleme paneli: 3D sinek, 3D beyin, sineğin gördüğü, ekran (Faz 6) |
+| `flybrain/viz/` | Oturum kaydı (`record`), kayıttan yeniden çizim (`replay`), panel verisi (`export`), yerel panel (`serve`, `web/`), video (`video`) (Faz 6) |
 | `flybrain/create/` | Post görseli ve caption üretimi |
 | `flybrain/instagram/` | Gerçek Instagram bağlantısı ve test için sahte (lokal) feed |
 | `flybrain/governor.py` | Hız sınırları ve içerik vetosu |

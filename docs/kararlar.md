@@ -493,3 +493,27 @@ Durumlar: **önerildi** · **kabul edildi** · **yerine geçti**
   - "Sonraki post" bacak hareketiyle onaylanıyor ama sinek yürümüyor (K-026).
   - İlgi kaybında akış hareket olmadan ilerliyor. Bu bir karar değil, kararın yokluğu; Z-27'de açık kalıyor.
 
+
+## K-033 · İzleme paneli: kayıttan oynatan tarayıcı paneli ve video
+
+- **Durum:** kabul edildi (2026-09-17), kullanıcı kararı
+- **Bağlam:**
+  - Faz 6'nın amacı bir oturumu baştan sona izlenebilir yapmak: 3D sinek, 3D sinir sistemi, sineğin gördüğü, telefon ekranı ve kararlar senkron görünmeli.
+  - Görülen her hareket, o anda ateşleyen motor nöronlara kadar geriye izlenebilmeli.
+  - **Hız sorunu:** Kapalı döngü gerçek zamanın ~3 katı yavaş (Z-21). Canlı izleme ancak ağır çekim olabilir (Z-28).
+- **Seçenekler:**
+  - **Tarayıcı paneli ve video.** *Önerildi, kullanıcı bunu seçti.*
+  - **Yalnızca video:** İndirme yok ama etkileşim de yok.
+  - **Önce video, panel sonra.**
+- **Karar:**
+  - **Kayıt ile izleme ayrı:** Oturum önce kaydedilir (`flybrain/viz/record.py`), sonra istenen hızda oynatılır.
+  - **Gövdenin yeniden kurulması:** Durum vektörü ve telefon ekranının konumu 5 ms'de bir kaydedilir. Gövde bunlardan yeniden kurulur; fizik yeniden çalışmaz.
+  - **Spike kaydı:** Spike'lar milisaniye çözünürlüğünde, nöron indeksiyle kaydedilir.
+  - **Panel** (`flybrain/viz/web/`, `python -m flybrain.viz.serve <kayıt>`):
+    - sinek ve telefon ekranı (3D), sinir sistemi (3D, soma konumları), gözler, telefon, karar günlüğü;
+    - zaman çizgisi ve oynatma hızı;
+    - geriye izleme: bir karara tıklanınca o kanalın nöronları, bir gövde parçasına tıklanınca o parçayı hareket ettiren kasların motor nöronları.
+  - **Video** (`python -m flybrain.viz.video <kayıt>`): Aynı kayıttan paylaşılabilir video üretilir. Hız 1'den küçükse video "ağır çekim" diye etiketlenir.
+  - **İndirme (kullanıcı izniyle):** three.js 0.186.0 (MIT), npm'den. Repoya yalnızca üç dosya ve lisansı girdi (`flybrain/viz/web/vendor/`); panel internetsiz çalışır.
+- **VARSAYIM:** Somasız nöronların (~%15, çoğu duyu nöronu) konumu, bağlantılı oldukları nöronların konumlarının sinaps sayısıyla ağırlıklı ortalaması. Panelde bu nöronlar ayrı bir seçenekle gizlenebilir.
+- **İlke notu:** Görselleştirme yalnızca kaydı gösterir; kayıtta olmayan hiçbir hareket ya da etkinlik çizilmez. Sinek parçalarının rengi MuJoCo dokularının ortalama rengidir.

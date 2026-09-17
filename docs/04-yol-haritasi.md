@@ -83,16 +83,21 @@ Ayrıntı: [09-govde.md](09-govde.md). Kararlar: K-019–K-032.
 
 ## Faz 6 — Görselleştirme ve kayıt
 
-- [ ] Oturum kaydı: spike'lar, gövde pozları, sineğin göz görüntüsü, ekran, kararlar
-- [ ] Yerel izleme paneli, senkron görünümler:
-  - 3D sinek
-  - 3D beyin (her spike nöronun gerçek konumunda)
+Ayrıntı: [10-gorsellestirme.md](10-gorsellestirme.md). Karar: K-033.
+
+- [x] Oturum kaydı: spike'lar (1 ms), gövde durumu ve telefon ekranının konumu (5 ms), sineğin göz görüntüsü, ekran, kararlar
+- [x] Yerel izleme paneli (three.js), senkron görünümler:
+  - 3D sinek ve telefon ekranı
+  - 3D sinir sistemi (165.122 nöron, soma konumlarında; %15'inin konumu yaklaşık)
   - sineğin gördüğü
   - Instagram ekranı
   - karar günlüğü
-- [ ] Canlı mod (ağır çekim, açıkça etiketli) ve gerçek hızda oynatma (Z-28)
+- [x] Geriye izleme: karara ya da gövde parçasına tıklayınca ilgili motor nöronlar ve spike sayıları
+- [x] Kayıttan gerçek hızda ve ağır çekimde oynatma
+- [ ] Canlı mod: simülasyon sürerken izleme, açıkça ağır çekim etiketli (Z-28)
+- [ ] Uzun oturumlar için spike verisinin parçalı yüklenmesi
 - [ ] Beyin bölgesi yüzeyleri ve önemli nöronların şekilleri (indirme için ayrıca izin istenecek)
-- [ ] Paylaşılabilir video dışa aktarımı
+- [x] Paylaşılabilir video dışa aktarımı (gerçek hız ya da etiketli ağır çekim)
 
 **Bitiş:** Bir oturum baştan sona izlenebiliyor. Görülen her hareket, o anda ateşleyen motor nöronlara kadar geriye doğru izlenebiliyor.
 

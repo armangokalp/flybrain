@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>flybrain oturum paneli</title>
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js" } }
+</script>
+</head>
+<body>
+<header>
+  <div class="baslik">
+    <strong>flybrain</strong>
+    <span id="bilgi" class="soluk">kayıt yükleniyor…</span>
+  </div>
+  <div class="denetim">
+    <button id="oynat" title="Oynat / durdur (boşluk)">▶</button>
+    <select id="hiz" title="Oynatma hızı (simülasyon zamanına göre)">
+      <option value="0.1">0,1×</option>
+      <option value="0.25">0,25×</option>
+      <option value="0.5">0,5×</option>
+      <option value="1" selected>1×</option>
+      <option value="2">2×</option>
+    </select>
+    <span id="zaman" class="sayi">0,00 sn</span>
+  </div>
+  <div id="zaman-cizgisi">
+    <canvas id="isaretler"></canvas>
+    <input id="kaydirac" type="range" min="0" max="1000" step="1" value="0" aria-label="Zaman">
+  </div>
+</header>
+
+<main>
+  <section class="pano" id="pano-sinek">
+    <h2>Sinek <span class="soluk">gövdeye tıkla: o parçayı süren motor nöronlar</span></h2>
+    <canvas id="sinek"></canvas>
+    <div id="rozet-tutma" class="rozet" hidden>deneyci tutuyor</div>
+  </section>
+
+  <section class="pano" id="pano-beyin">
+    <h2>Sinir sistemi <span class="soluk" id="beyin-not"></span></h2>
+    <canvas id="beyin"></canvas>
+    <div class="alt">
+      <div id="lejant"></div>
+      <label class="secim"><input type="checkbox" id="yaklasik" checked> konumu yaklaşık nöronlar</label>
+    </div>
+  </section>
+
+  <section class="pano" id="pano-gozler">
+    <h2>Sineğin gözleri <span class="soluk">sol | sağ</span></h2>
+    <video id="gozler" muted playsinline preload="auto"></video>
+  </section>
+
+  <section class="pano" id="pano-ekran">
+    <h2>Telefon</h2>
+    <video id="ekran" muted playsinline preload="auto"></video>
+  </section>
+
+  <section class="pano" id="pano-kararlar">
+    <h2>Kararlar <span class="soluk" id="karar-ozet"></span></h2>
+    <div id="simdi"></div>
+    <ol id="gunluk"></ol>
+  </section>
+
+  <section class="pano" id="pano-iz">
+    <h2 id="iz-baslik">Geriye izleme</h2>
+    <p id="iz-aciklama" class="soluk">Bir karara ya da sineğin bir parçasına tıkla.</p>
+    <table id="iz-tablo"><tbody></tbody></table>
+  </section>
+</main>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

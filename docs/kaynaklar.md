@@ -66,6 +66,10 @@ Taban adres: `https://storage.googleapis.com/flyem-male-cns/v1.0/connectome-data
 - FlyMimic kas-iskelet modeli: [Drosophila bacak hareketinin kas-iskelet simülasyonu](https://arxiv.org/html/2509.06426) (arXiv 2509.06426). FlyGym 2.1 içinde `assets/model/musculoskeletal`; bacak kas geometrimizin kaynağı (K-019 eki)
 - Vaxenburg ve ark. 2025, *Nature* — [flybody: tüm gövde fizik simülasyonu](https://www.nature.com/articles/s41586-025-09029-4). Kod: <https://github.com/TuragaLab/flybody>. Uçuş kontrolcüsü eğitilmiş olduğu için kullanılmıyor (Z-26).
 
+## Görselleştirme
+
+- [three.js](https://threejs.org/) 0.186.0 (MIT): izleme panelinin 3D çizimi. npm'den alındı; kullanılan dosyalar ve sağlama toplamı `flybrain/viz/web/vendor/KAYNAK.md` içinde (K-033).
+
 ## Referans uygulamalar
 
 - [vshapenko/flypoke](https://github.com/vshapenko/flypoke): NumPy tabanlı, bağımlılığı az FlyWire LIF simülasyonu (MIT)
