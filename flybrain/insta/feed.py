@@ -49,6 +49,9 @@ SKIP_PREFIX = ("Liked by", "Beğenen", "View all", "Tüm yorum", "Add a comment"
 _TIME_LINE = re.compile(r"^\d+\s*(saniye|dakika|saat|gün|hafta|second|minute|hour|day|week)", re.I)
 # Sayaç satırları: "89K", "277.4K", "1,234"; ve "and 5 others" gibi beğeni satırının kuyruğu.
 _COUNT_LINE = re.compile(r"^\d[\d.,\s]*[KMBkmb]?$")
+# Gezinme çubuğunun yüksekliği (CSS piksel). Sanal telefonda NAV oranı 0,13 × genişlik;
+# 390 piksellik görüntü alanında ~51 piksel (body/phone.py).
+NAV_PX = 51
 _OTHERS_LINE = re.compile(r"^(and|ve)\s+[\d.,]+\s*(others|diğer)", re.I)
 
 
@@ -124,11 +127,36 @@ class InstaFeed:
         )
 
     def goto_post(self, i: int) -> None:
-        """Postu ekranın üstüne getirir (tarayıcı tarafında; sinek bunu görmez)."""
-        self._article(i).evaluate("el => el.scrollIntoView({block: 'start', behavior: 'instant'})")
-        self.b.page.wait_for_timeout(400)
+        """Postun **görselini** sineğin baktığı bölgeye getirir (tarayıcı tarafında).
+
+        Sinek ekranın alt bölümünü görüyor (telefon zemine gömülü, body/scene.py). Yerel akışta
+        bakılan postun görseli gezinme çubuğunun hemen üstüne yerleştiriliyor (body/phone.py);
+        gerçek sayfada da aynı hizaya getiriliyor. Yoksa sinek fotoğrafı değil, altındaki beğeni
+        ve açıklama satırlarını görüyor.
+        """
+        for _ in range(2):  # hizaladıktan sonra sayfa yeni içerik yükleyip kayabiliyor
+            self._align(i)
+            self.b.page.wait_for_timeout(400)
         self.freeze_videos()
         self.index = i
+
+    def _align(self, i: int) -> dict | None:
+        """Postun en büyük görselinin alt kenarını gezinme çubuğunun üstüne hizalar."""
+        return self._article(i).evaluate(
+            """(el, nav) => {
+                const media = [...el.querySelectorAll('img, video')];
+                let best = null, area = 0;
+                for (const m of media) {
+                    const r = m.getBoundingClientRect();
+                    if (r.width * r.height > area) { area = r.width * r.height; best = m; }
+                }
+                if (!best) { el.scrollIntoView({block: 'start', behavior: 'instant'}); return null; }
+                const r = best.getBoundingClientRect();
+                window.scrollBy(0, r.bottom - (window.innerHeight - nav));
+                return {ust: r.top, alt: r.bottom, yukseklik: r.height};
+            }""",
+            NAV_PX,
+        )
 
     def _load_more(self) -> None:
         """Akışın sonuna inip yeni postların yüklenmesini bekler."""

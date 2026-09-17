@@ -156,6 +156,8 @@ def main() -> None:
     ap.add_argument("--headless", action="store_true", help="tarayıcı penceresi açılmasın (yalnızca test)")
     ap.add_argument("--sahte", action="store_true", help="gerçek Instagram yerine yerel sahte akış (tests/sahte_akis.html)")
     ap.add_argument("--izle", action="store_true", help="canlı izleme yayını aç (http://127.0.0.1:8766/)")
+    ap.add_argument("--izin", default=None,
+                    help="yalnızca bu eylemler uygulansın (virgülle: begen,kaydet)")
     ap.add_argument("--solma", type=float, default=None,
                     help=f"postlar arası geçiş süresi (ms; varsayılan {REAL_FADE_MS:.0f})")
     args = ap.parse_args()
@@ -163,8 +165,10 @@ def main() -> None:
     if args.sahte:
         from flybrain.paths import ROOT
         url = (ROOT / "tests" / "sahte_akis.html").as_uri()
+    limits = Limits.only(args.izin.split(",")) if args.izin else None
     path, _ = run_session(args.posts, dry_run=not args.gercek, seed=args.seed, out=args.out,
-                          headless=args.headless, url=url, live=args.izle, fade_ms=args.solma)
+                          headless=args.headless, url=url, live=args.izle, fade_ms=args.solma,
+                          limits=limits)
     print(f"kayıt: {path}")
 
 

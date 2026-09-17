@@ -40,6 +40,21 @@ class Limits:
     gap_s: float = 20.0          # aynı türden iki eylem arasında en az bekleme
     any_gap_s: float = 5.0       # herhangi iki eylem arasında en az bekleme
 
+    @classmethod
+    def only(cls, actions, base: "Limits | None" = None) -> "Limits":
+        """Yalnızca verilen eylemlere izin veren sınırlar; ötekiler 0 (kullanıcı kararı).
+
+        Sineğin kararı değişmez; izin verilmeyen eylem uygulanmaz ve gerekçesi kayda geçer.
+        """
+        base = base or cls()
+        izin = set(actions)
+        bilinmeyen = izin - set(ACTIONS)
+        if bilinmeyen:
+            raise ValueError(f"bilinmeyen eylem: {sorted(bilinmeyen)}")
+        return cls(hourly={a: (base.hourly[a] if a in izin else 0) for a in ACTIONS},
+                   daily={a: (base.daily[a] if a in izin else 0) for a in ACTIONS},
+                   gap_s=base.gap_s, any_gap_s=base.any_gap_s)
+
 
 class Vetoed(Exception):
     """Vali eylemi engelledi."""
@@ -92,6 +107,8 @@ class Governor:
             if hit:
                 raise Vetoed(f"yasaklı kelime: {', '.join(hit)}")
         h, d = self.limits.hourly[action], self.limits.daily[action]
+        if h == 0 or d == 0:
+            raise Vetoed("bu eylem kapalı (kullanıcı izni yok)")
         if self._count(action, 3600, now) >= h:
             raise Vetoed(f"saatlik sınır ({h})")
         if self._count(action, 86400, now) >= d:

@@ -117,6 +117,13 @@ ise postun metin bloğundan okunuyor.
 | Açıklama okuması | Açıklama "89K", "Suggested for you" çıkıyordu | Sayaç, öneri ve zaman satırları eleniyor |
 | Akışta ilerleme | 10. postta "yüklenmedi" hatası | Sıradaki post indeksle değil **bağlantısıyla** bulunuyor; akış gerektikçe yükleniyor |
 
+**Dördüncü hata — sinek fotoğrafı görmüyordu.** Sanal telefon zemine gömülü; sinek ekranın alt
+bölümünü görüyor ve yerel akışta bakılan postun görseli tam oraya yerleştiriliyor (body/phone.py).
+Gerçek sayfada post ekranın üstüne hizalanınca sineğin baktığı bölgeye görsel değil, beğeni sayısı
+ve açıklama satırları denk geliyordu. Artık tarayıcı, postun **en büyük görselinin alt kenarını**
+gezinme çubuğunun üstüne hizalıyor (`InstaFeed._align`); ölçülen görsel yüksekliği 487–520 piksel,
+sineğin bandına oturuyor.
+
 **Kaçış (K-037):** Sinek gerçek fotoğraflarda sık "çıkış" veriyor; geçiş süresi uzatılarak
 azaltıldı (ölçüm tablosu K-037'de). Uçup giden sineği deneyci geri getiriyor.
 
