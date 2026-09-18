@@ -640,3 +640,29 @@ açık ve etki büyük.
 **Ders:** Hata koddaki bir satırda değil, **deney düzeneğindeydi**. Ölçüm düzgündü, kayıt
 düzgündü; yanlış olan sineğe yaptığımız şeydi. Onu da ölçüm değil, **izleyen bir insan** fark
 etti.
+
+### Z-42 · Çift dokunma beğeni bırakmıyordu; test kendi varsayımını doğruluyordu 🟢
+
+Beğeni, Instagram'ın kalp animasyonunu çıkarsın diye fotoğrafa **çift dokunarak** yapılıyor
+(K-038 yanındaki kullanıcı kararı). İlk gerçek oturumda iki beğeni denemesi de doğrulamadan
+geçemedi: `tıklandı ama durum değişmedi`. Hesapta beğeni kalmadı.
+
+**Sebep:** Jest `page.mouse.dblclick` ile gönderiliyordu. Instagram telefon görünümünde
+**dokunma** olaylarını dinliyor, fare çift tıklamasını değil.
+
+**Neden test yakalamadı:** Sahte akış sayfasını (`tests/sahte_akis.html`) kendi varsayımıma göre
+yazmıştım — görselde `ondblclick` vardı, fare çift tıklaması onu tetikliyordu. Test geçiyordu
+çünkü **gerçeği değil, benim varsayımımı** doğruluyordu. Mock'u kendi koduna uydurmak, testi
+süsten ibaret bırakıyor.
+
+**Çözüm:**
+- Jest `page.touchscreen.tap` ile iki vuruş olarak gönderiliyor (`DOUBLE_TAP_MS = 90`).
+- Sahte akış artık `touchend` dinliyor, yani gerçeğin yaptığını yapıyor.
+- Çift dokunma tutmazsa **kalp düğmesine** düşülüyor ve hangi yolun kullanıldığı kayda geçiyor
+  ("kalp düğmesi (çift dokunma tutmadı)"). Animasyon çıkmaz ama beğeni kaydolur.
+
+**Doğrulama:** Gerçek oturum, `@ruudnaturephotography` postunda `begen → uygulandı`, vali
+günlüğünde `"uygulandi": true, "not": ""` — geri dönüş yolu kullanılmadı, çift dokunma tuttu.
+
+**Ders:** Doğrulama katmanı (tıklamadan sonra etiketi yeniden oku) işini yaptı: hata sessizce
+"başarılı" diye kaydedilmedi. Test yakalayamadı ama **gerçeğe sorduğumuz soru** yakaladı.

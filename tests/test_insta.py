@@ -304,3 +304,25 @@ def test_recovery_screen_is_flat_and_keeps_brightness():
     assert ekran.shape == (20, 10, 3)
     assert ekran.std() == 0                       # düz: hiçbir desen yok
     assert abs(int(ekran[0, 0, 0]) - 100) <= 1    # ortalama parlaklık korundu
+
+
+def test_like_falls_back_to_the_heart_button_when_double_tap_does_not_register(sahte_akis):
+    """Çift dokunma tutmazsa beğeni kalp düğmesinden yapılır ve kayda geçer.
+
+    Gerçek oturumda çift dokunma hiç kaydolmadı (fare olayı gönderiliyordu, Instagram dokunma
+    bekliyor). Doğrulama katmanı yakaladı ama beğeni de olmadı; geri dönüş yolu o yüzden var.
+    """
+    feed, _gov, b = sahte_akis
+    feed.next_post()
+    # Fotoğrafın çift dokunma dinleyicisini sök: jest artık hiçbir şey yapmıyor.
+    b.page.evaluate("""() => {
+        const img = document.querySelector('img.gorsel');
+        img.replaceWith(img.cloneNode(true));
+    }""")
+    assert feed._double_tap() is True          # jest gönderildi
+    assert feed._state("begen") is False       # ama beğeni kaydolmadı
+
+    kayit = feed.act("begen")
+    assert kayit["uygulandi"] is True
+    assert "kalp düğmesi" in kayit["not"]      # hangi yolun kullanıldığı kayda geçti
+    assert feed._state("begen") is True

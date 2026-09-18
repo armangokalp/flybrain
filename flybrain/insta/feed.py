@@ -64,6 +64,7 @@ VIDEO_SEEK_MS = 60.0  # currentTime değişince karenin çizilmesi için beklene
 # Eylem animasyonu (beğeni kalbi, yorumun belirmesi): tarayıcıdan gerçek zamanda çekilir.
 ACTION_MS = 900.0
 ACTION_FPS = 12.0
+DOUBLE_TAP_MS = 90.0  # çift dokunmanın iki vuruşu arası
 ALIGN_SKIP_PX = 40  # bundan büyük sapmada post atlanır: sinek fotoğrafı göremezdi
 _OTHERS_LINE = re.compile(r"^(and|ve)\s+[\d.,]+\s*(others|diğer)", re.I)
 
@@ -439,6 +440,19 @@ class InstaFeed:
         ok = self._state(action)
         if action == "yorum":
             ok = True  # yorumun doğrulaması gönderimden sonra metnin listede görünmesi
+        if ok is not True and action == "begen":
+            # Çift dokunma tutmadı (Instagram arayüzü değişmiş olabilir): kalp düğmesine düş.
+            # Animasyon çıkmaz ama beğeni kaydolur; hangi yolun kullanıldığı kayda geçer.
+            try:
+                icon = self._icon(action, 0)
+                if icon is not None:
+                    icon.click(timeout=5000)
+                    self.last_frames = self.grab_frames()
+                    ok = self._state(action)
+            except Exception:
+                ok = None
+            if ok is True:
+                return self.gov.record(action, True, "kalp düğmesi (çift dokunma tutmadı)")
         if ok is not True:
             return self.gov.record(action, False, "tıklandı ama durum değişmedi")
         return self.gov.record(action, True, text)
@@ -484,7 +498,11 @@ class InstaFeed:
             }""")
         if kutu is None:
             return False
-        self.b.page.mouse.dblclick(kutu["x"], kutu["y"])
+        # **Dokunma**, fare değil: Instagram telefon görünümünde dokunma olaylarını dinliyor.
+        # mouse.dblclick ile denendi, beğeni hiç kaydolmadı ("tıklandı ama durum değişmedi").
+        self.b.page.touchscreen.tap(kutu["x"], kutu["y"])
+        self.b.page.wait_for_timeout(DOUBLE_TAP_MS)
+        self.b.page.touchscreen.tap(kutu["x"], kutu["y"])
         return True
 
     def _comment(self, text: str) -> None:

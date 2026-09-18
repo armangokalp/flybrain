@@ -55,7 +55,7 @@ document.querySelector("main").innerHTML = POSTLAR.map((p, i) => `
     <a href="/${p.kullanici}/">${p.kullanici}</a></header>
   <a href="/p/${p.kod}/" onclick="return false">${p.video
     ? '<video muted playsinline style="width:100%;height:420px;background:#111"></video>'
-    : `<img class="gorsel" alt="post" ondblclick="cifttap(this)" src="${GORSEL}">`}</a>
+    : `<img class="gorsel" alt="post" data-cifttap="1" src="${GORSEL}">`}</a>
   <div class="ikonlar">
     <button class="begen" onclick="cevir(this, 'Like', 'Unlike')">${svg("Like")}</button>
     <button class="yorum">${svg("Comment")}</button>
@@ -73,11 +73,20 @@ function cevir(btn, once, sonra) {
   const s = btn.querySelector("svg");
   s.setAttribute("aria-label", s.getAttribute("aria-label") === once ? sonra : once);
 }
-function cifttap(img) {
-  // Instagram'da fotoğrafa çift dokunmak yalnızca beğenir, beğeniyi geri almaz.
-  const s = img.closest("article").querySelector(".begen svg");
-  if (s.getAttribute("aria-label") === "Like") s.setAttribute("aria-label", "Unlike");
-}
+// Instagram çift dokunmayı **dokunma** olaylarından algılıyor, fare çift tıklamasından değil.
+// Sahte akış da öyle yapmalı: yoksa test gerçeği değil, bizim varsayımımızı doğrular.
+document.querySelectorAll('[data-cifttap]').forEach(img => {
+  let son = 0;
+  img.addEventListener("touchend", () => {
+    const simdi = Date.now();
+    if (simdi - son < 400) {
+      // Çift dokunma yalnızca beğenir, beğeniyi geri almaz.
+      const s = img.closest("article").querySelector(".begen svg");
+      if (s.getAttribute("aria-label") === "Like") s.setAttribute("aria-label", "Unlike");
+    }
+    son = simdi;
+  });
+});
 function takip(btn) { btn.textContent = btn.textContent === "Follow" ? "Following" : "Follow"; }
 function yorumla(btn) {
   const kutu = btn.parentElement.querySelector("input");
