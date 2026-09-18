@@ -55,6 +55,19 @@ SETTLE_MS = 2000.0
 REAL_FADE_MS = 600.0
 
 
+def _recovery_screen(fly):
+    """Kaçıştan sonra toparlanma ekranı: o anki karenin ortalama parlaklığında düz gri.
+
+    Parlaklık korunuyor çünkü ekran ışık yayan bir yüzey; karartmak ya da aydınlatmak tek
+    başına bir uyaran olurdu. Kaçılan postlar zaten belirgin biçimde daha karanlık çıkıyor
+    (ölçüm: parlaklık 50 vs 78), yani bu bantta oynamak sonucu kirletir.
+    """
+    import numpy as np
+
+    frame = fly.feed.frame()
+    return np.full_like(frame, int(round(frame.mean())))
+
+
 def _video_fn(frames: list, fps: float):
     """Kare listesini `ScreenshotFeed.play`'in beklediği `video(t_ms)` biçimine çevirir.
 
@@ -187,6 +200,11 @@ def run_session(n_posts: int = 5, dry_run: bool = True, seed: int = 8003, out: s
                     rec.event("geri_getirildi", sira=k + 1)
                     if stream is not None:
                         stream.say(f"post {k + 1}: sinek uçtu, deneyci geri getiriyor")
+                    # Toparlanırken ekranda **kaçtığı post durmuyor**. Önceden duruyordu: deneyci
+                    # sineği geri getirip onu korkutan şeyin tam karşısına koyuyor, 2 saniye öyle
+                    # bırakıyordu. Sinek aynı posttan tekrar tekrar kaçıyordu (kullanıcı canlı
+                    # yayında gördü). Gerçek bir deneyde hayvan geri konulurken uyaran kaldırılır.
+                    fly.show_post(Shot(_recovery_screen(fly)))
                     fly.reset()
                     fly.run(SETTLE_MS)
         print(f"bitti: {len(results)} post, {escapes} kez uçup gitti (deneyci geri getirdi)", flush=True)

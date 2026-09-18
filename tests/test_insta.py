@@ -281,3 +281,26 @@ def test_zero_length_transition_switches_the_screen_at_once():
     feed.fade_to(Shot(np.full((*shape, 3), 255, np.uint8)), now_ms=0.0, duration_ms=0.0)
     assert not feed.scrolling          # geçiş yok
     assert feed.frame().min() == 255   # yeni kare tamamen yerinde
+
+
+def test_recovery_screen_is_flat_and_keeps_brightness():
+    """Kaçıştan sonra ekran düz griye döner; ortalama parlaklık korunur.
+
+    Önceden sinek, kaçtığı postun tam karşısına geri konuyordu ve aynı posttan tekrar tekrar
+    kaçıyordu. Parlaklık korunuyor çünkü ekran ışık yayıyor: karartmak/aydınlatmak tek başına
+    bir uyaran olurdu.
+    """
+    from flybrain.insta.session import _recovery_screen
+
+    class _SahteSinek:
+        class feed:
+            @staticmethod
+            def frame():
+                kare = np.zeros((20, 10, 3), np.uint8)
+                kare[:10] = 200  # yarısı parlak, yarısı koyu
+                return kare
+
+    ekran = _recovery_screen(_SahteSinek())
+    assert ekran.shape == (20, 10, 3)
+    assert ekran.std() == 0                       # düz: hiçbir desen yok
+    assert abs(int(ekran[0, 0, 0]) - 100) <= 1    # ortalama parlaklık korundu

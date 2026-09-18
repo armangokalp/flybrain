@@ -608,3 +608,35 @@ bugün bağlansa sonsuza kadar sıfır okur.
 
 **Bağımlılık zinciri:** yorum metni ← duygu okuması ← gerçek ödül ← gelen beğeni ← sineğin
 postu olması ← **Faz 9 (içerik üretimi)**. Faz 9 bir özellik değil, duygu okumasının kilit taşı.
+
+### Z-41 · Deneyci sineği korktuğu şeyin karşısına geri koyuyordu 🟢
+
+Kullanıcı canlı yayında gördü: sinek bir posttan korkuyor, sonraki posta geçiyor, sonra **aynı
+korktuğu posta geri dönüp yine kaçıyor**. Döngüye giriyor.
+
+**Sebep:** Kaçıştan sonra `fly.reset()` + `fly.run(SETTLE_MS)` çalışıyordu ama ekranda **kaçtığı
+post duruyordu**. Yani deneyci sineği geri getirip onu korkutan şeyin tam karşısına koyuyor ve
+2 saniye öyle bırakıyordu. O sürede sinek yeniden sıçrayabiliyor (karar kaydedilmiyor) ve
+sonraki posta zaten tedirgin giriyordu.
+
+Kimsenin verdiği bir karar değildi; kimse ekranı temizlemeyi düşünmemişti.
+
+**Çözüm:** Toparlanma sırasında ekran, o anki karenin **ortalama parlaklığında düz griye**
+dönüyor (`_recovery_screen`). Parlaklık korunuyor çünkü ekran ışık yayan bir yüzey; karartmak
+ya da aydınlatmak tek başına bir uyaran olurdu. Gerçek bir deneyde de hayvan geri konulurken
+uyaran kaldırılır, sonra sıradaki denemeye geçilir.
+
+**Ölçüm** (40 postluk oturumlar, gerçek akış, kuru çalıştırma):
+
+| | Kaçış |
+|---|---|
+| düzeltme öncesi | 24/40 (%60) |
+| 60 postluk oturum, düzeltme öncesi | 18/60 (%30) |
+| **düzeltme sonrası** | **5/40 (%12,5)** |
+
+Beş kat düşüş. Karşılaştırma tam denetimli değil (farklı postlar, farklı saat) ama mekanizma
+açık ve etki büyük.
+
+**Ders:** Hata koddaki bir satırda değil, **deney düzeneğindeydi**. Ölçüm düzgündü, kayıt
+düzgündü; yanlış olan sineğe yaptığımız şeydi. Onu da ölçüm değil, **izleyen bir insan** fark
+etti.
