@@ -5,7 +5,7 @@ değişiyor:
 
   1. Tarayıcı postu açar, ekran görüntüsünü alır. Post videoysa (reels) kareleri toplanır ve
      sineğe simülasyon zamanıyla oynatılır (Z-37); tarayıcı kendi başına oynatmaz.
-  2. Ekran görüntüsü sineğin telefonuna **solarak** gelir (K-030); postun açıklaması koku olur.
+  2. Ekran görüntüsü sineğin telefonuna **solarak** gelir (K-037); postun açıklaması koku olur.
   3. Sinek 500 ms'lik pencerelerle bakar, kanallardan biri eşiği aşınca karar verir (K-016, K-032).
   4. Karar Instagram eylemiyse güvenlik valisine sorulur (K-007), sonra tarayıcı düğmeye basar ve
      sonuç doğrulanır. Kuru çalıştırmada yalnızca kaydedilir.
@@ -43,9 +43,16 @@ INSTA_ACTION = {"begen": "begen", "kaydet": "kaydet", "yorum": "yorum", "takip":
 # kaçıp devriliyor (kaçış 7 Hz, diklik 0,10). 2 sn'de kaçış sıfır, diklik 0,99 (docs/11-instagram.md).
 SETTLE_MS = 2000.0
 
-# Gerçek feed'de postlar arası geçiş (K-037). Yerel akıştaki 300 ms (K-030) gerçek fotoğraflarda
-# yetmiyor: 8 post çiftinde kaçış 300 ms'de 6/8, 1200 ms'de 2/8 (docs/11-instagram.md).
-REAL_FADE_MS = 1200.0
+# Gerçek feed'de postlar arası geçiş (K-039; K-037'nin 1200 ms'ini kısaltır). Kaçırmayan en
+# kısa süre aranıyor: geçiş Instagram'da olmayan bir dünya ayarı, kısası daha gerçekçi.
+#
+#   geçiş     deney (13 çift)   gerçek oturum (14 post)
+#   anında         6/13                 6/14
+#   600 ms         0/13                 1/14   ← seçilen
+#   1200 ms        2/13                 1/14
+#
+# Ölçüm: flybrain/experiments/gecis.py (oturumun akışını taklit eder; bkz. K-039).
+REAL_FADE_MS = 600.0
 
 
 def _video_fn(frames: list, fps: float):
@@ -110,7 +117,7 @@ def run_session(n_posts: int = 5, dry_run: bool = True, seed: int = 8003, out: s
         print(report(gov), flush=True)
         viewer = _make_viewer(seed)
         fly = viewer.fly
-        fly.fade_ms = REAL_FADE_MS if fade_ms is None else fade_ms  # K-037
+        fly.fade_ms = REAL_FADE_MS if fade_ms is None else fade_ms  # K-039
         # Sinek akış açıkken yerleştirilir: boş (siyah) ekrandan ilk posta geçiş büyük bir
         # parlaklık değişimi ve sineği kaçırıyor (Z-25, Z-34). Gerçek kullanıcı da uygulamayı
         # zaten bir postun üstünde açar.

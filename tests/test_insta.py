@@ -249,3 +249,35 @@ def test_action_frames_are_cleared_when_nothing_was_clicked(sahte_akis):
     gov.dry_run = True
     assert feed.act("kaydet")["not"] == "kuru çalıştırma"
     assert feed.last_frames == []
+
+
+def test_transition_experiment_reads_shots_from_a_recorded_session(tmp_path):
+    """Geçiş deneyi kaydedilmiş oturumdan da beslenebiliyor (tarayıcı açmadan)."""
+    import json
+
+    import imageio.v2 as iio
+
+    from flybrain.experiments.gecis import _shots_from_run
+
+    run = tmp_path / "oturum"
+    run.mkdir()
+    (run / "meta.json").write_text(json.dumps({"post_sayisi": 3}))
+    with iio.get_writer(run / "ekran.mp4", fps=10, macro_block_size=1) as w:
+        for k in range(30):
+            w.append_data(np.full((64, 32, 3), k * 8, np.uint8))
+
+    shots = _shots_from_run(run, 3)
+    assert len(shots) == 3
+    assert all(s.shape == (64, 32, 3) for s in shots)
+    # Her post için farklı bir an seçilmeli, hepsi aynı kare olmamalı.
+    assert len({int(s.mean()) for s in shots}) == 3
+
+
+def test_zero_length_transition_switches_the_screen_at_once():
+    """Geçiş süresi 0 ise ekran anında değişir (K-039): Instagram'da solma yok."""
+    shape = (60, 30)
+    feed = ScreenshotFeed(shape)
+    feed.show(Shot(np.zeros((*shape, 3), np.uint8)))
+    feed.fade_to(Shot(np.full((*shape, 3), 255, np.uint8)), now_ms=0.0, duration_ms=0.0)
+    assert not feed.scrolling          # geçiş yok
+    assert feed.frame().min() == 255   # yeni kare tamamen yerinde

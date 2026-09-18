@@ -313,7 +313,10 @@ class PhoneFeed:
         self._changed = True
 
     def fade_to(self, post: FeedPost, now_ms: float, duration_ms: float = FADE_MS) -> None:
-        """Yeni postu akışa ekler; ekran eski görüntüden yenisine solarak geçer."""
+        """Yeni postu akışa ekler; ekran solarak geçer. Süre 0 ise anında değişir (K-039)."""
+        if duration_ms <= 0.0:
+            self.show(post)
+            return
         old = self.frame()
         self.show(post)
         self._fade = (old, now_ms, duration_ms)

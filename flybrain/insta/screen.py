@@ -54,7 +54,10 @@ class ScreenshotFeed:
         self._changed = True
 
     def fade_to(self, shot: Shot | np.ndarray, now_ms: float, duration_ms: float = FADE_MS) -> None:
-        """Ekran eski kareden yenisine solarak geçer."""
+        """Ekran eski kareden yenisine solarak geçer. Süre 0 ise anında değişir (K-039)."""
+        if duration_ms <= 0.0:
+            self.show(shot)
+            return
         old = self.frame()
         self.show(shot)
         self._fade = (old, now_ms, duration_ms)

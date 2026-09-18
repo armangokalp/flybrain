@@ -166,6 +166,8 @@ post yok, band yok.
 - **Bildirimler:** Sineğin kendi postlarına gelen beğeni ve yeni takipçiler ödül nöronlarına
   bağlanacak (`senses/reward.py`); Instagram'dan okunması henüz yazılmadı.
 - **Yorum metni:** K-036 (duygu + koklama) uygulanacak.
-- **Geçiş süresi:** K-037'deki 1200 ms eski sahne düzeninde (ekran sineğin başında, 2,0 mm)
-  ölçüldü. Sahne değiştiği için (K-038) yeniden ölçülmeli.
+- **Geçiş kaldırıldı (K-039):** Yeni sahnede solmanın ölçülebilir faydası kalmadı (11 çiftte
+  kaçış anında 3, 1200 ms'de 3). Ekran artık Instagram'daki gibi anında değişiyor. Ölçüm
+  tekrarlanabilir: `python -m flybrain.experiments.gecis --postlar 12`; kaydedilmiş bir
+  oturumdan da beslenebiliyor (`--kayittan runs/<ad>`, tarayıcı açılmaz).
 - **Paylaşım:** Post Faz 9'da (K-004, K-005), story oturum videosundan (K-035).

@@ -599,3 +599,28 @@ Durumlar: **önerildi** · **kabul edildi** · **yerine geçti**
 - **Gerekçe:** 2,5 mm kaçışı eskisi kadar koruyor (2/3, LC4 daha yüksek) ama postun alt kısmının baskınlığını %59'dan %49'a indiriyor. Asıl kazanç sayıda değil, **mesafenin artık sineğin kararı olmasında**: korktuğunda geri çekiliyor (ölçülen kaçış yer değiştirmesi 1,7–1,9 mm) ve postu daha geniş görüyor; yaklaşırsa bir şeyin üstüne gelmesi onu yeniden kaçırabiliyor. Önceden ekran başına yapışık olduğu için bunların hiçbiri olamıyordu.
 - **Bedel:** Bütün kalibrasyonlar (K-016/K-031 motor eşikleri, K-036 duygu ölçeği) 180°'de ölçülmüştü; yeniden ölçüldü. Önceki oturumlarla sayısal karşılaştırma koptu.
 - **Bilinen sınır:** Sinek gezinirken pratikte yürümüyor (ölçüm: pencere başına 0,001–0,05 mm), yani mesafeyi asıl değiştiren şey kaçışlar. "Sinek postu incelemek için geri çekiliyor" henüz gözlenmedi; başlangıç mesafesi hâlâ bizim seçtiğimiz bir sayı.
+
+## K-039 · Geçiş 600 ms; kaldırma denendi, ölçüm protokolü hatalıydı
+
+- **Durum:** kabul edildi (2026-09-18). K-037'nin 1200 ms'ini 600 ms'e indirir.
+- **Ne yapıldı:** K-038 sahneyi değiştirince K-037'nin dayanağı kalmadı ve geçiş süresi yeniden ölçüldü (`flybrain/experiments/gecis.py`). Ölçüm sürenin hiçbir etkisi olmadığını söyledi; kullanıcı bunun üzerine geçişin kaldırılmasını seçti. Geçişsiz ilk gerçek oturum **14 postta 6 kaçış** verdi (geçişli oturumda 1). Değişiklik geri alındı.
+- **Hata neredeydi:** Deneyin ilk sürümü **her çiftten önce sineği sıfırlayıp 2 sn oturtuyordu**. Her deneme dinlenmiş, sakin bir sinekle başlıyordu; oysa gerçek oturumda geçişler arka arkaya geliyor ve sineğin durumu taşınıyor. Ölçülen koşul, kullanılan koşul değildi.
+
+  | Geçiş | Kaçış (hatalı protokol) | Kaçış (oturum) |
+  |---|---|---|
+  | anında | 3/11 | **6/14** |
+  | 1200 ms | 3/11 | 1/14 |
+
+- **Düzeltme:** Deney artık oturumun akışını taklit ediyor — sinek yalnızca başta ve kaçıştan sonra sıfırlanıyor, geçişler arka arkaya geliyor. Düzeltilmiş protokol küçük bir örneklemde bile farkı gösterdi (4 çift: anında 1, 1200 ms 0).
+- **Ders:** Bir ölçüm, ölçtüğü şeyin **kullanıldığı koşulu** taklit etmeli. Deneyi "temiz" yapan sıfırlama, tam da ölçmek istediğimiz birikimi siliyordu. Aynı hatanın izi Z-38'de de var: orada da doğru görünen kayıt (ekran) yanlış soruyu yanıtlıyordu.
+- **Düzeltilmiş ölçüm** (13 ardışık post, aynı dizi her sürede) ve doğrulama oturumları:
+
+  | Geçiş | Deney | Gerçek oturum |
+  |---|---|---|
+  | anında | 6/13 | 6/14 |
+  | 300 ms | 4/13 | – |
+  | **600 ms** | **0/13** | **1/14** |
+  | 1200 ms (K-037) | 2/13 | 1/14 |
+
+- **Karar:** `REAL_FADE_MS = 600.0`. Düzeltilmiş deney artık oturumu öngörüyor (anında için 6/13 tahmin, 6/14 ölçüm); eski protokol 3/11 diyordu. 600 ms oturumda 1200 ms kadar iyi, deneyde daha iyi ve yarısı kadar yapay.
+- **Bilinen sınır:** 13 çift küçük bir örneklem ve 600 ile 1200 arasındaki fark (0 vs 2) gürültü olabilir; ikisi de "anında"dan açıkça iyi. Kısa olan seçildi çünkü geçiş Instagram'da yok.
