@@ -11,6 +11,8 @@ import numpy as np
 
 from flybrain.body.muscles import LEGS, load_geometry
 from flybrain.body.scene import Scene, SceneConfig, add_to_world
+from flybrain.body.tether import Tether, TetherConfig
+from flybrain.body.tether import add_to_world as add_tether
 
 # Bacak eklemleri: kas-iskelet modelinin pasif özellikleri (kas kuvvetleriyle birlikte
 # kullanılan değerler). Kütle eylemsizliği NeuroMechFly'ınki gibi küçük tutulur; küçük
@@ -55,9 +57,14 @@ class BodyState:
 
 
 class Body:
-    """3D sinek gövdesi ve dünyası: düz zemin; istenirse gri arena ve telefon ekranı (body/scene.py)."""
+    """3D sinek gövdesi ve dünyası: düz zemin; istenirse gri arena ve telefon ekranı (body/scene.py).
 
-    def __init__(self, camera_res: tuple[int, int] = (360, 480), scene: SceneConfig | None = None):
+    `tether` verilirse sinek ekrana kilitlidir: göğsü dünyada duran bir tutucuya bağlanır
+    (body/tether.py, K-040). Bacaklar, kanatlar ve baş serbest kalır.
+    """
+
+    def __init__(self, camera_res: tuple[int, int] = (360, 480), scene: SceneConfig | None = None,
+                 tether: "TetherConfig | None" = None):
         from flygym import Simulation
         from flygym.anatomy import ActuatedDOFPreset, AxisOrder, JointPreset, Skeleton
         from flygym.compose import ActuatorType, FlatGroundWorld, KinematicPosePreset, NeuroMechFly
@@ -84,11 +91,14 @@ class Body:
         if scene is not None:
             add_to_world(world.mjcf_root, scene)
         world.add_fly(fly, [0, 0, 0.7], Rotation3D(format="quat", values=[1, 0, 0, 0]))
+        if tether is not None:
+            add_tether(world.mjcf_root, fly.name, tether)
         self.fly = fly
         self.sim = Simulation(world, timestep=TIMESTEP_S)
         self._motor = ActuatorType.MOTOR
         self.dofs = [d.name for d in fly.get_actuated_jointdofs_order(ActuatorType.MOTOR)]
         self.scene = Scene(self.sim, fly.name, scene) if scene is not None else None
+        self.tether = Tether(self.sim, fly.name, tether) if tether is not None else None
         self._renderers: dict[str, mj.Renderer] = {}
         self.camera_res = camera_res
         self.reset()
@@ -123,6 +133,8 @@ class Body:
                 joint.solref_limit = [LIMIT_TIMECONST_S, 1.0]
 
     def reset(self):
+        # sim.reset() bağı da çözer (eq_active → eq_active0). Sinek önce kendi pasif duruşuna
+        # oturur, bağ ondan sonra takılır (EmbodiedFly.reset → Tether.attach).
         self.sim.reset()
         self.sim.set_leg_adhesion_states(self.fly.name, np.ones(6))
         self.sim.mj_data.qfrc_applied[:] = 0.0

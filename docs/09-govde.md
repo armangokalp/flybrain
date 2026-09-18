@@ -1126,3 +1126,62 @@ Kalibrasyon sinekleri 80'er posta (~144 sn) baktı; yatık takılmalar uzun otur
 - Etkinlik dönemleri gerçek sinekte de var. Oranların uzun ölçekte bütçeye yaklaşıp yaklaşmadığı daha uzun oturumlarla ölçülmeli.
 - Kaydetmenin başlangıç eşiği yüksek.
 - Sekme ve önceki post neredeyse hiç seçilmiyor (Z-27).
+
+## 18. Bağ: sinek ekrana kilitli (2026-09-18)
+
+Kullanıcı düzeni değiştirdi: sinek artık **bağlı** (K-040). Göğsü dünyada duran bir tutucuya
+bağlı; bacaklar, kanatlar ve baş serbest. Korktuğunda kaçış hareketini yapıyor ama gidemiyor.
+Akışta ilerlemenin tek yolu kendi vereceği başka bir karar.
+
+Bu, gerçek sinek görme deneylerinin standart hazırlığı. Önceki düzen (serbest sinek + kaçınca
+deneycinin yakalayıp geri koyması, K-031/K-037) daha yapaydı.
+
+### 18.1 Fizik
+
+`flybrain/body/tether.py`. Göğüs ile tutucu arasında MuJoCo `weld` kısıtı; göreli poz birim,
+yani tutucunun çerçevesi göğsün çerçevesi. Kısıt sinek **kendi pasif duruşuna oturduktan
+sonra** takılıyor (`EmbodiedFly.reset` → `Tether.attach`), gerçek düzendeki gibi.
+
+Bağ görünür: notumda yapışkan damlası, yukarı çıkan iğne, iğneyi tutan kol. Hepsi tutucunun
+(mocap gövde) üstünde; kütlesi ve çarpışması yok, sineğin fiziğine dokunmuyor.
+
+Dinlenmede bağın gerginliği 1e-5 mm — görünür hareket eşiğinin (0,1 mm) dört kat altında.
+
+### 18.2 Kaçışın gövde onayı yeniden ölçüldü
+
+Ayrıntı Z-43'te. Özet: bağlı sinekte göğüs hiçbir şey söylemiyor (dev lif ateşlerken bile
+yükselme 0,003 mm, savrulma 0,005 mm), bağı gevşetmek yardım etmiyor. Ölçü sıçrama kasının
+(TTM) kendi eklemine taşındı:
+
+| ölçü | bağlı, dev lif > 0 | bağlı, dev lif = 0 | serbest, sıçrama | serbest, sakin |
+|---|---|---|---|---|
+| göğüs yükselme | 0,003 mm | 0,000 mm | 0,724 mm | 0,003 mm |
+| göğüs savrulma | 0,005 mm | 0,001 mm | 1,640 mm | 0,017 mm |
+| TTM eklemi | 87,2° | 3,1° | – | 6,7° |
+
+Eşik (`ESCAPE_DEG = 20°`) serbest sineğin gerçekten sıçradığı pencerelerden çıkarıldı:
+
+| TTM eşiği | serbest sıçrama | serbest sakin | bağlı dev lif | bağlı sakin |
+|---|---|---|---|---|
+| 10° | %100 | %16 | %100 | %3 |
+| **20°** | **%100** | **%0** | **%100** | **%2** |
+| 40° | %91 | %0 | %75 | %1 |
+
+### 18.3 Bedel: kaçış seyrekleşiyor
+
+Bağlı sinekte dev lif 96 pencerede 4 kez ateşledi; serbest sinekte 22. Sebep düzenekte değil,
+kopan bir geri besleme döngüsünde: serbest sinek kaçarken kendi hareketi görüntüyü süpürüyor,
+bu LC4'ü yeniden besliyor ve kaçışı büyütüyor (K-029'un görme kazancını düşürme gerekçesiyle
+aynı olgu). Bağlı sinekte o döngü yok.
+
+### 18.4 Çırpınma: kaçış kararı postu bitirmiyor
+
+`FeedViewer.look(on_struggle=...)`. "Çıkış" kararı geldiğinde kaçış hareketi olur, kaydedilir,
+ekran değişmez ve sinek aynı posta **yeni bir bakış nöbetiyle** bakmaya devam eder (kanıt
+birikimi sıfırlanır). Nöbet sayısı `MAX_BOUTS = 5`'i aşarsa post ilgi kaybıyla kapanır.
+
+İki sınır:
+- Üst sınır dünya tarafında bir kural, oturum ilerlesin diye var.
+- Kalibrasyon istatistikleri postun **geçişle** başlayan ilk nöbetinden çıkarıldı. Sonraki
+  nöbetler geçişsiz başlıyor (ekran zaten yerinde), görme uyarımı daha düşük, eşikleri aşmak
+  zor. Çırpınan sinek bu yüzden ilgi kaybına doğru eğimli.

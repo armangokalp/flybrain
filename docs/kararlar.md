@@ -626,3 +626,26 @@ Durumlar: **önerildi** · **kabul edildi** · **yerine geçti**
 
 - **Karar:** `REAL_FADE_MS = 600.0`. Düzeltilmiş deney artık oturumu öngörüyor (anında için 6/13 tahmin, 6/14 ölçüm); eski protokol 3/11 diyordu. 600 ms oturumda 1200 ms kadar iyi, deneyde daha iyi ve yarısı kadar yapay.
 - **Bilinen sınır:** 13 çift küçük bir örneklem ve 600 ile 1200 arasındaki fark (0 vs 2) gürültü olabilir; ikisi de "anında"dan açıkça iyi. Kısa olan seçildi çünkü geçiş Instagram'da yok.
+
+## K-040 · Sinek ekrana bağlı; korkuyor ama kaçamıyor
+
+- **Durum:** kabul edildi (2026-09-18), kullanıcı kararı. K-031'deki yeniden yerleştirmeyi ve K-037'nin "deneyci sineği geri getirir" ekini gereksiz kılar.
+- **Kullanıcının isteği:** "Sinek bağlı olsun, korkunca korksun... Korkunca kaçamasın gene fear response göstersin (biz enjekte etmeyelim böcek kendisi korkuyosa korksun) ama ters dönmesin gövdesi bağlı olsun ekrana bakmaya devam etsin... çırpınsın tek çare sonraki reelse geçmek (gene her şey böceğin iradesinde ama ekrana kitli)."
+- **Neden zaten doğru düzen:** Gerçek sinek görme deneylerinin standart hazırlığı bu. Hayvanın notumuna ince bir iğne yapıştırılır, iğne sabit bir kola tutturulur, önüne ekran konur. Bacaklar, kanatlar ve baş serbesttir. Bizim önceki düzenimiz (serbest sinek + kaçınca deneycinin yakalayıp geri koyması) daha yapaydı.
+- **Uygulama:** `flybrain/body/tether.py`. Göğüs, dünyada duran bir tutucuya MuJoCo `weld` kısıtıyla bağlanır. Kısıt sinek **kendi pasif duruşuna oturduktan sonra** takılır (gerçek düzende de hayvan önce yerleştirilir). Bağ görünür: notumda yapışkan damlası, yukarı çıkan iğne, iğneyi tutan kol — hiçbirinin kütlesi ve çarpışması yok.
+- **Kaçışın sonucu değişti:** "Çıkış" kararı artık postu bitirmiyor. Sinek kaçış hareketini yapıyor, gidemiyor, aynı posta bakmaya devam ediyor — yeni bir **bakış nöbeti** başlıyor (`FeedViewer.look(on_struggle=...)`). Akışta ilerlemenin tek yolu sineğin kendi vereceği başka bir karar. Toparlanma ekranı (K-039 eki, Z-41) ve yeniden yerleştirme (K-031) bağlı sinekte kapalı.
+- **Gövde onayı yeniden ölçüldü (Z-43):** Kaçışın gövde onayı serbest sinekte göğsün yükselmesiydi (sıçrama). Bağlı sinekte göğüs hiçbir şey söylemiyor — dev lifin ateşlediği pencerelerde bile yükselme 0,003 mm, savrulma 0,005 mm. Ölçü, sıçrama kasının (TTM) kendi eklemine taşındı: orta bacakların trokanter açıcısı, eşik 20°. Eşik **serbest** sineğin gerçekten sıçradığı pencerelerden çıkarıldı, dev lif spike'larından değil.
+- **Bedel:** Bağlı sinekte dev lif belirgin biçimde daha seyrek ateşliyor (ölçüm: 96 pencerede 22 yerine 4). Sebebi bilinen bir döngünün kopması: serbest sinek kaçarken kendi hareketi görüntüyü süpürüyor, bu da LC4'ü ve dev lifi yeniden besliyordu. Bağlı sinekte bu kendini büyüten döngü yok. Korku duruyor, daha seyrek.
+- **Bedel 2:** Kalibrasyon yeniden yapıldı (`calibration_tethered.json`, `--bagli`). Bağlı sinekte propriyosepsiyon ve görme farklı çalıştığı için kanalların tipik düzeyi de farklı; serbest sineğin eşikleri geçersiz.
+- **Bilinen sınır:** Bakış nöbeti sayısının üst sınırı (`MAX_BOUTS = 5`) dünya tarafında bir kural: oturum ilerlesin diye var. Ayrıca kalibrasyon istatistikleri postun **geçişle** başlayan ilk nöbetinden çıkarıldı; sonraki nöbetler geçişsiz başlıyor, görme uyarımı daha düşük, eşikleri aşmak zor. Çırpınan sinek bu yüzden ilgi kaybına doğru eğimli.
+
+## K-041 · Yorum metni: yalnızca koklanan kelimeler; duygu bileşeni düştü
+
+- **Durum:** kabul edildi (2026-09-18), kullanıcı kararı. K-036'yı daraltır ve yorum özelliğini yeniden açar.
+- **Bağlam:** K-036 hibritti: duygu sinekten okunacak, kelimeler koklanarak seçilecekti. Ölçüm (Z-40) hibridin **duygu** yarısını düşürdü: duygu okuması tekrarlanmıyor ve kelime sıralamasını değiştirmiyor. Yorum o gün tamamen kapatılmıştı.
+- **Gözden kaçan:** Z-40 yalnızca duygu bileşenini çürüttü. Kelimeleri koklayarak seçme kısmı ölçülmedi ve çalışıyor: sinek aday kelimeleri tek tek kokluyor, her birinde `ileri − geri − çıkış` kanallarından yaklaşma skoru okunuyor.
+- **Karar:** Yorum metni **yalnızca** koklanan kelimelerden kurulur. Sinek yaklaştığı kelimeleri sırayla seçer; yaklaşma sıfırın altına düşünce yorum biter, yani **uzunluğu da sinek belirler**. Hiçbir kelimeye yaklaşmazsa yorum boş kalır ve hiçbir şey yazılmaz.
+- **Kaldırılanlar:** Emoji ve "duyguya göre kelime sayısı" tablosu (`MOOD_STYLE`). İkisi de insan tarafından yazılmıştı; tekrarlanmayan bir okumadan emoji seçmek gürültüyü duygu diye sunmak olurdu. Duygu okuması istenirse yalnızca **günlüğe** yazılır, metni etkilemez.
+- **Ne iddia ediliyor, ne edilmiyor:** Yorum, sineğin gerçekten yaklaştığı kelimelerden oluşur. Sinek bu kelimelerin anlamını bilmiyor; kelime → koku eşlemesinin (K-013) anlamla ilişkisi yok. İddia "sinek bir şey söylüyor" değil, "yorumun her kelimesi sineğin kendi seçimi".
+- **Maliyet:** Her koklama `SNIFF_MS` (300 ms) simülasyon zamanı harcıyor; en fazla 12 aday ve 4 kelime, yani yorum başına ~12 sn simülasyon.
+- **Bilinen sınır:** Bildirimler hâlâ ödül nöronlarına bağlı değil (Z-40 kök nedeni, Faz 9'a bağlı). Duygu bileşeni oraya kadar kapalı.

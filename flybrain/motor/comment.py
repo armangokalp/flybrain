@@ -1,14 +1,21 @@
-"""Yorumun metni: duygu sinekten, kelimeler koklanarak (K-036).
+"""Yorumun metni: kelimeler koklanarak seçilir (K-036, K-041 ile daraltıldı).
 
 Sinek dil bilmiyor. Kelimeler **feed'den** geliyor: gördüğü açıklamalardaki her kelime bir koku
 (K-013). Yorum yazarken sinek adayları sırayla kokluyor ve en çok **yaklaştığı** kelimeyi
-seçiyor. Koklama sineğin o anki beyin durumunda yapılıyor; korkmuşken yaklaştığı kelime ile
-başka durumdaki farklı olabilir. Beyin kelimeler arasında sıfırlanmıyor (K-005).
+seçiyor. Koklama sineğin o anki beyin durumunda yapılıyor. Beyin kelimeler arasında
+sıfırlanmıyor (K-005).
 
   yaklaşma = ileri kanalı − (geri kanalı + çıkış kanalı)
 
-Duygu (motor/mood.py) kelimeyi doğrudan seçmez; yorumun kaç kelime olacağını ve sonundaki
-emojiyi belirler (MOOD_STYLE, insan tarafından yazılmış küçük tablo) ve karar günlüğüne yazılır.
+Yorum, yaklaşma skoru sıfırın altına düşünce biter: **uzunluğu da sinek belirliyor**. Sinek
+hiçbir kelimeye yaklaşmıyorsa yorum boş kalır ve hiçbir şey yazılmaz.
+
+**Duygu bileşeni yok (K-041).** K-036 duygunun (motor/mood.py) kelime seçimini değiştirmesini,
+yorumun uzunluğunu ve sonundaki emojiyi belirlemesini öngörüyordu. Ölçüm bunu düşürdü (Z-40):
+duygu okuması tekrarlanmıyor ve kelime sıralamasını değiştirmiyor. Tekrarlanmayan bir okumadan
+emoji seçmek gürültüyü duygu diye sunmak olurdu. Emoji ve uzunluk tablosu (MOOD_STYLE) insan
+tarafından yazılmıştı; ikisi de kaldırıldı. `mood` verilirse okuma yalnızca **günlüğe** yazılır,
+metni etkilemez.
 
 Kelime kütüphanesi sineğin gördüğü açıklamalardan birikir. Aday sayısı MAX_CANDIDATES ile
 sınırlı, çünkü her koklama simülasyon zamanı harcıyor (SNIFF_MS).
@@ -18,12 +25,15 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from flybrain.motor.mood import MOOD_STYLE, MOODS, MoodReadout
+from flybrain.motor.mood import MOODS, MoodReadout
 from flybrain.motor.readout import CHANNELS, MotorReadout
 from flybrain.senses.olfaction import OlfactoryEncoder, tokenize
 
 SNIFF_MS = 300.0        # bir kelimenin koklanma süresi
 MAX_CANDIDATES = 12     # her yorumda koklanacak en fazla kelime
+# Yorumun uzunluğunu sinek belirliyor (yaklaşma sıfırın altına düşünce biter); bu yalnızca
+# üst sınır: her kelime SNIFF_MS simülasyon zamanı harcıyor.
+MAX_WORDS = 4
 MIN_WORD_LEN = 2
 LIBRARY_LIMIT = 200     # kütüphanede tutulan en yeni kelime sayısı
 
@@ -58,7 +68,7 @@ class WordLibrary:
 @dataclass
 class Comment:
     text: str
-    mood: str
+    mood: str                    # yalnızca günlük için; metni etkilemez (K-041)
     words: list[str]
     scores: dict[str, float]     # her adayın son yaklaşma skoru
     mood_z: dict[str, float]
@@ -70,9 +80,9 @@ def _approach(rates: np.ndarray) -> float:
 
 
 class CommentWriter:
-    """Koklayarak kelime seçer; duyguyu okur ve yorumu kurar."""
+    """Koklayarak kelime seçer ve yorumu kurar (duygu verilirse yalnızca günlüğe yazılır)."""
 
-    def __init__(self, fly, readout: MotorReadout, mood: MoodReadout,
+    def __init__(self, fly, readout: MotorReadout, mood: MoodReadout | None = None,
                  smell: OlfactoryEncoder | None = None, sniff_ms: float = SNIFF_MS):
         self.fly = fly
         self.readout = readout
@@ -96,17 +106,17 @@ class CommentWriter:
         return self.mood.dominant(counts, duration_ms)
 
     def write(self, counts: np.ndarray, duration_ms: float, caption: str = "") -> Comment:
-        """Posta bakarken biriken spike'lardan duyguyu okur, sonra kelimeleri koklayarak seçer.
+        """Kelimeleri koklayarak seçer; yaklaşma bitince yorum da biter.
 
         counts: posta bakılırken biriken spike sayıları (karar okumasının kullandığı dizi).
+        Duygu okuması yalnızca günlüğe yazılır, metni etkilemez (K-041).
         """
-        mood, z = self.read_mood(counts, duration_ms)
+        mood, z = self.read_mood(counts, duration_ms) if self.mood is not None else ("", {})
         self.library.add(caption)
-        wanted = MOOD_STYLE[mood]["words"]
         adaylar = self.candidates(caption)
         secilen: list[str] = []
         scores: dict[str, float] = {}
-        while adaylar and len(secilen) < wanted:
+        while adaylar and len(secilen) < MAX_WORDS:
             for w in adaylar:
                 scores[w] = self.sniff(w)
             best = max(adaylar, key=lambda w: scores[w])
@@ -114,10 +124,7 @@ class CommentWriter:
                 break  # kaçınma baskın: yorum burada biter (K-005)
             secilen.append(best)
             adaylar.remove(best)
-        text = " ".join(secilen)
-        if text:
-            text = f"{text} {MOOD_STYLE[mood]['emoji']}"
-        return Comment(text=text, mood=mood, words=secilen, scores=scores, mood_z=z)
+        return Comment(text=" ".join(secilen), mood=mood, words=secilen, scores=scores, mood_z=z)
 
     def candidates(self, caption: str = "") -> list[str]:
         return self.library.candidates(caption)

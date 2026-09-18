@@ -47,9 +47,9 @@ Kalan risk videolarda ve çoklu görsellerde; oradaki sert değişimler "anında
 |---|---|
 | beğen / kaydet | kalp / yer imi düğmesi |
 | takip | takip düğmesi |
-| yorum | yorum kutusu (metin K-036 ile yazılacak) |
+| yorum | yorum kutusu; metni sinek koklayarak seçiyor (K-041) |
 | ileri, geri, sekme, tımar, ilgi kaybı | yok; yalnızca gövde hareketi ve akışta ilerleme |
-| çıkış | oturumu bitirir ("uçup gider") |
+| çıkış | bağlı sinekte çırpınma; post bitmez, sinek bakmaya devam eder (K-040) |
 
 ## 4. Güvenlik valisi (`insta/governor.py`)
 
@@ -165,7 +165,8 @@ post yok, band yok.
   Çelişki çözülmedi, kök neden Z-25.
 - **Bildirimler:** Sineğin kendi postlarına gelen beğeni ve yeni takipçiler ödül nöronlarına
   bağlanacak (`senses/reward.py`); Instagram'dan okunması henüz yazılmadı.
-- **Yorum metni:** K-036 (duygu + koklama) uygulanacak.
+- **Yorum metni:** K-041 ile açıldı; metin yalnızca koklanan kelimelerden geliyor, duygu
+  bileşeni Z-40'ta düştü. Bildirimler ödül nöronlarına bağlanınca (Faz 9) yeniden bakılacak.
 - **Geçiş kaldırıldı (K-039):** Yeni sahnede solmanın ölçülebilir faydası kalmadı (11 çiftte
   kaçış anında 3, 1200 ms'de 3). Ekran artık Instagram'daki gibi anında değişiyor. Ölçüm
   tekrarlanabilir: `python -m flybrain.experiments.gecis --postlar 12`; kaydedilmiş bir

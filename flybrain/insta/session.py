@@ -11,6 +11,11 @@ değişiyor:
      sonuç doğrulanır. Kuru çalıştırmada yalnızca kaydedilir.
   5. Eylemin animasyonu sineğe oynatılır: beğeni fotoğrafa çift dokunarak yapılıyor ve sinek
      kalbin görselin üstünde büyümesini görüyor.
+  6. Karar "yorum" ise metin sineğin kendisinden gelir: aday kelimeleri tek tek koklar ve
+     yaklaştıklarını seçer (K-041, motor/comment.py). Yaklaştığı kelime yoksa yorum boş kalır.
+
+Sinek **ekrana bağlıdır** (K-040): göğsü dünyada duran bir tutucuya bağlı. Korktuğunda kaçış
+hareketini yapar ama gidemez; akışta ilerlemenin tek yolu kendi vereceği başka bir karardır.
 
 Sahne: telefon dünyada duran bir nesne, sinek 2,5 mm uzakta başlıyor (K-038). Mesafeyi sineğin
 kendi yürüyüşü belirliyor; kaçtığında geri çekiliyor ve postu daha geniş görüyor.
@@ -33,10 +38,16 @@ from flybrain.insta.browser import Browser
 from flybrain.insta.feed import ACTION_FPS, VIDEO_FPS, InstaFeed
 from flybrain.insta.governor import LOG, Governor, Limits, Stopped, report
 from flybrain.insta.screen import ScreenshotFeed, Shot
-from flybrain.motor.selector import CALIBRATION_EMBODIED_PATH, Calibration
+from flybrain.motor.comment import CommentWriter
+from flybrain.motor.selector import (
+    CALIBRATION_EMBODIED_PATH,
+    CALIBRATION_TETHERED_PATH,
+    Calibration,
+)
 
 # Sineğin kararı → Instagram eylemi. Ötekiler (ileri, geri, sekme, tımar, ilgi kaybı) yalnızca
-# gövde hareketi ve akışta ilerleme; Instagram'da karşılığı yok. "cikis" oturumu bitirir.
+# gövde hareketi ve akışta ilerleme; Instagram'da karşılığı yok. "cikis" bağlı sinekte çırpınma
+# olur ve postu bitirmez (K-040); yalnızca --serbest kipinde sineği akıştan çıkarır.
 INSTA_ACTION = {"begen": "begen", "kaydet": "kaydet", "yorum": "yorum", "takip": "takip"}
 
 # Yerleştirmeden sonra ilk posta geçmeden önceki bekleme. 500 ms yetmiyor: sinek ilk pencerede
@@ -80,9 +91,10 @@ def _video_fn(frames: list, fps: float):
     return video
 
 
-def _make_viewer(seed: int, homeostasis: bool = True):
+def _make_viewer(seed: int, homeostasis: bool = True, tether: bool = True):
     from flybrain.body.embodied import EMBODIED_VISION, EmbodiedFly
     from flybrain.body.scene import SceneConfig
+    from flybrain.body.tether import TetherConfig
     from flybrain.body.viewer import FeedViewer
 
     class _Viewer(FeedViewer):
@@ -100,20 +112,33 @@ def _make_viewer(seed: int, homeostasis: bool = True):
                 self.pending_video = None
             return stim
 
-    fly = EmbodiedFly(vision=EMBODIED_VISION, scene=SceneConfig(), seed=seed)
+    fly = EmbodiedFly(vision=EMBODIED_VISION, scene=SceneConfig(), seed=seed,
+                      tether=TetherConfig() if tether else None)
     fly.feed = ScreenshotFeed(fly.scene.texture_shape)
-    viewer = _Viewer(fly, Calibration.load(CALIBRATION_EMBODIED_PATH), homeostasis=homeostasis)
+    viewer = _Viewer(fly, Calibration.load(calibration_path(tether)), homeostasis=homeostasis)
     return viewer
+
+
+def calibration_path(tether: bool):
+    """Bağlı sineğin eşikleri ayrı dosyada (K-040): kanalların tipik düzeyi farklı."""
+    if not tether:
+        return CALIBRATION_EMBODIED_PATH
+    if not CALIBRATION_TETHERED_PATH.exists():
+        raise Stopped(f"bağlı sineğin kalibrasyonu yok ({CALIBRATION_TETHERED_PATH.name}); "
+                      "önce: python -m flybrain.experiments.embodied_calibrate --bagli --save")
+    return CALIBRATION_TETHERED_PATH
 
 
 def run_session(n_posts: int = 5, dry_run: bool = True, seed: int = 8003, out: str | None = None,
                 headless: bool = False, limits: Limits | None = None, url: str | None = None,
-                live: bool = False, fade_ms: float | None = None):
+                live: bool = False, fade_ms: float | None = None, tether: bool = True):
     """Oturumu yürütür. dry_run=False ise eylemler gerçekten uygulanır.
 
     url: gerçek Instagram yerine yerel bir sayfa (tests/sahte_akis.html). Döngünün tamamını
     gerçek hesaba dokunmadan çalıştırmak için.
     live: oturum sürerken tarayıcıdan izlenebilen canlı yayın (viz/live.py, ağır çekim).
+    tether: sinek ekrana bağlı (K-040). Kaçış kararı postu bitirmez; sinek çırpınır ve
+        akışta ilerlemenin tek yolu kendi vereceği başka bir karardır.
     """
     from flybrain.viz.record import SessionRecorder
 
@@ -128,8 +153,9 @@ def run_session(n_posts: int = 5, dry_run: bool = True, seed: int = 8003, out: s
         if url is None and not browser.logged_in():
             raise Stopped("Instagram oturumu yok: açılan tarayıcıda elle giriş yap, sonra yeniden çalıştır")
         print(report(gov), flush=True)
-        viewer = _make_viewer(seed)
+        viewer = _make_viewer(seed, tether=tether)
         fly = viewer.fly
+        writer = CommentWriter(fly, viewer.readout)  # yorumun metni (K-041)
         fly.fade_ms = REAL_FADE_MS if fade_ms is None else fade_ms  # K-039
         # Sinek akış açıkken yerleştirilir: boş (siyah) ekrandan ilk posta geçiş büyük bir
         # parlaklık değişimi ve sineği kaçırıyor (Z-25, Z-34). Gerçek kullanıcı da uygulamayı
@@ -145,9 +171,11 @@ def run_session(n_posts: int = 5, dry_run: bool = True, seed: int = 8003, out: s
             feed.on_frame = stream.show_browser  # kaydırma ve animasyon izleyiciye aksın
             print(f"canlı izleme: {stream.url}", flush=True)
         info = {"sinek_tohumu": seed, "post_sayisi": n_posts, "kuru_calistirma": dry_run,
-                "kalibrasyon": CALIBRATION_EMBODIED_PATH.name, "kaynak": url or "instagram"}
+                "kalibrasyon": calibration_path(tether).name, "kaynak": url or "instagram",
+                "bagli": tether}
         results = []
         escapes = 0
+        struggles = 0
         t0 = time.perf_counter()
         with SessionRecorder(fly, out, info=info) as rec:
             for k in range(n_posts):
@@ -166,14 +194,43 @@ def run_session(n_posts: int = 5, dry_run: bool = True, seed: int = 8003, out: s
                     if kareler:
                         rec.event("video", sira=k + 1, kare=len(kareler), fps=VIDEO_FPS)
                         viewer.pending_video = _video_fn(kareler, VIDEO_FPS)
-                decision = viewer.look(Post(image=item.shot, caption=item.caption))
+                def cirpinma(d, bout, _k=k, _item=item):
+                    """Bağlı sinek kaçmaya kalktı ve kaçamadı (K-040)."""
+                    nonlocal struggles
+                    struggles += 1
+                    rec.event("cirpinma", sira=_k + 1, nobet=bout, z=d.z.get("cikis"),
+                              yukselme_mm=(d.body or {}).get("gogus_yukselme_mm"))
+                    msg = (f"  [{_k + 1}] kaçmaya çalıştı (nöbet {bout + 1}), bağ tuttu"
+                           f" — göğüs {(d.body or {}).get('gogus_yukselme_mm', 0):.2f} mm")
+                    print(msg, flush=True)
+                    if stream is not None:
+                        stream.say(f"post {_k + 1}: korktu, kaçamadı (çırpınma {bout + 1})")
+
+                decision = viewer.look(Post(image=item.shot, caption=item.caption),
+                                       on_struggle=cirpinma if tether else None)
                 action = INSTA_ACTION.get(decision.action)
                 applied = None
                 if action == "yorum":
-                    # Yorumun metni sineğin duygusundan ve kokladığı kelimelerden yazılacak (K-036).
-                    applied = gov.record("yorum", False, "yorum metni üretimi henüz yok (K-036)")
-                    rec.event("instagram_eylem", sira=k + 1, eylem=action, uygulandi=False,
-                              aciklama=applied["not"])
+                    # Yorumun metni: sinek aday kelimeleri tek tek kokluyor ve yaklaştıklarını
+                    # seçiyor (K-041). Koklama simülasyon zamanı harcıyor; ekran değişmiyor.
+                    yorum = writer.write(viewer.counts, decision.dwell_ms, item.caption)
+                    rec.event("yorum_metni", sira=k + 1, metin=yorum.text, kelimeler=yorum.words,
+                              skorlar={w: round(s, 3) for w, s in yorum.scores.items()})
+                    if not yorum.text:
+                        applied = gov.record("yorum", False, "sinek hiçbir kelimeye yaklaşmadı")
+                    else:
+                        applied = feed.act(action, yorum.text)
+                    rec.event("instagram_eylem", sira=k + 1, eylem=action,
+                              uygulandi=applied["uygulandi"], aciklama=applied["not"],
+                              metin=yorum.text)
+                    print(f"  [{k + 1}] yorum: {yorum.text!r}"
+                          + ("" if yorum.text else " (yaklaştığı kelime yok)"), flush=True)
+                    if stream is not None:
+                        stream.say(f"post {k + 1}: yorum → {yorum.text or '(boş)'}")
+                    if feed.last_frames:
+                        fly.play_video(_video_fn(feed.last_frames, ACTION_FPS))
+                        fly.run(len(feed.last_frames) / ACTION_FPS * 1000.0)
+                        feed.last_frames = []
                 elif action is not None:
                     applied = feed.act(action)
                     rec.event("instagram_eylem", sira=k + 1, eylem=action,
@@ -194,6 +251,7 @@ def run_session(n_posts: int = 5, dry_run: bool = True, seed: int = 8003, out: s
                 print(f"post {k + 1}/{n_posts} @{item.username}: {decision.action} "
                       f"({decision.dwell_ms} ms){note} | {time.perf_counter() - t0:.0f} sn", flush=True)
                 if decision.action == "cikis":
+                    # Yalnızca **bağsız** sinekte olur (K-040 öncesi davranış; --serbest).
                     # Sinek uçup gitti. Yerel oturumlarda (Faz 6) bu karar akışı durdurmuyordu;
                     # deneyci sineği geri getiriyor (K-031'deki yeniden yerleştirmenin aynısı).
                     escapes += 1
@@ -207,7 +265,10 @@ def run_session(n_posts: int = 5, dry_run: bool = True, seed: int = 8003, out: s
                     fly.show_post(Shot(_recovery_screen(fly)))
                     fly.reset()
                     fly.run(SETTLE_MS)
-        print(f"bitti: {len(results)} post, {escapes} kez uçup gitti (deneyci geri getirdi)", flush=True)
+        if tether:
+            print(f"bitti: {len(results)} post, {struggles} kez kaçmaya çalıştı (bağ tuttu)", flush=True)
+        else:
+            print(f"bitti: {len(results)} post, {escapes} kez uçup gitti (deneyci geri getirdi)", flush=True)
         return rec.path, results
     finally:
         if stream is not None:
@@ -231,6 +292,8 @@ def main() -> None:
                     help="yalnızca bu eylemler uygulansın (virgülle: begen,kaydet)")
     ap.add_argument("--solma", type=float, default=None,
                     help=f"postlar arası geçiş süresi (ms; varsayılan {REAL_FADE_MS:.0f})")
+    ap.add_argument("--serbest", action="store_true",
+                    help="sinek bağlı olmasın (K-040 öncesi davranış: kaçınca deneyci geri getirir)")
     args = ap.parse_args()
     url = None
     if args.sahte:

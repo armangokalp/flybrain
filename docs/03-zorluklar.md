@@ -666,3 +666,54 @@ günlüğünde `"uygulandi": true, "not": ""` — geri dönüş yolu kullanılma
 
 **Ders:** Doğrulama katmanı (tıklamadan sonra etiketi yeniden oku) işini yaptı: hata sessizce
 "başarılı" diye kaydedilmedi. Test yakalayamadı ama **gerçeğe sorduğumuz soru** yakaladı.
+
+### Z-43 · Bağlı sinekte kaçışın gövdedeki izi göğüste değil, bacaklarda 🟢
+
+Sinek ekrana bağlandığında (K-040) bir şey kırılıyor: "çıkış" kararı **gövde onayından**
+geçmek zorunda (K-032) ve serbest sinekteki ölçüsü göğsün yükselmesi, yani sıçrama. Bağlı
+sinek yükselemez. Onay hiç gelmezse sinek korksa bile karar veremez ve korku kararlardan
+tamamen silinir — tam da kullanıcının istemediği şey.
+
+**İki yanlış deneme.**
+
+1. *Yükselme yerine savrulma.* İlk ölçüm kaçışın bağa karşı neredeyse tamamen **yatay**
+   olduğunu gösterdi (20 ms'lik bağda yükselme 0,01 mm, savrulma 0,11 mm). Ölçüyü "pencere
+   içinde göğsün başlangıç noktasından en büyük uzaklığı" yaptım.
+2. *Bağı gevşetmek.* Savrulma eşiği (0,1 mm) ancak çok esnek bir bağla aşılabilirdi. Bağın
+   zaman sabiti tarandı (10 / 20 / 40 / 80 ms) ve **beklediğimin tersi** çıktı: gevşetmek
+   kaçış savrulmasını artırmıyor, yalnızca dinlenmedeki salınımı büyütüyor. 40 ve 80 ms'de
+   sineğin dinlenirken savrulması kaçıştakinden **fazla**.
+
+   | bağ | dinlenme savrulma | kaçış savrulma |
+   |---|---|---|
+   | 10 ms | 0,023 mm | 0,011 mm |
+   | 20 ms | 0,009 mm | 0,022 mm |
+   | 40 ms | 0,055 mm | 0,022 mm |
+   | 80 ms | 0,016 mm | 0,009 mm |
+
+**Doğru yer.** Gerçek sinekte dev lif (DNp01) TTM kasını sürer, o da orta bacakların trokanter
+eklemini açar ve hayvan fırlar (`body/muscles.py`). Gövde gidemese de **bu hareket bacaklarda
+tam olarak yapılır**. Bütün gövde ölçüleri dev lifin ateşlediği ve ateşlemediği pencerelerde
+ayrı ayrı ölçüldü (`flybrain/experiments/bag.py`):
+
+| ölçü | bağlı, dev lif > 0 | bağlı, dev lif = 0 |
+|---|---|---|
+| göğüs yükselme | 0,003 mm | 0,000 mm |
+| göğüs savrulma | 0,005 mm | 0,001 mm |
+| **TTM eklemi** | **87,2°** | **3,1°** |
+
+**Eşik nereden geldi.** Dev lif spike'larından değil — yoksa gövde onayı kararı veren nöronu
+tekrar okumuş olurdu ve K-032'nin amacı (hareketi nöronla değil gövdeyle doğrulamak) kalmazdı.
+Eşik **serbest** sineğin gerçekten sıçradığı pencerelerden çıkarıldı: göğsü ≥ 0,1 mm yükselmiş
+pencerelerde TTM ekleminin açı yolu. 20°: serbest sıçramaların %100'ü, serbest sakin
+pencerelerin %0'ı, bağlı sakin pencerelerin %2'si.
+
+**Yan bulgu (bedel).** Bağlı sinekte dev lif belirgin biçimde daha seyrek ateşliyor: 96
+pencerede 22 yerine 4. Sebebi düzenekte değil, kopan bir geri besleme döngüsünde — serbest
+sinek kaçarken **kendi hareketi** görüntüyü süpürüyor, bu LC4'ü yeniden besliyor ve kaçışı
+büyütüyor. Bağlı sinekte o döngü yok. Gerçek tethered deneylerde de durum bu; korku duruyor,
+daha seyrek geliyor.
+
+**Ders:** Dünyayı değiştirince, o dünyaya bağlı **ölçütleri** de yeniden ölçmek gerekiyor.
+Bağı eklemek tek satırlık bir fizik değişikliğiydi; kararın gövdeyle doğrulanması ona sessizce
+bağlıydı ve ölçmeseydim korku çıktısı hiç gelmeyecekti.

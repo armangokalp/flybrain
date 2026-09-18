@@ -35,6 +35,7 @@ from flybrain.body.phone import FADE_MS, SCROLL_MS, FeedPost, PhoneFeed, ScreenS
 from flybrain.body.proprio import build_proprioception
 from flybrain.body.scene import SceneConfig
 from flybrain.body.sight import FlyEyes
+from flybrain.body.tether import TetherConfig
 from flybrain.connectome.connectome import Connectome, load_connectome
 from flybrain.connectome.electrical import with_electrical
 from flybrain.sim import BRAIN_PARAMS, LIFParams, Simulator, Stimulus
@@ -124,18 +125,21 @@ class EmbodiedFly:
         vision: VisionConfig | None = None,
         scene: SceneConfig | None = None,
         reposition: bool | None = None,
+        tether: TetherConfig | None = None,
     ):
         """vnc: "lif" — tüm sinir sistemi LIF; "rate" — bacak motor ağı hız modeliyle (K-025, deneysel).
         vision: verilirse sinek sahneyi kendi gözleriyle görür (body/sight.py).
         scene: verilirse gri arena ve sineği izleyen telefon ekranı (body/scene.py).
-        reposition: düşen sineği deneyci yeniden yerleştirsin mi; None ise sahne varsa evet.
+        reposition: düşen sineği deneyci yeniden yerleştirsin mi; None ise sahne varsa evet
+            (bağlı sinekte gereksiz: devrilemez, bu yüzden None ise kapalı).
+        tether: verilirse sinek ekrana kilitlidir (body/tether.py, K-040).
         """
         self.conn = conn or load_connectome()
         self.gap_junctions = []
         if electrical:
             self.conn, gap_exempt, self.gap_junctions = with_electrical(self.conn, params)
             std_exempt = gap_exempt if std_exempt is None else np.union1d(std_exempt, gap_exempt)
-        self.body = Body(camera_res=camera_res, scene=scene)
+        self.body = Body(camera_res=camera_res, scene=scene, tether=tether)
         self.scene = self.body.scene
         self.feed: ScreenSource | None = PhoneFeed(scene.texture_shape) if scene is not None else None
         self.eyes = None
@@ -165,7 +169,8 @@ class EmbodiedFly:
         else:
             raise ValueError(f"bilinmeyen sinir kordonu modeli: {vnc}")
         self._steps = int(round(COUPLE_MS / 1000 / TIMESTEP_S))
-        self.reposition = scene is not None if reposition is None else reposition
+        self.tether = self.body.tether
+        self.reposition = (scene is not None and tether is None) if reposition is None else reposition
         self.repositions: list[float] = []
         self._standing: np.ndarray | None = None
         self._down_ms = 0.0
@@ -211,6 +216,9 @@ class EmbodiedFly:
         else:
             raise RuntimeError(f"sinek {SETTLE_TRIES} denemede dik oturmadı")
         self._standing = self.body.snapshot()
+        if self.tether is not None:
+            # Bağ oturmadan **sonra** takılır: sinek kendi pasif duruşundayken (K-040).
+            self.tether.attach()
         if self.scene is not None:
             self.scene.snap(force=True)  # oturmuş duruşa göre yerleşsin
         if self.eyes is not None:

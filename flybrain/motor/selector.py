@@ -74,6 +74,9 @@ SAVE_SHARE = SAVE_BUDGET / BUDGET["hortum"]  # hortum kararları içinde kaydetm
 CALIBRATION_PATH = Path(__file__).with_name("calibration.json")
 # Gövdeli sineğin kalibrasyonu (experiments/embodied_calibrate.py, K-032).
 CALIBRATION_EMBODIED_PATH = Path(__file__).with_name("calibration_embodied.json")
+# Bağlı sineğin kalibrasyonu (K-040). Bağlı sinekte propriyosepsiyon ve görme farklı çalışıyor
+# (gövde hareket edemiyor), yani kanalların tipik düzeyi de farklı; eşikler ayrı çıkarılır.
+CALIBRATION_TETHERED_PATH = Path(__file__).with_name("calibration_tethered.json")
 
 
 @dataclass
@@ -184,6 +187,7 @@ class Decision:
     z: dict[str, float]  # karar penceresindeki z-skorları
     reason: str
     body: dict[str, float] | None = None  # gövdeli sinekte karar penceresinin gövde ölçüleri
+    bout: int = 0        # bağlı sinekte kaçıncı bakış nöbeti (K-040); serbest sinekte hep 0
 
 
 ACTION_OF_CHANNEL = {

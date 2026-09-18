@@ -11,8 +11,12 @@ Bir posta bakma (gövdesiz sinekteki flybrain/fly.py ile aynı düzen):
      sonunda ilgisini kaybeder.
 
 Beyin ve gövde postlar arasında sıfırlanmaz. Düşen sineği deneyci yeniden yerleştirir (K-031).
+
+Sinek bağlıysa (K-040, body/tether.py) "çıkış" kararı postu bitirmez: kaçış hareketi olur,
+gövde gidemez, sinek aynı posta bakmaya devam eder. Bkz. `look(on_struggle=...)`.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
 
 import numpy as np
@@ -33,6 +37,11 @@ from flybrain.motor.selector import (
 from flybrain.senses.olfaction import OlfactoryEncoder
 from flybrain.senses.reward import RewardEncoder
 from flybrain.sim import Stimulus
+
+# Bağlı sinekte (K-040) bir postta en fazla kaç bakış nöbeti. Kaçış girişimi nöbeti bitirir,
+# sinek aynı posta bakmaya devam eder. Üst sınır dünya tarafında bir kural: oturum ilerlesin
+# diye var, sineğin devresine dokunmuyor. Ölçümde çırpınma zaten 1-2 nöbette sönüyor.
+MAX_BOUTS = 5
 
 
 @dataclass
@@ -64,6 +73,7 @@ class FeedViewer:
         fly.spike_counter = self.counts
         self.selector = None
         self.posts = 0
+        self.tethered = fly.tether is not None  # kaçışın gövde onayı değişir (K-040)
         if calibration is not None or CALIBRATION_EMBODIED_PATH.exists():
             self.selector = ActionSelector(calibration or Calibration.load(CALIBRATION_EMBODIED_PATH), homeostasis)
 
@@ -97,24 +107,48 @@ class FeedViewer:
         rows = [self._window(stim, w) for w in range(windows)]
         return Observation(*(np.array(col) for col in zip(*rows)))
 
-    def look(self, post: Post) -> Decision:
-        """Posta bakar ve bir eyleme karar verir."""
+    def look(self, post: Post, on_struggle: Callable[[Decision, int], None] | None = None) -> Decision:
+        """Posta bakar ve bir eyleme karar verir.
+
+        `on_struggle` verilirse sinek **bağlıdır** (K-040): "çıkış" kararı postu bitirmez.
+        Sinek kaçış hareketini yapar, gidemez ve aynı posta bakmaya devam eder — yeni bir
+        bakış nöbeti başlar (birikim sıfırlanır, ekran değişmez). Tek çıkış yolu başka bir
+        karar vermek. Nöbet sayısı MAX_BOUTS'u aşarsa post ilgi kaybıyla kapanır.
+
+        Sınır: Kalibrasyon istatistikleri postun **geçişle** başlayan ilk nöbetinden çıkarıldı.
+        Sonraki nöbetler geçişsiz başlar (ekran zaten yerinde), yani görme uyarımı daha
+        düşüktür ve eşikleri aşmak zorlaşır. Çırpınan sinek bu yüzden çoğunlukla ilgi kaybına
+        doğru gider (docs/09-govde.md 18).
+        """
         if self.selector is None:
             raise RuntimeError("karar vermek için gövdeli kalibrasyon gerekli (experiments/embodied_calibrate.py)")
         stim = self._begin(post)
         placed = 0
-        for w in range(MAX_WINDOWS):
-            rates, turn, measures, _, n = self._window(stim, w)
-            placed += n
-            decision = self.selector.step(w, rates, turn, visible(measures))
-            if decision is not None:
+        bouts = MAX_BOUTS if on_struggle is not None else 1
+        for bout in range(bouts):
+            if bout:
+                self.counts[:] = 0  # yeni nöbet: kanıt birikimi baştan
+            for w in range(MAX_WINDOWS):
+                rates, turn, measures, _, n = self._window(stim, w)
+                placed += n
+                decision = self.selector.step(w, rates, turn, visible(measures, self.tethered))
+                if decision is None:
+                    continue
                 decision.body = {k: round(float(v), 4) for k, v in zip(MEASURES, measures)}
                 decision.body["yeniden_yerlestirme"] = placed
+                decision.bout = bout
                 if self.fly.recorder is not None:
                     self.fly.recorder.event("karar", sira=self.posts, eylem=decision.action, kanal=decision.channel,
                                             pencere=decision.window, sure_ms=decision.dwell_ms,
-                                            gerekce=decision.reason, z=decision.z, govde=decision.body)
+                                            gerekce=decision.reason, z=decision.z, govde=decision.body,
+                                            nobet=bout)
+                # Kararı sinek verdi; homeostaz bunu kaçış girişiminde de görmeli, yoksa
+                # çıkış eşiği bütçesinden sapar.
                 self.selector.learn(decision)
+                if on_struggle is not None and decision.action == "cikis":
+                    on_struggle(decision, bout)
+                    break  # kaçamadı: aynı posta yeni bir nöbetle bakmaya devam
                 return decision
-        raise AssertionError("seçici son pencerede her zaman karar verir")
+        return Decision("ilgi_kaybi", None, MAX_WINDOWS - 1, MAX_WINDOWS * WINDOW_MS * bouts,
+                        {}, f"kaçış döngüsü: {bouts} nöbet boyunca çıkıştan başka karar yok")
 

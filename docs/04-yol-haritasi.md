@@ -125,14 +125,15 @@ Ayrıntı: [10-gorsellestirme.md](10-gorsellestirme.md). Karar: K-033.
 - [x] Güvenlik valisi: hız sınırları, yasaklı kelime vetosu, doğrulama algılama → durdur ve bildir
 - [x] Kuru çalıştırma modu: eylemleri loglar ama uygulamaz
 - [x] Yerel sahte akışta uçtan uca deneme (`tests/sahte_akis.html`)
-- [x] Yorum metninin ön koşulu ölçüldü ve düştü (Z-40); yorum özelliği kapalı
+- [x] Yorum metninin duygu bileşeni ölçüldü ve düştü (Z-40); yorum, yalnızca koklanan kelimelerle açıldı (K-041)
 - [ ] **Bildirimler (gelen beğeni, yeni takipçi) → ödül nöronları** (`senses/reward.py`). Z-40 bunu öne çıkardı: devre çalışıyor (116 Hz) ama sinek bildirimleri hiç almıyor. Duygu okumasının anlamlı olması buna bağlı.
 - [x] Gerçek hesapta kuru çalıştırma; arayüz etiketleri doğrulandı (Z-36)
 - [x] Gerçek hesapta düşük limitli ilk oturum: 1 beğeni uygulandı ve doğrulandı (2026-09-17)
 - [x] Akış hataları: bildirim sayfası, "Use the app" bandı, hiza, tekrar eden post (Z-38)
 - [x] Reels oynuyor: kareler tarayıcıdan toplanıp simülasyon zamanıyla gösteriliyor (Z-37)
 - [x] Telefon dünyada sabit nesne; mesafe sineğin kararı (K-038) — kalibrasyonlar yenilendi
-- [ ] Postlar arası geçiş süresinin yeni sahnede yeniden ölçülmesi (K-037 eski düzende ölçüldü)
+- [x] Postlar arası geçiş süresi yeni sahnede yeniden ölçüldü: 600 ms (K-039)
+- [x] Sinek ekrana bağlandı (K-040): korkuyor, kaçış hareketini yapıyor ama gidemiyor; bağlı sinek için ayrı kalibrasyon
 
 **Bitiş:** Sinek gerçek feed'de bir oturumu sorunsuz tamamlıyor.
 
