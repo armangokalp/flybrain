@@ -550,7 +550,9 @@ Durumlar: **önerildi** · **kabul edildi** · **yerine geçti**
   - **Duygu sinekten okunur:** korku (LC4/LPLC2 → dev lif), besleme (şeker yolu → hortum), kur (pC1, şarkı komutu), ödül/ceza (PAM/PPL1), rahatsızlık (tımar kanalı). Okuma, motor okumayla aynı biçimde nöron havuzlarının hızından yapılır; eğitilmiş yorumlayıcı yok.
   - **Kelimeler koklanarak seçilir:** Adaylar sineğin feed'de karşılaştığı kelimeler (K-013 kelime → koku). Koklama, sineğin **o anki beyin durumunda** yapılır; korkmuşken yaklaştığı kelime ile açken yaklaştığı kelime farklı olabilir. Duygu kelimeyi doğrudan vermez, seçimi değiştirir.
   - **Duygunun ayrıca belirledikleri:** yorumun uzunluğu ve sonundaki emoji (küçük, sabit tablo), karar günlüğüne yazılan "baskın duygu".
-- **Ön koşul (ölçülecek):** Aynı kelime farklı beyin durumlarında gerçekten farklı yanıt alıyor mu? Fark çıkmazsa duygu yalnızca emojiyi ve uzunluğu belirler; bu durum açıkça raporlanır.
+- **Ön koşul ölçüldü ve DÜŞTÜ (2026-09-18, Z-40):** Duygu kelime seçimini değiştirmiyor; durumlar arası sıralama benzerliği aynı durumun kendi tekrarlarından yüksek. Duygu okumasının kendisi de tekrarlanmıyor. Yedek plan ("duygu yalnızca emojiyi ve uzunluğu belirler") de geçersiz: tekrarlanmayan bir okumadan emoji seçmek gürültüyü duygu diye sunmak olur.
+- **Kök neden (Z-40):** Havuzlar sağlam — doğrudan sürülünce ~140 Hz, ödül/ceza kendi uyaranlarıyla 116/117 Hz ateşliyor. Sessizlik, sineğin dünyasında o uyaranların hiç olmamasından geliyor: bildirimler ödül nöronlarına bağlı değil, sinek beğeni aldığını hiç öğrenmiyor.
+- **Durum:** Yorum özelliği **kapalı**. "yorum" kararı kayda geçiyor, hiçbir şey yazılmıyor. Bildirimler bağlandıktan sonra K-036 yeniden değerlendirilecek.
 - **Bilinen sınır:** Modelde açlık gibi bir **dürtü** yok; yalnızca şekere verilen anlık yanıt var. Kur devresi (pC1) postlarda neredeyse hiç ateşlemedi (K-017); libido baskın duygu olarak nadiren çıkacak.
 
 ## K-037 · Gerçek feed'de geçiş 1200 ms

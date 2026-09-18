@@ -552,3 +552,52 @@ devredildi.
 daha küçük yaklaşmalara kaçıyor. Bizim modelde yön seçiciliği oluşmuyor (T4/T5 için gereken farklı
 zaman sabitleri yok) ve görme yalnızca L2, L3, Mi1, Tm3'e veriliyor. Bu düzelirse dar ekranda da
 kaçış çalışır ve sinek postu rahatça görebileceği bir mesafede durabilir.
+
+### Z-40 · Duygu okuması tekrarlanmıyor; yorum metni bu temelde yazılamaz 🔴
+
+K-036 yorumun metnini iki şeye dayandırıyordu: duygu sineğin nöron havuzlarından okunacak,
+kelimeler o duygu içindeyken koklanarak seçilecek. Ön koşul ölçüldü (`experiments/comment.py`):
+aynı kelime listesi nötr ve korku durumlarında ikişer kez koklandı.
+
+| | 300 ms koklama | 1500 ms koklama |
+|---|---|---|
+| Aynı durumun iki ölçümü (gürültü tabanı) | −0,01 / 0,47 | 0,50 / 0,50 |
+| Nötr ↔ korku (4 eşleşme) | 0,62 · 0,56 · −0,01 · −0,36 | 0,43 · 0,42 · 0,95 · 0,72 |
+
+**Durum kelime seçimini değiştirmiyor.** Durumlar arası sıralama benzerliği (1500 ms'te ortalama
+0,63), aynı durumun kendi tekrarlarından (0,50) daha yüksek. Etki olsaydı tersi olurdu.
+
+**Duygu okumasının kendisi de tekrarlanmıyor.** Yaklaşan diski gördükten sonra sinek bir ölçümde
+"korku", aynı koşulun öteki ölçümünde "ödül" okuyor. Havuzlar neredeyse sessiz (kalibrasyonda
+korku 0,000 Hz, ödül 0,000 Hz), bu yüzden kazanan duygu sıfıra yakın farklarla değişiyor.
+
+**Sonuç:** K-036 bu temelde uygulanamaz. K-036'nın kendi yedek planı ("fark çıkmazsa duygu
+yalnızca emojiyi ve uzunluğu belirler") de geçersiz: tekrarlanmayan bir okumadan emoji seçmek,
+gürültüyü duygu diye sunmak olur (ilke 3'e aykırı).
+
+**Kök neden bulundu — havuzlar bozuk değil, dünyada uyaran yok.** Ölçüm
+(`python -m flybrain.experiments.duygu --ms 2000`), nöron başına Hz:
+
+| sonda | korku | besleme | kur | ödül | ceza | rahatsızlık |
+|---|---|---|---|---|---|---|
+| boş ekran | 0 | 0 | 0 | 0 | 0 | 0 |
+| post | 1,66 | 0,03 | 0,02 | 0 | 0,25 | 0 |
+| şeker | 0 | **0,09** | 0 | 0 | 0 | 0 |
+| acı | 0 | 0,01 | 0 | 0 | **0,31** | 0 |
+| **ödül (20 beğeni)** | 0 | 0 | 0 | **116,0** | 0 | 0 |
+| **ceza (20 takipçi kaybı)** | 0 | 0 | 0 | 0 | **117,3** | 0 |
+| doğrudan Poisson | 142,2 | 141,8 | 141,7 | 142,2 | 143,2 | 137,6 |
+
+Her havuz doğrudan sürülünce ~140 Hz ateşliyor: tanımları ve dinamikleri sağlam. Ödül ve ceza
+havuzları **kendi uyaranlarıyla 115 ve 110 Hz**'e çıkıyor, yani devreler eksiksiz çalışıyor.
+Şeker beslemeyi, acı cezayı sürüyor — hepsi beklendiği gibi.
+
+**Sessizliğin sebebi:** Sineğin dünyasında o uyaranlar hiç olmuyor. `senses/reward.py` yazılmış
+ve çalışıyor ama oturum onu hiç çağırmıyor — sinek beğeni aldığını, takipçi kazandığını ya da
+kaybettiğini **hiç öğrenmiyor**. Şeker de tatmıyor. Postlara bakarken korku ve ceza dışında
+gerçekten hiçbir şey hissetmiyor, çünkü hissedecek bir şey verilmemiş.
+
+**Sonuç:** "Baskın duygu" okuması sıfıra yakın hızlar arasından seçim yapıyordu; okunan şey
+gürültüydü çünkü **okunacak bir şey yoktu.** Havuzları düzeltmek gerekmiyor; sineğin dünyasına
+eksik girdileri bağlamak gerekiyor (yol haritasında zaten açık madde: bildirimler → ödül
+nöronları). Bağlandığında ödül havuzu gerçek bir sebeple ateşleyecek.

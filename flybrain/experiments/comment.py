@@ -32,8 +32,8 @@ def _rank_corr(a: np.ndarray, b: np.ndarray) -> float:
     return float((ra * rb).sum() / denom) if denom else float("nan")
 
 
-def run(n_words: int, seed: int, repeats: int) -> dict:
-    from flybrain.body.phone import fit, post_box
+def run(n_words: int, seed: int, repeats: int, sniff_ms: float | None = None) -> dict:
+    from flybrain.body.phone import FeedPost, fit, post_box
     from flybrain.body.scene import SceneConfig, pixel_directions
     from flybrain.experiments.calibrate import CAL_SEED, make_post
     from flybrain.experiments.embodied_calibrate import _viewer
@@ -48,8 +48,12 @@ def run(n_words: int, seed: int, repeats: int) -> dict:
     cfg = SceneConfig()
     mood = MoodReadout(fly.conn, MoodCalibration.load())
     writer = CommentWriter(fly, viewer.readout, mood)
+    if sniff_ms:  # 300 ms'de kelimelerin çoğu 0,000 Hz veriyor: ölçümün çözünürlüğü yok
+        writer.sniff_ms = sniff_ms
 
     post = make_post(0, CAL_SEED)
+    # Ekran akışı FeedPost bekliyor; make_post kalibrasyonun Post'unu döndürüyor.
+    ekran_postu = FeedPost(post.image, caption=post.caption)
     words = [w for w in dict.fromkeys(tokenize(post.caption)) if len(w) >= 2][:n_words]
     if len(words) < n_words:  # caption kısaysa başka postlardan tamamla
         for k in range(1, 20):
@@ -68,7 +72,7 @@ def run(n_words: int, seed: int, repeats: int) -> dict:
     scores: dict[tuple[str, int], np.ndarray] = {}
     moods: dict[tuple[str, int], str] = {}
     for state, rep in itertools.product(("notr", "korku"), range(repeats)):
-        fly.show_post(post)
+        fly.show_post(ekran_postu)
         fly.reset()
         fly.run(SETTLE_MS)
         if state == "korku":
@@ -101,8 +105,10 @@ def main() -> None:
     ap.add_argument("--kelime", type=int, default=10)
     ap.add_argument("--seed", type=int, default=8003)
     ap.add_argument("--tekrar", type=int, default=2)
+    ap.add_argument("--koklama", type=float, default=None,
+                    help="koklama penceresi (ms; varsayılan CommentWriter.sniff_ms)")
     args = ap.parse_args()
-    r = run(args.kelime, args.seed, args.tekrar)
+    r = run(args.kelime, args.seed, args.tekrar, args.koklama)
 
     print("\nkelime başına yaklaşma skoru (ileri − geri − çıkış, Hz)")
     keys = sorted(r["skorlar"])

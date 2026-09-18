@@ -125,8 +125,8 @@ Ayrıntı: [10-gorsellestirme.md](10-gorsellestirme.md). Karar: K-033.
 - [x] Güvenlik valisi: hız sınırları, yasaklı kelime vetosu, doğrulama algılama → durdur ve bildir
 - [x] Kuru çalıştırma modu: eylemleri loglar ama uygulamaz
 - [x] Yerel sahte akışta uçtan uca deneme (`tests/sahte_akis.html`)
-- [ ] Yorum metni: duygu okuması + koklayarak kelime seçimi (K-036)
-- [ ] Bildirimler (gelen beğeni, yeni takipçi) → ödül nöronları (`senses/reward.py`)
+- [x] Yorum metninin ön koşulu ölçüldü ve düştü (Z-40); yorum özelliği kapalı
+- [ ] **Bildirimler (gelen beğeni, yeni takipçi) → ödül nöronları** (`senses/reward.py`). Z-40 bunu öne çıkardı: devre çalışıyor (116 Hz) ama sinek bildirimleri hiç almıyor. Duygu okumasının anlamlı olması buna bağlı.
 - [x] Gerçek hesapta kuru çalıştırma; arayüz etiketleri doğrulandı (Z-36)
 - [x] Gerçek hesapta düşük limitli ilk oturum: 1 beğeni uygulandı ve doğrulandı (2026-09-17)
 - [x] Akış hataları: bildirim sayfası, "Use the app" bandı, hiza, tekrar eden post (Z-38)
