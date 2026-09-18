@@ -599,5 +599,12 @@ gerçekten hiçbir şey hissetmiyor, çünkü hissedecek bir şey verilmemiş.
 
 **Sonuç:** "Baskın duygu" okuması sıfıra yakın hızlar arasından seçim yapıyordu; okunan şey
 gürültüydü çünkü **okunacak bir şey yoktu.** Havuzları düzeltmek gerekmiyor; sineğin dünyasına
-eksik girdileri bağlamak gerekiyor (yol haritasında zaten açık madde: bildirimler → ödül
-nöronları). Bağlandığında ödül havuzu gerçek bir sebeple ateşleyecek.
+eksik girdileri bağlamak gerekiyor.
+
+**Ama bildirimleri bağlamak da şu an yetmiyor.** Hesap okundu (salt okuma): `flybrain26`'nın
+**hiç postu yok** ("Share your first photo") ve bildirim sayfasında yalnızca giriş güvenlik
+uyarıları var. Beğenecek bir şey olmadığı için gelen etkileşim de yok; bildirim okuyucusu
+bugün bağlansa sonsuza kadar sıfır okur.
+
+**Bağımlılık zinciri:** yorum metni ← duygu okuması ← gerçek ödül ← gelen beğeni ← sineğin
+postu olması ← **Faz 9 (içerik üretimi)**. Faz 9 bir özellik değil, duygu okumasının kilit taşı.
