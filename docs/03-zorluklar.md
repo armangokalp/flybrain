@@ -720,6 +720,10 @@ bağlıydı ve ölçmeseydim korku çıktısı hiç gelmeyecekti.
 
 ### Z-44 · Sineğin beğenisi komşu posta düştü ve hiçbir yere kaydedilmedi 🟢
 
+> **Teşhis eksikti (Z-45).** Aşağıdaki "sayfa dokunuştan önce kaydı" açıklaması asıl sebep
+> değildi. Asıl sebep, eylem yolunun postu hâlâ **indeksle** bulmasıydı. Buradaki iki katman
+> duruyor ama yetmedi: bir sonraki gerçek oturumda iki beğeni kararı dört başka posta düştü.
+
 Bağlı sinekle ilk gerçek oturumda (12 post, yalnızca beğeni ve yorum açık) günlük şunu yazdı:
 
 ```
@@ -764,3 +768,61 @@ Hesabın durumu ile günlüğün **tamamının** uyuşması gerekiyor, yalnızca
 belgelendi. Geri almak da hesaba sineğin kararı olmayan bir eylem daha yazmak olurdu. Bu yüzden
 hesaptaki beğenilerden biri sineğin kararı ama **yanlış postta**: sinek @vishnu___photography_'yu
 beğenmeye karar verdi, dokunuş @bestfeedmy'ye düştü.
+
+### Z-45 · Eylemler postu hâlâ indeksle buluyordu: iki beğeni dört başka posta, yorum başka birine 🟢
+
+Z-44'ün düzeltmesiyle 30 postluk gerçek bir oturum açıldı (bağlı sinek, beğeni ve yorum açık).
+Günlük temiz görünüyordu: bir beğeni tutmadı, bir beğeni kalp düğmesiyle uygulandı, bir yorum
+gönderildi, "yanlış posta düştü" uyarısı hiç çıkmadı. Hesabın salt okunur denetimi ise başka bir
+tablo verdi:
+
+| sineğin kararı | günlük | hesapta ne oldu |
+|---|---|---|
+| beğen @pedrophoto2020 (6) | tutmadı | beğenilmedi |
+| yorum @petthee (7) | "rethimni greece" gönderildi | yorum **@kieran_dykstra2023**'e (4) yazıldı |
+| beğen @swamprattler (12) | kalp düğmesiyle uygulandı | beğenilmedi |
+| — | — | **@petthee (7), @icmphotoacademy, @kdenny_astro (13), @liam_alford_photography (14) beğenildi** |
+
+Sineğin üç kararından **hiçbiri** kendi postuna gitmedi. Hesapta sineğin kararı olmayan dört
+beğeni ve yanlış yerde bir yorum oluştu. @icmphotoacademy'nin postu sineğe hiç gösterilmemişti.
+Yorum, sineğin üç post önce görüp geçtiği bir posta gitti; açıklamasındaki kelimeler (Rethimni,
+Greece) ise yazıldığı postla değil, @petthee'nin postuyla ilgili.
+
+**Sebep.** Z-38'de Instagram'ın akışın başından `article` sildiği ölçülmüş ve okuma, hizalama,
+ekran görüntüsü postu **bağlantısıyla** bulacak şekilde düzeltilmişti. Eylem yolu unutulmuştu:
+`act`, `_state`, `_icon`, `_click` ve `_comment` hâlâ `_article(self.index)` kullanıyordu. Sinek
+karar verene kadar (bakış pencereleri, bağlı sinekte çırpınma nöbetleri) akışın başından post
+silinmişse indeks bir sonraki posta bakıyordu. Çift dokunma o postun ekran dışındaki fotoğrafını
+bulamayıp kalp düğmesine düşüyor, durum okuması ise bu arada daha da kaymış bir başka posttan
+yapılıyordu. Bir karar böylece iki beğeniye dönüşebiliyordu.
+
+**Z-44'ün katmanları neden yakalamadı.** Görünen bütün postların önce/sonra karşılaştırması
+"hedef dışında değişen var mı" diye soruyordu. Ama **hedefin kendisi** de aynı kaymış indeksten
+okunuyordu: değişen post hedef sanıldı ve karşılaştırmadan çıkarıldı. Z-44'te gözlenen tablo da
+(8. postun beğenisi 9. postta) bu açıklamayla birebir uyuşuyor. "Sayfa dokunuştan önce kaydı"
+teşhisi gözleme uyuyordu ama sınanmamıştı.
+
+**Çözüm:**
+1. Bakılan postun bağlantısı `feed.url` olarak tutuluyor. Eylemler postu `_target()` ile
+   **yalnızca** bu bağlantıdan buluyor. Post sayfada yoksa indekse düşülmüyor ve hiçbir şeye
+   dokunulmuyor.
+2. Yorum simgesi başka bir sayfa açtıysa adresin bakılan postun kodunu taşıdığı yazmadan önce
+   doğrulanıyor. Taşımıyorsa tek harf yazılmıyor.
+3. Yorum gönderildikten sonra metnin sayfada göründüğü doğrulanıyor. Önceden `ok = True`
+   yazıyordu, yani kod yorumun gittiğini hiç denetlemiyordu.
+4. Beğeni durumu 2 saniyeye kadar bekleniyor. Geç güncellenen bir etiket "tutmadı" sanılırsa
+   kalp düğmesi beğeniyi geri alırdı.
+5. Yanlış posta düşme denetimi kalp düğmesinden **sonra** da yapılıyor ve hedef artık doğru.
+   Düşerse eylemin hesapta bıraktığı iz sayısı (`iz`) valinin hız sınırına sayılıyor ve
+   **oturum duruyor**.
+6. Sahte akışa Instagram'ın silme davranışı eklendi (testte ilk `article` siliniyor). Yeni
+   testler eski kodda gerçekteki hatayı birebir yapıyor, yeni kodda geçiyor.
+
+Valinin günlüğüne bu oturumun kayda geçmeyen üç beğenisi için bir düzeltme satırı eklendi.
+
+**Ders.** Z-38'in düzeltmesi "postu bağlantıyla bul" idi ve yalnızca sorunun görüldüğü yere
+uygulandı. Aynı varsayım (indeks sabittir) kodun başka yerlerinde de yaşıyordu. Bir varsayımın
+yanlış olduğu ölçüldüğünde, onu kullanan **her** yer taranmalı. İkinci ders Z-44'ten: bir
+denetim, denetlediği şeyi bozuk olabilecek aynı kaynaktan okuyorsa hiçbir şey denetlemiyor.
+Asıl denetim hesabın kendisiydi ve iki kez de hatayı o yakaladı.
+

@@ -387,3 +387,73 @@ def test_like_falls_back_to_the_heart_button_when_double_tap_does_not_register(s
     assert kayit["uygulandi"] is True
     assert "kalp düğmesi" in kayit["not"]      # hangi yolun kullanıldığı kayda geçti
     assert feed._state("begen") is True
+
+
+_SIL_ILK = "() => document.querySelector('article').remove()"  # Instagram akışın başını siliyor
+
+
+def test_actions_follow_the_viewed_post_when_instagram_drops_articles(sahte_akis):
+    """Eylem bakılan posta gider, indeksin şimdi gösterdiği posta değil (Z-45).
+
+    Gerçek oturumda sineğin iki beğeni kararı dört başka posta, @petthee'ye yazdığı yorum üç
+    post önceki @kieran_dykstra2023'e gitti: eylem yolu postu hâlâ indeksle buluyordu.
+    """
+    feed, gov, b = sahte_akis
+    feed.next_post()
+    ikinci = feed.next_post()
+    assert ikinci.url == "/p/BBB222/" and feed.index == 1
+    b.page.evaluate(_SIL_ILK)
+    assert feed._post_url(feed._article(feed.index)) == "/p/CCC333/"  # indeks artık komşuda
+
+    kayit = feed.act("begen")
+    assert kayit["uygulandi"] and "sapma" not in kayit
+    assert feed.like_states() == {"/p/BBB222/": True, "/p/CCC333/": False}
+
+    assert feed.act("yorum", text="karanlık rüzgar")["uygulandi"]
+    yorumlar = b.page.locator("li.yorum")
+    assert yorumlar.count() == 1
+    assert yorumlar.first.evaluate("li => li.closest('article').querySelector('a[href^=\"/p/\"]').getAttribute('href')") \
+        == "/p/BBB222/"
+
+
+def test_action_touches_nothing_when_the_viewed_post_is_gone(sahte_akis):
+    """Bakılan post sayfadan silindiyse hiçbir şeye dokunulmaz; indekse düşülmez (Z-45)."""
+    feed, gov, b = sahte_akis
+    feed.next_post()
+    b.page.evaluate(_SIL_ILK)  # bakılan post gitti
+    onceki = feed.like_states()
+    kayit = feed.act("begen")
+    assert not kayit["uygulandi"] and "sayfada yok" in kayit["not"]
+    assert feed.like_states() == onceki
+    assert not feed.act("yorum", text="ışık")["uygulandi"]
+    assert b.page.locator("li.yorum").count() == 0
+
+
+def test_comment_is_not_typed_on_another_posts_page(sahte_akis):
+    """Yorum kutusu postun içinde açılmadıysa açılan sayfa bakılan postun olmalı (Z-45).
+
+    Gerçek Instagram'da yorum simgesi /p/<kod>/comments/ adresine gidiyor. Adres bakılan
+    postun kodunu taşımıyorsa tek harf yazılmaz.
+    """
+    feed, gov, b = sahte_akis
+    feed.next_post()
+    # Simge artık postun içinde kutu açmıyor ve sayfa da postun sayfası değil.
+    b.page.evaluate("() => document.querySelectorAll('button.yorum').forEach(x => x.onclick = null)")
+    kayit = feed.act("yorum", text="ışık kanat")
+    assert not kayit["uygulandi"] and "bakılan postun değil" in kayit["not"]
+    assert b.page.locator("input").count() == 0
+
+
+def test_stray_traces_count_toward_the_rate_limit(gov):
+    """Yanlış posta düşen eylem sineğin kararı değil ama hesapta iz: sınıra sayılır (Z-44)."""
+    gov.record("begen", False, "YANLIŞ POSTA DÜŞTÜ: /p/X/", now=1000.0, iz=2, sapma=["/p/X/", "/p/Y/"])
+    with pytest.raises(Vetoed, match="saatlik"):
+        gov.check("begen", now=1030.0)
+
+
+def test_session_stops_when_an_action_lands_on_another_post():
+    from flybrain.insta.session import _stop_if_stray
+
+    _stop_if_stray({"uygulandi": True, "not": ""}, 3)  # temiz eylem: devam
+    with pytest.raises(Stopped, match="başka posta"):
+        _stop_if_stray({"uygulandi": False, "not": "", "sapma": ["/p/X/"]}, 3)

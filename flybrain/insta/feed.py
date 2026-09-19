@@ -65,6 +65,10 @@ VIDEO_SEEK_MS = 60.0  # currentTime değişince karenin çizilmesi için beklene
 ACTION_MS = 900.0
 ACTION_FPS = 12.0
 DOUBLE_TAP_MS = 90.0  # çift dokunmanın iki vuruşu arası
+# Eylemden sonra etiketin güncellenmesi beklenir: Instagram durumu geç yazabiliyor ve erken
+# okunan "uygulanmadı" kalp düğmesine ikinci kez bastırıp beğeniyi geri aldırırdı.
+SETTLE_TIMEOUT_MS = 2000.0
+SETTLE_STEP_MS = 200.0
 ALIGN_SKIP_PX = 40  # bundan büyük sapmada post atlanır: sinek fotoğrafı göremezdi
 _OTHERS_LINE = re.compile(r"^(and|ve)\s+[\d.,]+\s*(others|diğer)", re.I)
 
@@ -83,6 +87,12 @@ class FeedItem:
     sapma: float = 0.0  # görselin alt kenarının hedeften kalan uzaklığı (piksel)
 
 
+def post_code(url: str) -> str:
+    """Post bağlantısından kısa kod: "/kullanici/p/ABC/" → "ABC" (reel de olur)."""
+    m = re.search(r"/(?:p|reel)/([^/?#]+)", url or "")
+    return m.group(1) if m else ""
+
+
 class InstaFeed:
     def __init__(self, browser: Browser, governor: Governor, require_login: bool = True):
         """require_login: yalnızca testlerdeki yerel sahte akış için False."""
@@ -90,6 +100,9 @@ class InstaFeed:
         self.gov = governor
         self.require_login = require_login
         self.index = -1
+        # Bakılan postun bağlantısı. Eylemler postu **yalnızca** bununla bulur (Z-45): Instagram
+        # akışın başından `article` siliyor ve indeks iş yaparken başka bir posta kayıyor.
+        self.url = ""
         self.home: str | None = None  # akışın adresi; ilk açılışta yakalanır
         self.seen: set[str] = set()  # gösterilmiş postların bağlantıları
         self.atlanan: list[tuple[str, float]] = []  # hizalanamadığı için atlananlar
@@ -207,7 +220,7 @@ class InstaFeed:
         Instagram'da reels zaten döngüde oynuyor.
         """
         # Bakılan postun videosu: sayfadaki ilk video başka bir posta ait olabilir.
-        art = self._article_of(self.index)
+        art = self._article_of(self.index, self.url)
         sure = art.evaluate(
             "(el) => { const v = el.querySelector('video'); return v ? v.duration : 0; }") or 0.0
         if not sure or not np.isfinite(sure):
@@ -253,6 +266,21 @@ class InstaFeed:
                 return loc.first
         return self._article(i)
 
+    def _target(self):
+        """Bakılan postun `article`'ı — **eylemler için**. İndekse düşülmez (Z-45).
+
+        `_article_of` bağlantıyı bulamazsa indekse düşüyor; okumak için bu zararsız, eylem için
+        değil. Gerçek oturumda eylem yolu hâlâ indeksle çalışıyordu ve sineğin iki beğeni
+        kararı dört başka posta, yorumu üç post önceki bir posta gitti. Post sayfada yoksa hiçbir
+        şeye dokunulmaz.
+        """
+        if not self.url:
+            raise RuntimeError("bakılan postun bağlantısı yok")
+        loc = self.articles.filter(has=self.b.page.locator(f'a[href="{self.url}"]'))
+        if not loc.count():
+            raise RuntimeError(f"bakılan post sayfada yok: {self.url}")
+        return loc.first
+
     def goto_post(self, i: int, url: str = "") -> None:
         """Postun **görselini** sineğin baktığı bölgeye getirir (tarayıcı tarafında).
 
@@ -272,6 +300,7 @@ class InstaFeed:
                 break
         self.freeze_videos()
         self.index = i
+        self.url = url or self._post_url(self._article(i))
 
     def _align(self, i: int, url: str = "") -> dict | None:
         """Postun en büyük görselinin alt kenarını gezinme çubuğunun üstüne hizalar."""
@@ -402,7 +431,7 @@ class InstaFeed:
 
     def _icon(self, action: str, state: int):
         """Postun düğmesi: state 0 uygulanmadan önceki etiket, 1 uygulandıktan sonraki."""
-        art = self._article(self.index)
+        art = self._target()
         for label in LABELS[action][state]:
             loc = art.locator(f"svg[aria-label='{label}']")
             if loc.count():
@@ -412,7 +441,7 @@ class InstaFeed:
     def _state(self, action: str) -> bool | None:
         """Eylem zaten uygulanmış mı (True), uygulanmamış mı (False), bilinmiyor mu (None)."""
         if action == "takip":
-            art = self._article(self.index)
+            art = self._target()
             for text in FOLLOWING_TEXTS:
                 if art.get_by_role("button", name=text, exact=False).count():
                     return True
@@ -448,47 +477,88 @@ class InstaFeed:
             }""", list(LABELS["begen"][1]))
 
     def act(self, action: str, text: str = "") -> dict:
-        """Kararı uygular. Dönen kayıt: eylem, uygulandı mı, gerekçe."""
+        """Kararı uygular. Dönen kayıt: eylem, uygulandı mı, gerekçe.
+
+        Eylem **bakılan posta** uygulanır; post bağlantısıyla bulunur, bulunamazsa hiçbir şeye
+        dokunulmaz (Z-45). Beğenide görünen bütün postların durumu önce ve sonra okunur;
+        hedef dışında değişen varsa kayda geçer (`sapma`) ve hesaptaki iz sayısı (`iz`) hız
+        sınırına sayılır (Z-44).
+        """
         self.last_frames = []  # erken dönülürse eski eylemin animasyonu gösterilmesin
         self.guard()
         try:
             self.gov.check(action, text)
         except Vetoed as e:
             return self.gov.record(action, False, f"vali: {e}")
-        if self._state(action) is True:
+        try:
+            durum = self._state(action)
+        except RuntimeError as e:  # bakılan post sayfada yok
+            return self.gov.record(action, False, f"başarısız: {e}")
+        if durum is True:
             return self.gov.record(action, False, "zaten uygulanmış")
         if self.gov.dry_run:
             return self.gov.record(action, False, "kuru çalıştırma")
-        hedef = self._post_url(self._article(self.index))
+        hedef = self.url
         onceki = self.like_states() if action == "begen" else None
         try:
             self._click(action, text)
         except Exception as e:  # tıklama ya da doğrulama başarısız
-            return self.gov.record(action, False, f"başarısız: {type(e).__name__}: {e}")
+            sapma = self._stray_likes(onceki, hedef)
+            return self.gov.record(action, False, f"başarısız: {type(e).__name__}: {e}",
+                                   iz=len(sapma), sapma=sapma)
         self.last_frames = self.grab_frames()  # eylemin animasyonu (sinek kendi kalbini görsün)
-        sapma = self._stray_likes(onceki, hedef)
-        if sapma:
-            # Hesapta iz var ama sineğin kararı bu post değildi: sessizce geçilmemeli (Z-44).
-            return self.gov.record(action, False, f"YANLIŞ POSTA DÜŞTÜ: {', '.join(sapma)}")
-        ok = self._state(action)
+        yol = text
         if action == "yorum":
-            ok = True  # yorumun doğrulaması gönderimden sonra metnin listede görünmesi
+            ok = self._comment_posted(text)
+        else:
+            ok = self._settled(action)
         if ok is not True and action == "begen":
-            # Çift dokunma tutmadı (Instagram arayüzü değişmiş olabilir): kalp düğmesine düş.
-            # Animasyon çıkmaz ama beğeni kaydolur; hangi yolun kullanıldığı kayda geçer.
+            # Çift dokunma tutmadı: kalp düğmesine düş. Animasyon çıkmaz ama beğeni kaydolur;
+            # hangi yolun kullanıldığı kayda geçer. Durum beklendikten sonra bakılıyor: geç
+            # güncellenen bir beğeniye kalp düğmesiyle basmak onu geri alırdı.
             try:
                 icon = self._icon(action, 0)
                 if icon is not None:
                     icon.click(timeout=5000)
                     self.last_frames = self.grab_frames()
-                    ok = self._state(action)
+                    ok = self._settled(action)
+                    yol = "kalp düğmesi (çift dokunma tutmadı)"
             except Exception:
                 ok = None
-            if ok is True:
-                return self.gov.record(action, True, "kalp düğmesi (çift dokunma tutmadı)")
+        sapma = self._stray_likes(onceki, hedef)
+        iz = len(sapma) + int(ok is True)
+        if sapma:
+            # Hesapta iz var ama sineğin kararı bu post değildi: sessizce geçilmemeli (Z-44).
+            return self.gov.record(action, ok is True, f"YANLIŞ POSTA DÜŞTÜ: {', '.join(sapma)}",
+                                   iz=iz, sapma=sapma)
         if ok is not True:
-            return self.gov.record(action, False, "tıklandı ama durum değişmedi")
-        return self.gov.record(action, True, text)
+            neden = "gönderildi ama listede görünmedi" if action == "yorum" else "tıklandı ama durum değişmedi"
+            return self.gov.record(action, False, neden)
+        return self.gov.record(action, True, yol)
+
+    def _settled(self, action: str, timeout_ms: float = SETTLE_TIMEOUT_MS) -> bool | None:
+        """Eylemin durumu uygulanmış görünene kadar bekler (etiket geç güncellenebiliyor)."""
+        waited = 0.0
+        while True:
+            try:
+                ok = self._state(action)
+            except RuntimeError:  # post beklerken sayfadan silindi: durum bilinmiyor
+                return None
+            if ok is True or waited >= timeout_ms:
+                return ok
+            self.b.page.wait_for_timeout(SETTLE_STEP_MS)
+            waited += SETTLE_STEP_MS
+
+    def _comment_posted(self, text: str, timeout_ms: float = SETTLE_TIMEOUT_MS) -> bool:
+        """Gönderilen yorum sayfada görünüyor mu? Görünmüyorsa uygulandı denmez."""
+        waited = 0.0
+        while True:
+            if self.b.page.get_by_text(text, exact=False).count():
+                return True
+            if waited >= timeout_ms:
+                return False
+            self.b.page.wait_for_timeout(SETTLE_STEP_MS)
+            waited += SETTLE_STEP_MS
 
     def _stray_likes(self, onceki: dict[str, bool] | None, hedef: str) -> list[str]:
         """Hedef dışında beğeni durumu değişen postlar (Z-44)."""
@@ -499,7 +569,7 @@ class InstaFeed:
                 if u != hedef and u in onceki and v != onceki[u]]
 
     def _click(self, action: str, text: str) -> None:
-        art = self._article(self.index)
+        art = self._target()
         if action == "takip":
             for name in FOLLOW_TEXTS:
                 btn = art.get_by_role("button", name=name, exact=False)
@@ -510,7 +580,7 @@ class InstaFeed:
         if action == "yorum":
             self._comment(text)
             return
-        if action == "begen" and self._double_tap(self._post_url(art)):
+        if action == "begen" and self._double_tap():
             return
         icon = self._icon(action, 0)
         if icon is None:
@@ -531,7 +601,7 @@ class InstaFeed:
         return hedef && el.contains(hedef) ? {x, y} : null;
     }"""
 
-    def _double_tap(self, url: str = "") -> bool:
+    def _double_tap(self) -> bool:
         """Postun fotoğrafına çift dokunur (Instagram'ın beğeni jesti). Başardıysa True.
 
         Kalp düğmesine basmak yalnızca simgeyi dolduruyor; fotoğrafın üstündeki büyük kalp
@@ -543,9 +613,10 @@ class InstaFeed:
 
         **Hedef her dokunuştan hemen önce doğrulanıyor** (`elementFromPoint`). Bir kez
         doğrulamak yetmedi: gerçek oturumda sineğin 8. posta verdiği beğeni 9. posta düştü ve
-        hiçbir yere kaydedilmedi — koordinat hesaplandıktan sonra sayfa kaymıştı (Z-44).
+        hiçbir yere kaydedilmedi (Z-44). Asıl sebep hedefin indeksle bulunmasıydı (Z-45);
+        bu denetim ikinci katman olarak kalıyor.
         """
-        art = self._article_of(self.index, url)
+        art = self._target()
         for vurus in range(2):
             kutu = art.evaluate(self._TAP_TARGET)
             if kutu is None:
@@ -585,10 +656,13 @@ class InstaFeed:
         basınca /p/<kod>/comments/ adresine gidiliyor ve kutu orada. Gönder düğmesi de ancak
         **yazdıktan sonra** beliriyor (2026-09-18'de ölçüldü). Akışa dönüşü `ensure_feed`
         yapıyor: bir sonraki postta adres akışınki olmadığı için geri dönülüyor.
+
+        Açılan yorum sayfasının **bakılan postun** sayfası olduğu yazmadan önce doğrulanıyor:
+        sineğin @petthee'ye yazdığı yorum üç post önceki @kieran_dykstra2023'e gitti (Z-45).
         """
         if not text.strip():
             raise ValueError("yorum metni boş")
-        art = self._article(self.index)
+        art = self._target()
         box = self._comment_box(art)
         if box is None:
             icon = self._icon("yorum", 0)
@@ -596,7 +670,12 @@ class InstaFeed:
                 raise RuntimeError("yorum kutusu bulunamadı")
             icon.click(timeout=5000)
             self.b.page.wait_for_timeout(1500)
-            box = self._comment_box(self.b.page)
+            box = self._comment_box(art)  # kutu postun içinde açıldıysa
+            if box is None:
+                kod = post_code(self.url)
+                if not kod or f"/{kod}/" not in urlparse(self.b.page.url).path + "/":
+                    raise RuntimeError(f"açılan yorum sayfası bakılan postun değil: {self.b.page.url}")
+                box = self._comment_box(self.b.page)
         if box is None:
             raise RuntimeError("yorum kutusu bulunamadı")
         box.click(timeout=5000)

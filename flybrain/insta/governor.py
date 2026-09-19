@@ -90,11 +90,17 @@ class Governor:
         if self.log.exists():
             self.history = [json.loads(line) for line in self.log.read_text().splitlines() if line.strip()]
 
+    @staticmethod
+    def _traces(e: dict) -> int:
+        """Kaydın hesapta bıraktığı iz sayısı. Yanlış posta düşen eylem de iz bırakır (Z-44):
+        sineğin kararı uygulanmasa bile hız sınırına sayılmalı."""
+        return int(e.get("iz", int(e["uygulandi"])))
+
     def _count(self, action: str, window_s: float, now: float) -> int:
-        return sum(1 for e in self.history if e["eylem"] == action and now - e["t"] < window_s and e["uygulandi"])
+        return sum(self._traces(e) for e in self.history if e["eylem"] == action and now - e["t"] < window_s)
 
     def _last(self, action: str | None, now: float) -> float:
-        times = [e["t"] for e in self.history if e["uygulandi"] and (action is None or e["eylem"] == action)]
+        times = [e["t"] for e in self.history if self._traces(e) and (action is None or e["eylem"] == action)]
         return now - max(times) if times else float("inf")
 
     def check(self, action: str, text: str = "", now: float | None = None) -> None:
@@ -120,9 +126,18 @@ class Governor:
         if gap < self.limits.any_gap_s:
             raise Vetoed(f"önceki eylemden {gap:.0f} sn geçti (en az {self.limits.any_gap_s:.0f} sn)")
 
-    def record(self, action: str, applied: bool, note: str = "", now: float | None = None) -> dict:
-        """Eylemi geçmişe ve dosyaya yazar (engellenenler de yazılır)."""
+    def record(self, action: str, applied: bool, note: str = "", now: float | None = None,
+               iz: int | None = None, sapma: list[str] | None = None) -> dict:
+        """Eylemi geçmişe ve dosyaya yazar (engellenenler de yazılır).
+
+        iz: hesapta bırakılan değişiklik sayısı, `applied`'dan farklıysa (Z-44).
+        sapma: eylemin hedef dışında değiştirdiği postlar.
+        """
         entry = {"t": time.time() if now is None else now, "eylem": action, "uygulandi": bool(applied), "not": note}
+        if iz is not None and iz != int(bool(applied)):
+            entry["iz"] = int(iz)
+        if sapma:
+            entry["sapma"] = list(sapma)
         self.history.append(entry)
         self.log.parent.mkdir(parents=True, exist_ok=True)
         with self.log.open("a", encoding="utf-8") as f:

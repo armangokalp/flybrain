@@ -38,8 +38,15 @@ Kalan risk videolarda ve çoklu görsellerde; oradaki sert değişimler "anında
 
 - **Okuma:** Her post bir `article`. Alınanlar: kullanıcı adı, açıklama (koku olur), bağlantı,
   video mu, ekran görüntüsü.
-- **Eylem sırası:** valiye sor → düğmeyi bul → tıkla → **durumu yeniden oku** → kaydet.
-  Düğmenin etiketi değişmediyse eylem "başarısız" yazılır; sessiz başarısızlık yok.
+- **Eylem sırası:** valiye sor → bakılan postu **bağlantısıyla** bul → düğmeyi bul → tıkla →
+  **durumu yeniden oku** → görünen öteki postların durumunu karşılaştır → kaydet. Düğmenin
+  etiketi değişmediyse eylem "başarısız" yazılır; sessiz başarısızlık yok.
+- **Hedef:** Eylemler postu yalnızca bağlantısıyla bulur, indeksle asla (Z-45): Instagram akışın
+  başından post siliyor ve indeks başka bir posta kayıyor. Post sayfada yoksa hiçbir şeye
+  dokunulmaz. Yorum sayfası bakılan postun değilse hiçbir şey yazılmaz; gönderilen yorumun
+  sayfada göründüğü doğrulanır.
+- **Yanlış post:** Beğeni hedef dışında bir postu değiştirdiyse kayda `sapma` olarak geçer, iz
+  hız sınırına sayılır ve oturum durur (Z-44, Z-45).
 - **Etiketler:** Düğmeler erişilebilirlik etiketinden bulunuyor; arayüz dili hesaba göre
   değiştiği için Türkçe ve İngilizce birlikte aranıyor (Z-36).
 

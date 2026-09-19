@@ -131,6 +131,17 @@ def calibration_path(tether: bool):
     return CALIBRATION_TETHERED_PATH
 
 
+def _stop_if_stray(applied: dict, sira: int) -> None:
+    """Eylem bakılan post dışında bir posta iz bıraktıysa oturum durur (Z-44, Z-45).
+
+    Sonraki eylemler de aynı yanlışı büyütebilir; hesapta sineğin kararı olmayan izler birikir.
+    Kayıt kapanır, günlük yazılır; neyin düştüğü `sapma` alanında.
+    """
+    if applied.get("sapma"):
+        raise Stopped(f"post {sira}: eylem başka posta düştü ({', '.join(applied['sapma'])}); "
+                      "oturum durduruldu")
+
+
 def run_session(n_posts: int = 5, dry_run: bool = True, seed: int = 8003, out: str | None = None,
                 headless: bool = False, limits: Limits | None = None, url: str | None = None,
                 live: bool = False, fade_ms: float | None = None, tether: bool = True):
@@ -228,7 +239,8 @@ def run_session(n_posts: int = 5, dry_run: bool = True, seed: int = 8003, out: s
                         applied = feed.act(action, yorum.text)
                     rec.event("instagram_eylem", sira=k + 1, eylem=action,
                               uygulandi=applied["uygulandi"], aciklama=applied["not"],
-                              metin=yorum.text)
+                              metin=yorum.text, sapma=applied.get("sapma", []))
+                    _stop_if_stray(applied, k + 1)
                     print(f"  [{k + 1}] yorum: {yorum.text!r}"
                           + ("" if yorum.text else " (yaklaştığı kelime yok)"), flush=True)
                     if stream is not None:
@@ -240,7 +252,9 @@ def run_session(n_posts: int = 5, dry_run: bool = True, seed: int = 8003, out: s
                 elif action is not None:
                     applied = feed.act(action)
                     rec.event("instagram_eylem", sira=k + 1, eylem=action,
-                              uygulandi=applied["uygulandi"], aciklama=applied["not"])
+                              uygulandi=applied["uygulandi"], aciklama=applied["not"],
+                              sapma=applied.get("sapma", []))
+                    _stop_if_stray(applied, k + 1)
                     if feed.last_frames:
                         # Sinek kendi eyleminin sonucunu görsün: beğeninin kalbi fotoğrafın
                         # üstünde büyürken ekran sineğe simülasyon zamanıyla oynatılıyor.
