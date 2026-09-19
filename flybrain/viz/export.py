@@ -29,6 +29,7 @@ import mujoco as mj
 import numpy as np
 from scipy.spatial.transform import Rotation
 
+from flybrain.body.tether import TETHER_BODY
 from flybrain.viz.record import load
 from flybrain.viz.replay import SCREEN_BODY, Replay
 
@@ -47,6 +48,41 @@ def _geom_color(m: mj.MjModel, g: int) -> list[float]:
         a, w, h, c = m.tex_adr[tex], m.tex_width[tex], m.tex_height[tex], m.tex_nchannel[tex]
         rgba[:3] *= m.tex_data[a:a + w * h * c].reshape(-1, c)[:, :3].mean(0) / 255.0
     return [float(x) for x in rgba]
+
+
+def primitive_mesh(kind: int, size, segments: int = 16) -> tuple[np.ndarray, np.ndarray]:
+    """MuJoCo'nun basit şekilleri (elipsoid, küre, kapsül) için üçgen örgü, geomun kendi çerçevesinde.
+
+    Panel yalnızca mesh çiziyor. Bağın parçaları (yapışkan damlası, iğne, kol) basit şekil
+    olduğu için dışa aktarımda atlanıyor ve panelde bağ hiç görünmüyordu (K-040).
+    Örgü halkalarla kuruluyor: her halka (z, yarıçap); kapsülde ekvator iki kez, biri +h
+    biri −h yüksekliğinde, aradaki yan yüz silindir oluyor.
+    """
+    half = segments // 2
+    if kind == mj.mjtGeom.mjGEOM_CAPSULE:
+        r, h = float(size[0]), float(size[1])
+        top = [(h + r * np.cos(t), r * np.sin(t)) for t in np.linspace(0, np.pi / 2, half + 1)]
+        bottom = [(-h + r * np.cos(t), r * np.sin(t)) for t in np.linspace(np.pi / 2, np.pi, half + 1)]
+        rings, scale = top + bottom, (1.0, 1.0)
+    elif kind in (mj.mjtGeom.mjGEOM_ELLIPSOID, mj.mjtGeom.mjGEOM_SPHERE):
+        a, b, c = (size[0], size[0], size[0]) if kind == mj.mjtGeom.mjGEOM_SPHERE else size[:3]
+        rings = [(c * np.cos(t), np.sin(t)) for t in np.linspace(0, np.pi, segments + 1)]
+        scale = (float(a), float(b))
+    else:
+        raise ValueError(f"desteklenmeyen şekil: {kind}")
+    phi = np.linspace(0, 2 * np.pi, segments, endpoint=False)
+    verts = np.array([(scale[0] * rad * np.cos(f), scale[1] * rad * np.sin(f), z)
+                      for z, rad in rings for f in phi], np.float32)
+    faces = []
+    for i in range(len(rings) - 1):
+        for j in range(segments):
+            a0, a1 = i * segments + j, i * segments + (j + 1) % segments
+            b0, b1 = a0 + segments, a1 + segments
+            faces += [(a0, b0, a1), (a1, b0, b1)]
+    return verts, np.array(faces, np.int32)
+
+
+PRIMITIVES = (mj.mjtGeom.mjGEOM_CAPSULE, mj.mjtGeom.mjGEOM_ELLIPSOID, mj.mjtGeom.mjGEOM_SPHERE)
 
 
 def muscle_map(conn, rp: Replay) -> tuple[dict, dict]:
@@ -88,20 +124,29 @@ def export_scene(rp: Replay, out: Path, nearest: dict | None = None) -> dict:
     geoms = []
     for g in range(m.ngeom):
         name = body_name(g)
-        kind = "sinek" if name.startswith(fly_prefix) else ("ekran" if name == SCREEN_BODY else None)
-        if kind is None or m.geom_group[g] not in VISIBLE_GROUPS or m.geom_type[g] != mj.mjtGeom.mjGEOM_MESH:
+        kind = ("sinek" if name.startswith(fly_prefix) else "ekran" if name == SCREEN_BODY
+                else "bag" if name == TETHER_BODY else None)
+        if kind is None or m.geom_group[g] not in VISIBLE_GROUPS:
             continue
-        mesh = m.geom_dataid[g]
-        v = m.mesh_vert[m.mesh_vertadr[mesh]:m.mesh_vertadr[mesh] + m.mesh_vertnum[mesh]]
-        f = m.mesh_face[m.mesh_faceadr[mesh]:m.mesh_faceadr[mesh] + m.mesh_facenum[mesh]]
-        textured = kind == "ekran" and m.geom_matid[g] >= 0 and m.mesh_texcoordnum[mesh] > 0
+        if kind == "bag" and m.geom_type[g] in PRIMITIVES:
+            v, f = primitive_mesh(m.geom_type[g], m.geom_size[g])
+            mesh, mesh_name = None, f"{TETHER_BODY}_{g}"
+        elif m.geom_type[g] == mj.mjtGeom.mjGEOM_MESH:
+            mesh = m.geom_dataid[g]
+            mesh_name = mj.mj_id2name(m, mj.mjtObj.mjOBJ_MESH, mesh)
+            v = m.mesh_vert[m.mesh_vertadr[mesh]:m.mesh_vertadr[mesh] + m.mesh_vertnum[mesh]]
+            f = m.mesh_face[m.mesh_faceadr[mesh]:m.mesh_faceadr[mesh] + m.mesh_facenum[mesh]]
+        else:
+            continue
+        textured = (kind == "ekran" and mesh is not None and m.geom_matid[g] >= 0
+                    and m.mesh_texcoordnum[mesh] > 0)
         if textured:  # doku koordinatları köşe başına değil yüz köşesi başına: üçgenleri aç
             tc = m.mesh_texcoord[m.mesh_texcoordadr[mesh]:m.mesh_texcoordadr[mesh] + m.mesh_texcoordnum[mesh]]
             ft = m.mesh_facetexcoord[m.mesh_faceadr[mesh]:m.mesh_faceadr[mesh] + m.mesh_facenum[mesh]]
             v, uv, f = v[f.reshape(-1)], tc[ft.reshape(-1)], np.arange(f.size).reshape(-1, 3)
             uvs.append(uv.astype(np.float32))
         part = {
-            "ad": mj.mj_id2name(m, mj.mjtObj.mjOBJ_MESH, mesh), "govde": name, "tur": kind,
+            "ad": mesh_name, "govde": name, "tur": kind,
             "renk": _geom_color(m, g), "doku": "ekran" if textured else None, "kasli": nearest.get(name),
             "kose": [nv, len(v)], "yuz": [nf, int(f.size)], "uv": [nuv, len(v)] if textured else None,
         }

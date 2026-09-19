@@ -142,3 +142,17 @@ def test_recorder_keeps_frame_size_when_vision_is_off(tmp_path):
     assert reader.count_frames() == 2
     assert reader.get_data(0).shape == reader.get_data(1).shape == (60, 40, 3)
     reader.close()
+
+
+def test_tether_primitives_become_meshes_for_the_panel():
+    """Bağın parçaları basit şekil (kapsül, elipsoid); panel yalnızca mesh çiziyor (K-040)."""
+    import mujoco as mj
+
+    from flybrain.viz.export import primitive_mesh
+
+    v, f = primitive_mesh(mj.mjtGeom.mjGEOM_CAPSULE, [0.1, 1.2, 0])
+    assert np.allclose([v[:, 2].min(), v[:, 2].max()], [-1.3, 1.3], atol=1e-5)
+    assert np.isclose(np.hypot(v[:, 0], v[:, 1]).max(), 0.1, atol=1e-5)
+    v, f = primitive_mesh(mj.mjtGeom.mjGEOM_ELLIPSOID, [0.26, 0.22, 0.12])
+    assert np.allclose(v.max(0), [0.26, 0.22, 0.12], atol=1e-5)
+    assert f.min() == 0 and f.max() == len(v) - 1
