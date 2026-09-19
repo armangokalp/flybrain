@@ -8,27 +8,45 @@ THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
 
 const KAYIT = '/kayit/';
 const $ = (id) => document.getElementById(id);
+// Kayıttaki adlar Türkçe (kod içi); panel İngilizce gösterir.
 const EYLEM = {
-  ileri: ['sonraki post', '--ileri'],
-  geri: ['önceki post', '--geri'],
-  begen: ['beğen', '--begen'],
-  kaydet: ['kaydet', '--begen'],
-  yorum: ['yorum', '--yorum'],
-  takip: ['takip et', '--takip'],
-  cikis: ['çıkış', '--cikis'],
-  sekme_sol: ['sekme (sol)', '--sekme'],
-  sekme_sag: ['sekme (sağ)', '--sekme'],
-  timar: ['tımar', '--timar'],
-  ilgi_kaybi: ['ilgi kaybı', '--ilgi'],
+  ileri: ['next post', '--ileri'],
+  geri: ['previous post', '--geri'],
+  begen: ['like', '--begen'],
+  kaydet: ['save', '--begen'],
+  yorum: ['comment', '--yorum'],
+  takip: ['follow', '--takip'],
+  cikis: ['escape', '--cikis'],
+  sekme_sol: ['switch tab (left)', '--sekme'],
+  sekme_sag: ['switch tab (right)', '--sekme'],
+  timar: ['grooming', '--timar'],
+  ilgi_kaybi: ['lost interest', '--ilgi'],
 };
 const KANAL_ADI = {
-  ileri: 'bacak motor nöronları', geri: 'geri yürüme komut nöronları (MDN)',
-  hortum: 'hortum motor nöronları', yorum: 'kanat yönlendirme motor nöronları',
-  takip: 'karın motor nöronları', cikis: 'kaçış inen nöronları',
-  sekme: 'boyun motor nöronları', timar: 'ön bacak motor nöronları',
+  ileri: 'leg motor neurons', geri: 'backward walking command neurons (MDN)',
+  hortum: 'proboscis motor neurons', yorum: 'wing steering motor neurons',
+  takip: 'abdomen motor neurons', cikis: 'escape descending neurons',
+  sekme: 'neck motor neurons', timar: 'front leg motor neurons',
 };
+const KANAL_KISA = {
+  ileri: 'walk', geri: 'walk backward', hortum: 'proboscis', yorum: 'wings',
+  takip: 'abdomen', cikis: 'escape', sekme: 'head turn', timar: 'grooming',
+};
+// Kayıttaki gerekçe metinleri (motor/selector.py, body/viewer.py) İngilizceye.
+function reason(s) {
+  if (!s) return '';
+  return s
+    .replace(/^hiçbir kanal eşiği aşmadı$/, 'no channel crossed its threshold')
+    .replace(/^kaçış döngüsü: (\d+) nöbet boyunca çıkıştan başka karar yok$/, 'escape loop: $1 bouts with no decision other than escape')
+    .replace(/^(\w+): z=/, (m, ch) => `${KANAL_KISA[ch] ?? ch}: z=`)
+    .replace(/ > eşik /, ' > threshold ')
+    .replace(/; kaydetme eşiği ([\d.-]+) de aşıldı/, '; also above the save threshold $1');
+}
+// Kas adları: "hortum:x", "boyun:sol", "kanat:sag:x", "karin:sol", "lf:x".
+const PARCA = { hortum: 'proboscis', boyun: 'neck', kanat: 'wing', karin: 'abdomen', sol: 'left', sag: 'right' };
+const kasAdi = (name) => name.split(':').map((w) => PARCA[w] ?? w).join(':');
 const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-const sn = (ms) => (ms / 1000).toFixed(2).replace('.', ',') + ' sn';
+const sn = (ms) => (ms / 1000).toFixed(2) + ' s';
 
 async function getJSON(path) {
   const r = await fetch(KAYIT + path);
@@ -171,13 +189,13 @@ class FlyView {
 // ---------------------------------------------------------------- beyin görünümü
 
 const SINIF_GRUBU = [
-  ['görme (optik lob)', '#3987e5', (c) => c.startsWith('ol_') || c.startsWith('visual')],
-  ['merkezi beyin', '#199e70', (c) => c === 'cb_intrinsic'],
-  ['sinir kordonu', '#9085e9', (c) => c === 'vnc_intrinsic'],
-  ['duyu', '#c98500', (c) => c.includes('sensory')],
-  ['inen / çıkan', '#d55181', (c) => c.startsWith('descending') || c.startsWith('ascending') || c.includes('_ascending') || c.includes('_descending')],
+  ['vision (optic lobe)', '#3987e5', (c) => c.startsWith('ol_') || c.startsWith('visual')],
+  ['central brain', '#199e70', (c) => c === 'cb_intrinsic'],
+  ['nerve cord', '#9085e9', (c) => c === 'vnc_intrinsic'],
+  ['sensory', '#c98500', (c) => c.includes('sensory')],
+  ['descending / ascending', '#d55181', (c) => c.startsWith('descending') || c.startsWith('ascending') || c.includes('_ascending') || c.includes('_descending')],
   ['motor', '#e66767', (c) => c.includes('motor') || c.includes('efferent')],
-  ['diğer', '#8a8a80', () => true],
+  ['other', '#8a8a80', () => true],
 ];
 const TAU_MS = 60;
 const BASE = 0.32;  // taban katmanında nöronun parlaklığı (sınıf rengine göre)
@@ -247,7 +265,7 @@ class BrainView {
     this.shown = null;
 
     $('lejant').innerHTML = SINIF_GRUBU.map(([ad, hex]) => `<span><i style="background:${hex}"></i>${ad}</span>`).join('');
-    $('beyin-not').textContent = `${info.sayi.toLocaleString('tr-TR')} nöron, soma konumları · ${info.yaklasik_sayi.toLocaleString('tr-TR')} nöronun konumu yaklaşık`;
+    $('beyin-not').textContent = `${info.sayi.toLocaleString('en-US')} neurons at their cell body positions · ${info.yaklasik_sayi.toLocaleString('en-US')} approximate`;
   }
 
   markNeurons(idx) {
@@ -359,9 +377,10 @@ async function main() {
   const posts = events.filter((e) => e.tur === 'post');
   const placements = events.filter((e) => e.tur === 'yerlestirme');
   const postStart = new Map(posts.map((p) => [p.sira, p.t_ms]));
-  $('bilgi').textContent = `sinek tohumu ${meta.sinek_tohumu ?? '?'} · ${sn(T)} · ${posts.length} post · `
-    + `${meta.spike_sayisi.toLocaleString('tr-TR')} spike · ${placements.length} yeniden yerleştirme`;
-  $('karar-ozet').textContent = `${decisions.length} karar`;
+  $('bilgi').textContent = `fly seed ${meta.sinek_tohumu ?? '?'} · ${sn(T)} · ${posts.length} posts · `
+    + `${meta.spike_sayisi.toLocaleString('en-US')} spikes`
+    + (meta.bagli ? ' · tethered' : ` · ${placements.length} times put back`);
+  $('karar-ozet').textContent = `${decisions.length} decisions`;
 
   const state = { t: 0, playing: false, speed: 1, selected: null };
   let fly, brain;
@@ -382,26 +401,26 @@ async function main() {
     const ch = d.kanal;
     document.querySelectorAll('#gunluk li').forEach((li, i) => li.classList.toggle('secili', i === k));
     if (!ch) {
-      selectTrace('Geriye izleme: ilgi kaybı', 'Hiçbir kanal eşiği aşmadı; bu kararın arkasında bir hareket yok (Z-27).', [], [], new Set());
+      selectTrace('Trace back: lost interest', 'No channel crossed its threshold, so no movement is behind this decision. The fly just scrolled on.', [], [], new Set());
       return;
     }
     const idx = info.kanallar[ch];
     const counts = countSpikes(spikes, idx, Math.floor(start), Math.floor(d.t_ms));
     const rows = [...counts].filter(([, c]) => c > 0).sort((a, b) => b[1] - a[1]).slice(0, 14)
-      .map(([n, c]) => ({ ad: `${info.tip[n] || '(tipsiz)'} <span class="soluk">#${n}</span>`, sayi: c }));
+      .map(([n, c]) => ({ ad: `${info.tip[n] || '(untyped)'} <span class="soluk">#${n}</span>`, sayi: c }));
     const active = [...counts].filter(([, c]) => c > 0).length;
     const moved = new Set(Object.values(info.kaslar).filter((m) => m.mn.some((n) => counts.get(n) > 0)).flatMap((m) => m.govde));
     selectTrace(
-      `Geriye izleme: ${EYLEM[d.eylem][0]}`,
-      `${KANAL_ADI[ch] ?? ch} (${idx.length} nöron), post başından karara kadar (${sn(d.t_ms - start)}): `
-      + `${active} nöron ateşledi. ${d.gerekce}. Parlayan gövde parçaları bu nöronların kaslarıyla hareket eden parçalar.`,
-      [{ grup: 'en çok ateşleyenler (spike)' }, ...rows], idx, moved,
+      `Trace back: ${EYLEM[d.eylem]?.[0] ?? d.eylem}`,
+      `${KANAL_ADI[ch] ?? ch} (${idx.length} neurons), from the start of the post to the decision (${sn(d.t_ms - start)}): `
+      + `${active} of them fired. ${reason(d.gerekce)}. The glowing body parts are the ones moved by these neurons' muscles.`,
+      [{ grup: 'most active (spikes)' }, ...rows], idx, moved,
     );
   };
 
   const pickBody = (part) => {
     if (!part || !part.kasli) {
-      selectTrace('Geriye izleme', part ? `${part.govde.split('/')[1]}: bu parçayı doğrudan hareket ettiren kas yok.` : 'Bir karara ya da sineğin bir parçasına tıkla.', [], [], new Set());
+      selectTrace('Trace back', part ? `${part.govde.split('/')[1]}: no muscle moves this part directly.` : 'Click a decision or a part of the fly.', [], [], new Set());
       return;
     }
     const a = Math.floor(state.t) - 500, b = Math.floor(state.t);
@@ -411,15 +430,15 @@ async function main() {
     const rows = [];
     for (const [name, m] of muscles) {
       const fired = m.mn.map((n) => [n, counts.get(n)]).filter(([, c]) => c > 0);
-      rows.push({ grup: `${name} (${m.mn.length} MN)` });
-      if (!fired.length) rows.push({ ad: '<span class="soluk">son 0,5 sn\'de spike yok</span>', sayi: 0 });
-      for (const [n, c] of fired.sort((x, y) => y[1] - x[1])) rows.push({ ad: `${info.tip[n] || '(tipsiz)'} <span class="soluk">#${n}</span>`, sayi: c });
+      rows.push({ grup: `${kasAdi(name)} (${m.mn.length} MN)` });
+      if (!fired.length) rows.push({ ad: '<span class="soluk">no spikes in the last 0.5 s</span>', sayi: 0 });
+      for (const [n, c] of fired.sort((x, y) => y[1] - x[1])) rows.push({ ad: `${info.tip[n] || '(untyped)'} <span class="soluk">#${n}</span>`, sayi: c });
     }
     const total = [...counts.values()].reduce((s, c) => s + c, 0);
     selectTrace(
-      `Geriye izleme: ${part.kasli}`,
-      `${muscles.length} kas, ${all.length} motor nöron; ${sn(a)}–${sn(b)} arasında ${total} spike. `
-      + 'Parçanın hareketi bu kaslardan ve atalarının hareketinden gelir.',
+      `Trace back: ${part.kasli}`,
+      `${muscles.length} muscles, ${all.length} motor neurons; ${total} spikes between ${sn(a)} and ${sn(b)}. `
+      + 'This part moves because of these muscles and the parts it hangs from.',
       rows, all, new Set([part.kasli]),
     );
   };
@@ -431,8 +450,8 @@ async function main() {
   // karar günlüğü
   $('gunluk').innerHTML = decisions.map((d) => {
     const [ad, renk] = EYLEM[d.eylem] ?? [d.eylem, '--ilgi'];
-    return `<li><span class="t">${(d.t_ms / 1000).toFixed(1).replace('.', ',')}</span><span class="n">#${d.sira}</span>`
-      + `<span><i class="nokta" style="background:var(${renk})"></i>${ad}</span><span class="d">${d.sure_ms / 1000} sn</span></li>`;
+    return `<li><span class="t">${(d.t_ms / 1000).toFixed(1)}</span><span class="n">#${d.sira}</span>`
+      + `<span><i class="nokta" style="background:var(${renk})"></i>${ad}</span><span class="d">${d.sure_ms / 1000} s</span></li>`;
   }).join('');
   document.querySelectorAll('#gunluk li').forEach((li, k) => li.addEventListener('click', () => pickDecision(k)));
 
@@ -525,10 +544,10 @@ async function main() {
     const lines = [];
     if (post) lines.push(`<div class="soluk">post ${post.sira}: “${post.aciklama}”</div>`);
     if (looking) {
-      lines.push(`<div class="eylem">bakıyor… <span class="soluk">${sn(state.t - post.t_ms)}</span></div>`);
+      lines.push(`<div class="eylem">looking… <span class="soluk">${sn(state.t - post.t_ms)}</span></div>`);
     } else if (d) {
       const [ad, renk] = EYLEM[d.eylem] ?? [d.eylem, '--ilgi'];
-      lines.push(`<div class="eylem"><i class="nokta" style="background:var(${renk})"></i>${ad}</div><div class="gerekce">${d.gerekce}</div>`);
+      lines.push(`<div class="eylem"><i class="nokta" style="background:var(${renk})"></i>${ad}</div><div class="gerekce">${reason(d.gerekce)}</div>`);
     }
     $('simdi').innerHTML = lines.join('');
     document.querySelectorAll('#gunluk li').forEach((li, i) => li.classList.toggle('gelecek', decisions[i].t_ms > state.t));
@@ -539,6 +558,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  $('bilgi').textContent = `hata: ${err.message}`;
+  $('bilgi').textContent = `error: ${err.message}`;
   console.error(err);
 });
