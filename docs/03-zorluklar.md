@@ -458,6 +458,7 @@ Instagram, otomatik beğeni, takip ve yorumu yasaklıyor. Hesap kısıtlanabilir
 - **Güvenlik valisi:** saatlik ve günlük eylem sınırları, eylemler arası insan benzeri bekleme süreleri. Vali eylemi yalnızca engelleyebilir, seçemez.
 - Görünür (headful) tarayıcı ve kalıcı oturum kullanmak; her seferinde yeniden giriş yapmamak.
 - İlk haftalarda "ısınma" dönemi: düşük eylem sınırlarıyla başlamak.
+- **2026-09-19:** Isınma sınırları kaldırıldı (K-042, kullanıcı kararı). Sinek 30 postta 2-4 eylem yapıyor; sınır sineğin kararlarını engellemeye başlamıştı.
 
 ### Z-11 · Güvenlik doğrulamaları (challenge / CAPTCHA) 🔴
 
@@ -826,3 +827,19 @@ yanlış olduğu ölçüldüğünde, onu kullanan **her** yer taranmalı. İkinc
 denetim, denetlediği şeyi bozuk olabilecek aynı kaynaktan okuyorsa hiçbir şey denetlemiyor.
 Asıl denetim hesabın kendisiydi ve iki kez de hatayı o yakaladı.
 
+
+**Hesaptaki izler ne oldu.** Dört beğeni ve @kieran_dykstra2023'teki yorum geri alınmadı; kullanıcı
+Z-44'teki gibi olduğu gibi bırakılmasını ve belgelenmesini seçti.
+
+**Doğrulama (aynı gün, 30 postluk yeni gerçek oturum).** Sinek iki beğeni ve iki yorum kararı
+verdi. Hesabın salt okunur denetimi günlükle birebir uyuştu:
+
+| sineğin kararı | hesap |
+|---|---|
+| beğen @fms.fossils (11) | beğenildi, çift dokunmayla |
+| yorum @joeymaclennan (12): "often" | doğru postta |
+| beğen @silentframesworld (16) | beğenildi, çift dokunmayla |
+| yorum (29): "our young this american" | vali saatlik sınırla engelledi (K-042 öncesi) |
+
+Öteki 28 postun hiçbiri beğenilmedi. Çift dokunma ilk kez gerçek hesapta kalp düğmesine
+düşmeden tuttu: önceki "tutmadı"ların hepsi ekran dışındaki yanlış posta dokunmaktan geliyormuş.

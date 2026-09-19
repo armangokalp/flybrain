@@ -60,14 +60,11 @@ Kalan risk videolarda ve çoklu görsellerde; oradaki sert değişimler "anında
 
 ## 4. Güvenlik valisi (`insta/governor.py`)
 
-- **Hız sınırları (ısınma):** saatlik/günlük üst sınırlar ve eylemler arası en az bekleme.
-  Sayaçlar `runs/insta/eylemler.jsonl` dosyasında; oturumlar arasında korunuyor.
-
-  | | beğen | kaydet | takip | yorum | paylaş | story |
-  |---|---|---|---|---|---|---|
-  | saatlik | 20 | 10 | 3 | 2 | 1 | 2 |
-  | günlük | 100 | 50 | 10 | 8 | 2 | 4 |
-
+- **Hız sınırı yok (K-042):** Varsayılan olarak hiçbir eylemin sayısına ya da sıklığına sınır
+  konmuyor. Sınır ancak açıkça verilirse uygulanıyor. `--izin begen,yorum` verilmeyen eylemleri
+  kapatıyor (sınır 0). Sayaçlar yine `runs/insta/eylemler.jsonl` dosyasında tutuluyor.
+  Önceki ısınma ayarı (saatte 2 yorum, 20 beğeni, eylemler arası 20 sn) sineğin 30 posttaki
+  üçüncü yorumunu engellemişti; kullanıcı kararıyla kaldırıldı.
 - **İçerik vetosu:** Yorumda yasaklı kelime varsa eylem uygulanmaz (`insta/yasakli.txt`, Z-13).
 - **Doğrulama algılama:** Adres `/challenge/`, `/accounts/suspended` gibi bir sayfaya düşerse ya
   da oturum kapanırsa oturum durur. Sistem doğrulamayı atlatmaya **çalışmaz** (Z-11).

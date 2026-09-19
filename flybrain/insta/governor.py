@@ -2,7 +2,8 @@
 
 Üç işi var:
   1. **Hız sınırları (Z-10):** Saatlik ve günlük üst sınırlar, eylemler arası en az bekleme.
-     Sayaçlar oturumlar arasında dosyada tutulur; gün sınırı son 24 saati kapsar.
+     **Varsayılan sınırsız (K-042):** sinek zaten seyrek eylem yapıyor. Sınır ancak açıkça
+     verilirse uygulanır; 0 eylemi kapatır (`--izin`). Sayaçlar yine dosyada tutulur.
   2. **İçerik vetosu (Z-13):** Yorumda yasaklı kelime varsa eylem engellenir; sinek bir sonraki
      tercihine geçer. Liste `yasakli.txt`; kullanıcı genişletebilir.
   3. **Doğrulama algılama (Z-11):** Instagram doğrulama isterse ya da oturum düşerse durur ve
@@ -31,14 +32,17 @@ CHALLENGE_URLS = ("/challenge/", "/accounts/suspended", "/accounts/disabled", "/
 
 @dataclass(frozen=True)
 class Limits:
-    """Isınma ayarı: gerçek hesapta ilk oturumlar için bilinçli olarak düşük (Z-10)."""
+    """Eylem sınırları: `None` sınırsız, 0 kapalı.
 
-    hourly: dict[str, int] = field(default_factory=lambda: {
-        "begen": 20, "kaydet": 10, "takip": 3, "yorum": 2, "paylas": 1, "story": 2})
-    daily: dict[str, int] = field(default_factory=lambda: {
-        "begen": 100, "kaydet": 50, "takip": 10, "yorum": 8, "paylas": 2, "story": 4})
-    gap_s: float = 20.0          # aynı türden iki eylem arasında en az bekleme
-    any_gap_s: float = 5.0       # herhangi iki eylem arasında en az bekleme
+    Varsayılan **sınırsız** (K-042, kullanıcı kararı). Önceki ısınma ayarı (saatte 2 yorum,
+    20 beğeni, eylemler arası 20 sn) sineğin kararını engelliyordu: 30 postta üçüncü yorumu
+    uygulanmadı. Sinek 30 postta 2-4 eylem yapıyor; bu hızda sınır bir şey korumuyordu.
+    """
+
+    hourly: dict[str, int | None] = field(default_factory=lambda: dict.fromkeys(ACTIONS))
+    daily: dict[str, int | None] = field(default_factory=lambda: dict.fromkeys(ACTIONS))
+    gap_s: float = 0.0           # aynı türden iki eylem arasında en az bekleme
+    any_gap_s: float = 0.0       # herhangi iki eylem arasında en az bekleme
 
     @classmethod
     def only(cls, actions, base: "Limits | None" = None) -> "Limits":
@@ -115,9 +119,9 @@ class Governor:
         h, d = self.limits.hourly[action], self.limits.daily[action]
         if h == 0 or d == 0:
             raise Vetoed("bu eylem kapalı (kullanıcı izni yok)")
-        if self._count(action, 3600, now) >= h:
+        if h is not None and self._count(action, 3600, now) >= h:
             raise Vetoed(f"saatlik sınır ({h})")
-        if self._count(action, 86400, now) >= d:
+        if d is not None and self._count(action, 86400, now) >= d:
             raise Vetoed(f"günlük sınır ({d})")
         gap = self._last(action, now)
         if gap < self.limits.gap_s:
@@ -152,14 +156,16 @@ class Governor:
         if not logged_in:
             raise Stopped("oturum düştü: tarayıcıda elle giriş yapılmalı")
 
-    def remaining(self, now: float | None = None) -> dict[str, tuple[int, int]]:
-        """Her eylem için (saatlik kalan, günlük kalan)."""
+    def remaining(self, now: float | None = None) -> dict[str, tuple[int | None, int | None]]:
+        """Her eylem için (saatlik kalan, günlük kalan); sınırsızsa None."""
         now = time.time() if now is None else now
-        return {a: (self.limits.hourly[a] - self._count(a, 3600, now),
-                    self.limits.daily[a] - self._count(a, 86400, now)) for a in ACTIONS}
+        kalan = lambda sinir, pencere, a: None if sinir is None else sinir - self._count(a, pencere, now)
+        return {a: (kalan(self.limits.hourly[a], 3600, a), kalan(self.limits.daily[a], 86400, a))
+                for a in ACTIONS}
 
 
 def report(gov: Governor) -> str:
-    rows = [f"{a}: saatlik {h}, günlük {d}" for a, (h, d) in gov.remaining().items()]
+    yaz = lambda n: "sınırsız" if n is None else n
+    rows = [f"{a}: saatlik {yaz(h)}, günlük {yaz(d)}" for a, (h, d) in gov.remaining().items()]
     kip = "kuru çalıştırma" if gov.dry_run else "gerçek eylemler"
     return f"[{kip}] kalan — " + "; ".join(rows)

@@ -650,3 +650,20 @@ Durumlar: **önerildi** · **kabul edildi** · **yerine geçti**
 - **Ne iddia ediliyor, ne edilmiyor:** Yorum, sineğin gerçekten yaklaştığı kelimelerden oluşur. Sinek bu kelimelerin anlamını bilmiyor; kelime → koku eşlemesinin (K-013) anlamla ilişkisi yok. İddia "sinek bir şey söylüyor" değil, "yorumun her kelimesi sineğin kendi seçimi".
 - **Maliyet:** Her koklama `SNIFF_MS` (300 ms) simülasyon zamanı harcıyor; en fazla 12 aday ve 4 kelime, yani yorum başına ~12 sn simülasyon.
 - **Bilinen sınır:** Bildirimler hâlâ ödül nöronlarına bağlı değil (Z-40 kök nedeni, Faz 9'a bağlı). Duygu bileşeni oraya kadar kapalı.
+
+## K-042 · Vali eylem sayısına ve sıklığına sınır koymuyor
+
+- **Durum:** kabul edildi (2026-09-19), kullanıcı kararı. Z-10'daki "ısınma" sınırlarını kaldırır.
+- **Bağlam:** Vali (K-007) saatlik ve günlük üst sınırlar ile eylemler arası en az bekleme
+  uyguluyordu: saatte 2 yorum, 20 beğeni, aynı türden iki eylem arasında 20 sn. 30 postluk gerçek
+  oturumda sinek üçüncü kez yorum yazmaya karar verdi ("our young this american") ve vali saatlik
+  sınır yüzünden uygulamadı.
+- **Karar:** Varsayılan sınırlar kaldırıldı (`Limits` içinde `None` = sınırsız). Beğeni, yorum ve
+  öteki eylemler sineğin kararıyla sınırsız uygulanır. Kullanıcının gerekçesi: sinek zaten seyrek
+  eylem yapıyor (30 postta 2-4 eylem).
+- **Kalanlar:** Vali yine eylem seçmez. Yasaklı kelime vetosu (Z-13), doğrulama sayfasında durma
+  (Z-11) ve `--izin` ile eylem kapatma duruyor. Yanlış posta düşen eylem oturumu durduruyor
+  (Z-44, Z-45); bu valinin değil eylem yolunun denetimi.
+- **Risk:** Z-10 açık kalıyor: otomasyon Instagram'ın kullanım şartlarına aykırı ve hesap
+  kısıtlanabilir. Sınır istenirse `Limits(hourly=..., daily=...)` ile açıkça verilir.
+

@@ -457,3 +457,22 @@ def test_session_stops_when_an_action_lands_on_another_post():
     _stop_if_stray({"uygulandi": True, "not": ""}, 3)  # temiz eylem: devam
     with pytest.raises(Stopped, match="başka posta"):
         _stop_if_stray({"uygulandi": False, "not": "", "sapma": ["/p/X/"]}, 3)
+
+
+def test_default_governor_sets_no_activity_limit(tmp_path):
+    """Varsayılan vali eylem sayısına ve sıklığına sınır koymuyor (K-042).
+
+    Yasaklı kelime ve kapatılmış eylem (`--izin`) yine engelleniyor.
+    """
+    gov = Governor(log=tmp_path / "eylemler.jsonl", dry_run=False)
+    for k in range(50):  # arka arkaya, bekleme olmadan
+        gov.check("yorum", now=1000.0 + k)
+        gov.check("begen", now=1000.0 + k)
+        gov.record("yorum", True, now=1000.0 + k)
+        gov.record("begen", True, now=1000.0 + k)
+    kelime = sorted(gov.banned)[0]
+    with pytest.raises(Vetoed, match="yasaklı kelime"):
+        gov.check("yorum", text=f"ışık {kelime}", now=2000.0)
+    kapali = Governor(Limits.only(["begen"]), log=tmp_path / "b.jsonl", dry_run=False)
+    with pytest.raises(Vetoed, match="kapalı"):
+        kapali.check("yorum", now=2000.0)
