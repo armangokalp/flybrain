@@ -142,6 +142,40 @@ def test_feed_reads_posts_and_applies_actions(sahte_akis):
     assert b.page.evaluate("document.querySelector('video').paused") is True
 
 
+def test_double_tap_refuses_when_the_photo_is_covered(sahte_akis):
+    """Dokunuş hedefi her vuruştan önce doğrulanıyor: nokta başka postun üstündeyse basılmaz.
+
+    Gerçek oturumda sineğin 8. posta verdiği beğeni 9. posta düştü ve hiçbir yere
+    kaydedilmedi (Z-44): koordinat hesaplandıktan sonra sayfa kaymıştı.
+    """
+    feed, gov, b = sahte_akis
+    feed.next_post()
+    assert feed._double_tap() is True  # önce olağan durum
+    b.page.evaluate("""() => {
+        const d = document.createElement('div');
+        d.style.cssText = 'position:fixed;inset:0;z-index:9999';
+        d.id = 'perde';
+        document.body.appendChild(d);
+    }""")
+    assert feed._double_tap() is False  # nokta artık bu postun değil
+
+
+def test_stray_like_on_another_post_is_reported(sahte_akis):
+    """Hedef dışında bir post beğenilirse eylem başarısız sayılır ve gerekçesi yazılır (Z-44)."""
+    feed, gov, b = sahte_akis
+    feed.next_post()
+    hedef = feed._post_url(feed._article(feed.index))
+    onceki = feed.like_states()
+    assert hedef in onceki and onceki[hedef] is False
+    # Komşu postu beğenilmiş göster: eylem hedefi değil onu değiştirmiş gibi.
+    b.page.evaluate("""() => {
+        const s = document.querySelectorAll('article')[1].querySelector('.begen svg');
+        s.setAttribute('aria-label', 'Unlike');
+    }""")
+    sapma = feed._stray_likes(onceki, hedef)
+    assert len(sapma) == 1 and sapma[0] != hedef
+
+
 def test_load_more_scrolls_the_page_to_the_bottom(sahte_akis):
     """Akış "hepsini gördün" ayracından sonra önerilenleri yüklüyor; sayfanın **altına** inilmeli.
 

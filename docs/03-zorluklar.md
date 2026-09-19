@@ -717,3 +717,50 @@ daha seyrek geliyor.
 **Ders:** Dünyayı değiştirince, o dünyaya bağlı **ölçütleri** de yeniden ölçmek gerekiyor.
 Bağı eklemek tek satırlık bir fizik değişikliğiydi; kararın gövdeyle doğrulanması ona sessizce
 bağlıydı ve ölçmeseydim korku çıktısı hiç gelmeyecekti.
+
+### Z-44 · Sineğin beğenisi komşu posta düştü ve hiçbir yere kaydedilmedi 🟢
+
+Bağlı sinekle ilk gerçek oturumda (12 post, yalnızca beğeni ve yorum açık) günlük şunu yazdı:
+
+```
+post 8/12 @vishnu___photography_: begen → begen: tıklandı ama durum değişmedi
+post 9/12 @bestfeedmy:            begen → begen: zaten uygulanmış
+```
+
+Hesabın gerçek durumu okunduğunda (salt okunur denetim) tablo uyuşmadı:
+
+| post | günlük | hesap |
+|---|---|---|
+| @vishnu___photography_ | uygulanmadı | beğenilmemiş ✔ |
+| @bestfeedmy | "zaten uygulanmış" | **beğenilmiş** ✘ |
+
+Vali günlüğünde (`runs/insta/eylemler.jsonl`) tek bir başarılı beğeni yok. Yani **hesapta
+sineğin hiçbir yere kaydedilmemiş bir izi vardı**.
+
+**Sebep.** Beğeni, fotoğrafa çift dokunarak yapılıyor (Z-42). Dokunulacak nokta hedef postun
+en büyük görselinin merkezinden hesaplanıyordu; hesapla dokunuş arasında sayfa kaydı (Instagram
+görselleri tembel yüklüyor ve düzeni yeniden boyutlandırıyor) ve dokunuş **bir sonraki postun**
+fotoğrafına gitti. 9. post ona geldiğinde zaten beğenili olduğu için kod "zaten uygulanmış"
+deyip hiçbir şey yapmadı — ve iz kimsenin hanesine yazılmadı.
+
+**Neden doğrulama katmanı yakalamadı.** Tıklamadan sonra etiketi yeniden okuma (Z-42'nin
+kazanımı) yalnızca **hedef postu** denetliyordu. Hedef değişmemişti, doğru; ama başka bir post
+değişmişti ve oraya kimse bakmıyordu. Doğrulama "istediğim oldu mu" diye soruyordu,
+"**yalnızca** istediğim mi oldu" diye değil.
+
+**Çözüm (iki katman):**
+1. `_double_tap` her vuruştan **hemen önce** `document.elementFromPoint` ile o noktada gerçekten
+   hedef postun bir parçası olduğunu doğruluyor; değilse dokunmuyor ve kalp düğmesine düşülüyor.
+   Tek doğrulama yetmiyordu: iki vuruş arasında da kayabiliyor.
+2. Eylemden önce ve sonra **görünen bütün postların** beğeni durumu okunuyor (`like_states`).
+   Hedef dışında bir post değiştiyse eylem başarısız sayılıyor ve gerekçe
+   `YANLIŞ POSTA DÜŞTÜ: <bağlantı>` olarak kayda geçiyor.
+
+**Ders.** Bir yan etkiyi yalnızca beklediğin yerde aramak, onu bulamamak demek. Z-42'de
+doğrulama katmanı işini yapmıştı; burada aynı katman, kapsamı dar olduğu için sessiz kaldı.
+Hesabın durumu ile günlüğün **tamamının** uyuşması gerekiyor, yalnızca hedef satırın değil.
+
+**Hesaptaki iz ne oldu.** @bestfeedmy beğenisi geri alınmadı; olduğu gibi bırakıldı ve burada
+belgelendi. Geri almak da hesaba sineğin kararı olmayan bir eylem daha yazmak olurdu. Bu yüzden
+hesaptaki beğenilerden biri sineğin kararı ama **yanlış postta**: sinek @vishnu___photography_'yu
+beğenmeye karar verdi, dokunuş @bestfeedmy'ye düştü.

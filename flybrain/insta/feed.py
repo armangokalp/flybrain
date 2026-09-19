@@ -426,6 +426,27 @@ class InstaFeed:
             return False
         return None
 
+    def like_states(self) -> dict[str, bool]:
+        """Görünen bütün postların beğeni durumu (bağlantı → beğenildi mi).
+
+        Eylemin **yalnızca hedef postu** değiştirdiğini doğrulamak için: hesabın durumu
+        günlükle uyuşmazsa bunu görmek gerekiyor (Z-44).
+        """
+        return self.b.page.evaluate(
+            """(unlike) => {
+                const out = {};
+                for (const art of document.querySelectorAll('article')) {
+                    // _post_url ile aynı ölçüt: beğenenler ve yorumlar bağlantısı değil.
+                    const a = [...art.querySelectorAll('a[href*="/p/"], a[href*="/reel/"]')]
+                        .find(x => !x.href.includes('liked_by') && !x.href.includes('comments'));
+                    if (!a) continue;
+                    const etiketler = [...art.querySelectorAll('svg[aria-label]')]
+                        .map(s => s.getAttribute('aria-label'));
+                    out[new URL(a.href).pathname] = etiketler.some(e => unlike.includes(e));
+                }
+                return out;
+            }""", list(LABELS["begen"][1]))
+
     def act(self, action: str, text: str = "") -> dict:
         """Kararı uygular. Dönen kayıt: eylem, uygulandı mı, gerekçe."""
         self.last_frames = []  # erken dönülürse eski eylemin animasyonu gösterilmesin
@@ -438,11 +459,17 @@ class InstaFeed:
             return self.gov.record(action, False, "zaten uygulanmış")
         if self.gov.dry_run:
             return self.gov.record(action, False, "kuru çalıştırma")
+        hedef = self._post_url(self._article(self.index))
+        onceki = self.like_states() if action == "begen" else None
         try:
             self._click(action, text)
         except Exception as e:  # tıklama ya da doğrulama başarısız
             return self.gov.record(action, False, f"başarısız: {type(e).__name__}: {e}")
         self.last_frames = self.grab_frames()  # eylemin animasyonu (sinek kendi kalbini görsün)
+        sapma = self._stray_likes(onceki, hedef)
+        if sapma:
+            # Hesapta iz var ama sineğin kararı bu post değildi: sessizce geçilmemeli (Z-44).
+            return self.gov.record(action, False, f"YANLIŞ POSTA DÜŞTÜ: {', '.join(sapma)}")
         ok = self._state(action)
         if action == "yorum":
             ok = True  # yorumun doğrulaması gönderimden sonra metnin listede görünmesi
@@ -463,6 +490,14 @@ class InstaFeed:
             return self.gov.record(action, False, "tıklandı ama durum değişmedi")
         return self.gov.record(action, True, text)
 
+    def _stray_likes(self, onceki: dict[str, bool] | None, hedef: str) -> list[str]:
+        """Hedef dışında beğeni durumu değişen postlar (Z-44)."""
+        if onceki is None:
+            return []
+        sonraki = self.like_states()
+        return [u for u, v in sonraki.items()
+                if u != hedef and u in onceki and v != onceki[u]]
+
     def _click(self, action: str, text: str) -> None:
         art = self._article(self.index)
         if action == "takip":
@@ -475,14 +510,28 @@ class InstaFeed:
         if action == "yorum":
             self._comment(text)
             return
-        if action == "begen" and self._double_tap():
+        if action == "begen" and self._double_tap(self._post_url(art)):
             return
         icon = self._icon(action, 0)
         if icon is None:
             raise RuntimeError(f"{action} düğmesi bulunamadı")
         icon.click(timeout=5000)
 
-    def _double_tap(self) -> bool:
+    _TAP_TARGET = """(el) => {
+        let best = null, area = 0;
+        for (const m of el.querySelectorAll('img, video')) {
+            const r = m.getBoundingClientRect();
+            if (r.width * r.height > area) { area = r.width * r.height; best = r; }
+        }
+        if (!best || area <= 10000) return null;
+        const x = best.x + best.width / 2, y = best.y + best.height / 2;
+        // O noktada GERÇEKTEN bu postun bir parçası duruyor mu? Sayfa kaydıysa ya da
+        // üstünü bir şey örttüyse dokunuş başka posta gider (2026-09-19'da oldu).
+        const hedef = document.elementFromPoint(x, y);
+        return hedef && el.contains(hedef) ? {x, y} : null;
+    }"""
+
+    def _double_tap(self, url: str = "") -> bool:
         """Postun fotoğrafına çift dokunur (Instagram'ın beğeni jesti). Başardıysa True.
 
         Kalp düğmesine basmak yalnızca simgeyi dolduruyor; fotoğrafın üstündeki büyük kalp
@@ -491,24 +540,21 @@ class InstaFeed:
 
         **En büyük** görsel seçiliyor: `img` listesinin ilki post fotoğrafı değil profil
         avatarı olabiliyor ve ona dokunmak profile gider.
+
+        **Hedef her dokunuştan hemen önce doğrulanıyor** (`elementFromPoint`). Bir kez
+        doğrulamak yetmedi: gerçek oturumda sineğin 8. posta verdiği beğeni 9. posta düştü ve
+        hiçbir yere kaydedilmedi — koordinat hesaplandıktan sonra sayfa kaymıştı (Z-44).
         """
-        kutu = self._article_of(self.index).evaluate(
-            """(el) => {
-                let best = null, area = 0;
-                for (const m of el.querySelectorAll('img, video')) {
-                    const r = m.getBoundingClientRect();
-                    if (r.width * r.height > area) { area = r.width * r.height; best = r; }
-                }
-                return best && area > 10000 ? {x: best.x + best.width / 2,
-                                               y: best.y + best.height / 2} : null;
-            }""")
-        if kutu is None:
-            return False
-        # **Dokunma**, fare değil: Instagram telefon görünümünde dokunma olaylarını dinliyor.
-        # mouse.dblclick ile denendi, beğeni hiç kaydolmadı ("tıklandı ama durum değişmedi").
-        self.b.page.touchscreen.tap(kutu["x"], kutu["y"])
-        self.b.page.wait_for_timeout(DOUBLE_TAP_MS)
-        self.b.page.touchscreen.tap(kutu["x"], kutu["y"])
+        art = self._article_of(self.index, url)
+        for vurus in range(2):
+            kutu = art.evaluate(self._TAP_TARGET)
+            if kutu is None:
+                # İlk vuruş gittiyse ve ikincisi hedefi bulamıyorsa tek dokunuş kalır; tek
+                # dokunuş Instagram'da beğeni değil, yani hesapta iz bırakmaz.
+                return False
+            self.b.page.touchscreen.tap(kutu["x"], kutu["y"])
+            if vurus == 0:
+                self.b.page.wait_for_timeout(DOUBLE_TAP_MS)
         return True
 
     @staticmethod

@@ -4,7 +4,8 @@ Bu deneysel projede bir meyve sineğinin (*Drosophila melanogaster*) tam sinir s
 
 - Sinek feed'i **görür**: post görselleri sineğin bileşik gözündeki fotoreseptörlere işlenir.
 - Caption'ları **koklar**: her kelime, koku alıcı nöronlara eşlenen bir "koku molekülü" gibi davranır.
-- **Davranışıyla** karar verir: ileri yürürse feed'i kaydırır, hortumunu uzatırsa beğenir, kur şarkısı söylerse yorum yapar, kaçarsa takipten çıkar.
+- **Davranışıyla** karar verir: ileri yürürse feed'i kaydırır, hortumunu uzatırsa beğenir, kanatlarını oynatırsa yorum yazar, kaçmaya kalkarsa çırpınır.
+- Yorumun kelimelerini de kendisi seçer: adayları tek tek koklar, yaklaştıklarını yazar, yaklaşma bitince susar.
 - Kendi postlarını ve caption'larını da kendi nöral aktivitesiyle üretir.
 - Bütün bunları **3D bir gövdede** görebilirsiniz. Gövdeyi yalnızca simüle edilen motor nöronlar hareket ettirir; animasyon ya da eğitilmiş hareket programı yoktur. Beyin aktivitesi de her nöronun gerçek konumunda izlenebilir.
 
@@ -19,7 +20,7 @@ Kararları insan, dil modeli ya da eğitilmiş bir yorumlayıcı ağ vermez. Sin
 - ✅ **Faz 4:** motor kod çözücü (kas grupları → Instagram eylemleri, eylem bütçesi, eşik homeostazı)
 - ✅ **Faz 5:** 3D gövde (motor nöron → kas → eklem, NeuroMechFly), propriyosepsiyon, sineğin kendi gözleriyle görmesi, telefon ekranlı sahne, yaklaşan nesneye kaçış, gövdeli kararlar ve gövde onayı; yürüme ve doğrulma henüz yok
 - ✅ **Faz 6:** görselleştirme ve kayıt: oturum kaydı, tarayıcı paneli (3D sinek, 3D sinir sistemi, sineğin gördüğü, kararlar, geriye izleme) ve video; canlı mod henüz yok
-- ⏭️ **Faz 8:** Instagram bağlantısı: tarayıcı, akış okuma, eylemler (beğen, kaydet, takip, yorum) ve güvenlik valisi. Gerçek hesapta çalışıyor; ilk gerçek beğeni uygulandı ve doğrulandı. Eylemler kullanıcının açıkça izin verdikleriyle sınırlı.
+- ⏭️ **Faz 8:** Instagram bağlantısı: tarayıcı, akış okuma, eylemler (beğen, kaydet, yorum) ve güvenlik valisi. Gerçek hesapta çalışıyor; beğeni ve yorum uygulandı ve doğrulandı. Eylemler kullanıcının açıkça izin verdikleriyle sınırlı. Sinek **ekrana bağlı** (K-040): korktuğunda kaçış hareketini yapıyor ama gidemiyor; akışta ilerlemenin tek yolu kendi vereceği başka bir karar.
 - **Faz 7:** yerel kum havuzu ve korku tepkisi (Faz 8'den sonra)
 - **Faz 9–10:** içerik üretimi (post ve story), öğrenme
 
