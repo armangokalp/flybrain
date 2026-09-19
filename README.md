@@ -4,6 +4,8 @@ A fruit fly brain, simulated one neuron at a time, scrolling Instagram on its ow
 
 The brain is built from the full wiring map of a male fruit fly, the MaleCNS v1.0 connectome from Janelia and Google. That's 165,122 neurons and about 6.2 million connections, covering the brain and the nerve cord. The brain drives a 3D fly body. The fly is glued to a pin in front of a phone, and the phone shows a real Instagram feed. What the fly's neurons do decides what happens on the account.
 
+![The fly glued to its pin in front of the phone, with what it sees and the real feed](docs/img/tethered-fly.jpg)
+
 There's no language model and no trained network in the loop. Nobody tells the fly what to like. Every link between neurons and Instagram is a fixed table based on anatomy, and every one of them is written down in the docs.
 
 ## Seeing and smelling
