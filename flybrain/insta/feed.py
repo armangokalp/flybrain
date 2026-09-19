@@ -293,10 +293,16 @@ class InstaFeed:
         )
 
     def _load_more(self) -> None:
-        """Akışın sonuna inip yeni postların yüklenmesini bekler."""
-        n = self.articles.count()
-        if n:
-            self.articles.nth(n - 1).evaluate("el => el.scrollIntoView({block: 'end', behavior: 'instant'})")
+        """Akışın sonuna inip yeni postların yüklenmesini bekler.
+
+        **Sayfanın** en altına iniliyor, son makalenin sonuna değil. Instagram takip edilen
+        hesapların postları bitince "You're all caught up" ayracı koyup altına önerilen postları
+        yüklüyor. Akışta tek post kaldığında o postun sonu sayfanın altına ulaşmıyor, sonsuz
+        kaydırma tetiklenmiyor ve akış orada kilitleniyordu (ölçüm: 6 turda makale sayısı 1'de
+        kaldı, sayfada "You're all caught up" yazıyordu).
+        """
+        self.b.page.evaluate(
+            "window.scrollTo({top: document.body.scrollHeight, behavior: 'instant'})")
         self.b.page.wait_for_timeout(1500)
 
     def next_post(self) -> FeedItem:
@@ -505,36 +511,55 @@ class InstaFeed:
         self.b.page.touchscreen.tap(kutu["x"], kutu["y"])
         return True
 
+    @staticmethod
+    def _first_visible(scope, getter):
+        """Eşleşenler arasından **görünür** olanı döndürür; yoksa None.
+
+        Sayısı saymak yetmiyor: gizli bir öğe de sayılıyor ve ona tıklamak zaman aşımına
+        düşüyor. Gerçek sayfada yorum kutusu akışta hiç yok (ölçüldü: akışta 0, panelde 1)
+        ama gizli bir kopya bırakan bir sürüm kodu sessizce kırardı.
+        """
+        loc = getter(scope)
+        for i in range(min(loc.count(), 5)):
+            if loc.nth(i).is_visible():
+                return loc.nth(i)
+        return None
+
+    def _comment_box(self, scope):
+        for ph in COMMENT_PLACEHOLDERS:
+            box = self._first_visible(scope, lambda s, ph=ph: s.get_by_placeholder(ph, exact=False))
+            if box is not None:
+                return box
+        return None
+
     def _comment(self, text: str) -> None:
-        """Yorumu yazar ve gönderir; metin boşsa hiçbir şey yapılmaz."""
+        """Yorumu yazar ve gönderir; metin boşsa hiçbir şey yapılmaz.
+
+        Gerçek Instagram'da (telefon görünümü) yorum kutusu akışta **yok**: yorum simgesine
+        basınca /p/<kod>/comments/ adresine gidiliyor ve kutu orada. Gönder düğmesi de ancak
+        **yazdıktan sonra** beliriyor (2026-09-18'de ölçüldü). Akışa dönüşü `ensure_feed`
+        yapıyor: bir sonraki postta adres akışınki olmadığı için geri dönülüyor.
+        """
         if not text.strip():
             raise ValueError("yorum metni boş")
         art = self._article(self.index)
-        box = None
-        for ph in COMMENT_PLACEHOLDERS:
-            loc = art.get_by_placeholder(ph, exact=False)
-            if loc.count():
-                box = loc.first
-                break
+        box = self._comment_box(art)
         if box is None:
             icon = self._icon("yorum", 0)
             if icon is None:
                 raise RuntimeError("yorum kutusu bulunamadı")
             icon.click(timeout=5000)
-            self.b.page.wait_for_timeout(1000)
-            for ph in COMMENT_PLACEHOLDERS:
-                loc = self.b.page.get_by_placeholder(ph, exact=False)
-                if loc.count():
-                    box = loc.first
-                    break
+            self.b.page.wait_for_timeout(1500)
+            box = self._comment_box(self.b.page)
         if box is None:
             raise RuntimeError("yorum kutusu bulunamadı")
         box.click(timeout=5000)
-        box.type(text, delay=120)  # insan hızında yazma
+        box.type(text, delay=120)  # insan hızında yazma; gönder düğmesi ancak yazınca beliriyor
+        self.b.page.wait_for_timeout(500)
         for scope in (art, self.b.page):  # önce postun kendi düğmesi, sonra sayfadaki
             for name in POST_TEXTS:
-                btn = scope.get_by_role("button", name=name, exact=True)
-                if btn.count():
-                    btn.first.click(timeout=5000)
+                btn = self._first_visible(scope, lambda s, n=name: s.get_by_role("button", name=n, exact=True))
+                if btn is not None:
+                    btn.click(timeout=5000)
                     return
         raise RuntimeError("yorumu gönderme düğmesi bulunamadı")

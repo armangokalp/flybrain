@@ -33,6 +33,8 @@ from __future__ import annotations
 import argparse
 import time
 
+import numpy as np
+
 from flybrain.fly import Post
 from flybrain.insta.browser import Browser
 from flybrain.insta.feed import ACTION_FPS, VIDEO_FPS, InstaFeed
@@ -198,10 +200,14 @@ def run_session(n_posts: int = 5, dry_run: bool = True, seed: int = 8003, out: s
                     """Bağlı sinek kaçmaya kalktı ve kaçamadı (K-040)."""
                     nonlocal struggles
                     struggles += 1
+                    # Kaçışın ölçüsü bağlı sinekte sıçrama kasının (TTM) kendi eklemi; göğüs
+                    # yükselmesi bağlı sinekte hep sıfır (K-040, Z-43).
+                    ttm = np.degrees((d.body or {}).get("ttm", 0.0))
                     rec.event("cirpinma", sira=_k + 1, nobet=bout, z=d.z.get("cikis"),
-                              yukselme_mm=(d.body or {}).get("gogus_yukselme_mm"))
+                              ttm_derece=round(ttm, 1),
+                              savrulma_mm=(d.body or {}).get("gogus_savrulma_mm"))
                     msg = (f"  [{_k + 1}] kaçmaya çalıştı (nöbet {bout + 1}), bağ tuttu"
-                           f" — göğüs {(d.body or {}).get('gogus_yukselme_mm', 0):.2f} mm")
+                           f" — sıçrama kası {ttm:.0f}°")
                     print(msg, flush=True)
                     if stream is not None:
                         stream.say(f"post {_k + 1}: korktu, kaçamadı (çırpınma {bout + 1})")

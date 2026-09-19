@@ -1174,7 +1174,30 @@ kopan bir geri besleme döngüsünde: serbest sinek kaçarken kendi hareketi gö
 bu LC4'ü yeniden besliyor ve kaçışı büyütüyor (K-029'un görme kazancını düşürme gerekçesiyle
 aynı olgu). Bağlı sinekte o döngü yok.
 
-### 18.4 Çırpınma: kaçış kararı postu bitirmiyor
+### 18.4 Bedel: takip ve sekme ölüyor
+
+Bağlı sineğin kalibrasyonu (`calibration_tethered.json`, 480 post) iki kanalın kaybolduğunu
+gösterdi:
+
+| kanal | serbest | bağlı |
+|---|---|---|
+| ileri | %34,6 | %34,2 |
+| beğen + kaydet | %11,7 | %15,0 |
+| yorum | %2,1 | %1,7 |
+| çıkış (korku) | %1,9 | %1,7 |
+| tımar | %4,0 | %1,9 |
+| **takip** | %2,1 | **%0** |
+| **sekme** | %1,3 | **%0** |
+
+Sebep gövde onayı: göğüs sabitlenince karın (0,16°) ve baş (0,005°) eklemleri 1°'lik
+görünürlük eşiğini hiç aşmıyor. K-032 "hareket yoksa eylem yok" diyor ve bu iki kanalda
+hareket gerçekten yok. Eşiği düşürmek kanalı geri getirirdi ama kuralı istenen sonuca
+uydurmak olurdu; kullanıcı bedeli kabul etti (K-040).
+
+Bağlı sinek ayrıca hiç devrilmiyor: 480 postta yeniden yerleştirme 0, dikliği eşiğin altına
+inen pencere %0.
+
+### 18.5 Çırpınma: kaçış kararı postu bitirmiyor
 
 `FeedViewer.look(on_struggle=...)`. "Çıkış" kararı geldiğinde kaçış hareketi olur, kaydedilir,
 ekran değişmez ve sinek aynı posta **yeni bir bakış nöbetiyle** bakmaya devam eder (kanıt

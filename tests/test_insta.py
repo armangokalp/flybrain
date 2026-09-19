@@ -142,6 +142,33 @@ def test_feed_reads_posts_and_applies_actions(sahte_akis):
     assert b.page.evaluate("document.querySelector('video').paused") is True
 
 
+def test_load_more_scrolls_the_page_to_the_bottom(sahte_akis):
+    """Akış "hepsini gördün" ayracından sonra önerilenleri yüklüyor; sayfanın **altına** inilmeli.
+
+    Son makalenin sonuna kaydırmak yetmiyordu: akışta tek post kalınca o postun sonu sayfanın
+    altına ulaşmıyor, sonsuz kaydırma tetiklenmiyor ve akış kilitleniyordu (gerçek hesapta
+    ölçüldü: 6 turda makale sayısı 1'de kaldı).
+    """
+    feed, gov, b = sahte_akis
+    b.page.evaluate("window.scrollTo(0, 0)")
+    feed._load_more()
+    assert b.page.evaluate(
+        "window.scrollY + window.innerHeight >= document.body.scrollHeight - 2")
+
+
+def test_comment_box_is_opened_from_the_icon(sahte_akis):
+    """Gerçek Instagram'da yorum kutusu akışta yok, simgeye basınca açılıyor (2026-09-18 ölçümü)."""
+    from flybrain.insta.feed import COMMENT_PLACEHOLDERS
+
+    feed, gov, b = sahte_akis
+    feed.next_post()
+    art = b.page.locator("article").nth(0)
+    assert art.get_by_placeholder(COMMENT_PLACEHOLDERS[0], exact=False).count() == 0 or \
+        not art.get_by_placeholder(COMMENT_PLACEHOLDERS[0], exact=False).first.is_visible()
+    assert feed.act("yorum", text="ışık kanat")["uygulandi"]
+    assert "ışık kanat" in art.locator("li.yorum").inner_text()
+
+
 def test_dry_run_and_veto_do_not_touch_the_page(sahte_akis):
     feed, gov, b = sahte_akis
     feed.next_post()

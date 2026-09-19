@@ -18,9 +18,13 @@ class Replay:
     def __init__(self, rec: dict | str | Path, width: int = 640, height: int = 480):
         from flybrain.body.body import Body
         from flybrain.body.scene import SceneConfig
+        from flybrain.body.tether import TetherConfig
 
         self.rec = rec if isinstance(rec, dict) else load(rec)
-        self.body = Body(scene=SceneConfig())
+        # Bağlı oturumda (K-040) tutucu da fizik dışı bir gövde: kayıtta iki mocap satırı var
+        # ve model onu tanımazsa kayıt yüklenemiyor. Eski kayıtlarda alan yok, sinek serbest.
+        bagli = bool(self.rec["meta"].get("bagli", False))
+        self.body = Body(scene=SceneConfig(), tether=TetherConfig() if bagli else None)
         self.m, self.d = self.body.sim.mj_model, self.body.sim.mj_data
         g = self.rec["govde"]
         if g["qpos"].shape[1] != self.m.nq:

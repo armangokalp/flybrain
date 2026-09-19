@@ -7,6 +7,8 @@
   dokunmadan sınamak için var. Kullanılan yapı gerçek sayfadaki ile aynı yerlerden okunuyor:
   article, header'daki kullanıcı bağlantısı, erişilebilirlik etiketli svg simgeler, takip düğmesi,
   açıklama metni ve yorum kutusu. Etiketlerin gerçek sayfadaki karşılıkları ayrıca doğrulanmalı.
+  Yorum akışı gerçekte ölçülüp buraya uyarlandı (2026-09-18): kutu ancak simgeye basınca,
+  gönder düğmesi ancak yazınca beliriyor.
 -->
 <html lang="tr">
 <head>
@@ -58,15 +60,12 @@ document.querySelector("main").innerHTML = POSTLAR.map((p, i) => `
     : `<img class="gorsel" alt="post" data-cifttap="1" src="${GORSEL}">`}</a>
   <div class="ikonlar">
     <button class="begen" onclick="cevir(this, 'Like', 'Unlike')">${svg("Like")}</button>
-    <button class="yorum">${svg("Comment")}</button>
+    <button class="yorum" onclick="yorumAc(this)">${svg("Comment")}</button>
     <button class="kaydet" onclick="cevir(this, 'Save', 'Remove')">${svg("Save")}</button>
     <button class="takip" onclick="takip(this)">Follow</button>
   </div>
   <ul><li><span dir="auto">${p.kullanici} ${p.aciklama}</span></li></ul>
-  <div class="yorum-kutusu">
-    <input placeholder="Add a comment…">
-    <button class="gonder" onclick="yorumla(this)">Post</button>
-  </div>
+  <div class="yorum-yeri"></div>
 </article>`).join("");
 
 function cevir(btn, once, sonra) {
@@ -88,6 +87,19 @@ document.querySelectorAll('[data-cifttap]').forEach(img => {
   });
 });
 function takip(btn) { btn.textContent = btn.textContent === "Follow" ? "Following" : "Follow"; }
+// Gerçek Instagram'da yorum kutusu akışta yok: yorum simgesine basınca açılan panelde
+// (ölçüldü — akışta 0 placeholder, panelde 1). Gönder düğmesi de ancak **yazınca** beliriyor.
+// Sahte akış ikisini de taklit ediyor; yoksa test gerçeği değil, bizim varsayımımızı doğrular
+// (Z-42'nin aynı hatası). Gerçekte panel ayrı bir adrese gidiyor (/p/<kod>/comments/), burada
+// gitmiyor; akışa dönüş `ensure_feed` ile ayrıca sınanıyor.
+function yorumAc(btn) {
+  const yer = btn.closest("article").querySelector(".yorum-yeri");
+  if (yer.querySelector("input")) return;
+  yer.innerHTML = `<div class="yorum-kutusu">
+    <input placeholder="Add a comment…" oninput="gonderGoster(this)">
+    <button class="gonder" onclick="yorumla(this)" hidden>Post</button></div>`;
+}
+function gonderGoster(kutu) { kutu.parentElement.querySelector(".gonder").hidden = !kutu.value.trim(); }
 function yorumla(btn) {
   const kutu = btn.parentElement.querySelector("input");
   if (!kutu.value.trim()) return;
@@ -96,6 +108,7 @@ function yorumla(btn) {
   li.textContent = "flybrain " + kutu.value;
   btn.closest("article").querySelector("ul").appendChild(li);
   kutu.value = "";
+  btn.hidden = true;
 }
 </script>
 </body>
